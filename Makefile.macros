@@ -1,5 +1,5 @@
 #Define install directory
-export MYBASEDIR:=/home/gaurav/eclipse-workspace/pycparser_examples
+export MYBASEDIR:=/home/gaurav/eclipse-workspace/sls_thesis_project
 
 #Directory for IR to C tool source
 IR2CDIR=$(MYBASEDIR)/ir2c

@@ -74,18 +74,18 @@ def readGlobalData(sourceFile,fnHash):
             m =re_functionLine.search(line);
             if m == None:
                 m = re_functionLine2.search(line);
-                if m and (not fnAltArgStart): 
-                    m=re_functionDesc.match(m.group());
-                    fnDesc=m.group();
-                    m =re_functionName.search(fnDesc);
-                    m = re.match('\w+',m.group());
-                    fnName=m.group();
-                    logging.debug("In main Fnmatch pattern, Fn = " + fnName)
-                    if fnName in fnHash: # This could be a function within ifdef, which is finally not defined
-                        if not (fnName in keywords.keywords):
-                            fnHash[fnName].setDesc(fnDesc);
-                            logging.debug("In main Fnmatch pattern, Fn desc = " + fnDesc)
-                            stopPrint = 1;
+            if m and (not fnAltArgStart): 
+                m=re_functionDesc.match(m.group());
+                fnDesc=m.group();
+                m =re_functionName.search(fnDesc);
+                m = re.match('\w+',m.group());
+                fnName=m.group();
+                logging.debug("In main Fnmatch pattern, Fn = " + fnName)
+                if fnName in fnHash: # This could be a function within ifdef, which is finally not defined
+                    if not (fnName in keywords.keywords):
+                        fnHash[fnName].setDesc(fnDesc);
+                        logging.debug("In main Fnmatch pattern, Fn desc = " + fnDesc)
+                        stopPrint = 1;
 
             # This is part of multiline fn arg list pattern search.
             # pushing it above the search for start of multiline arg list
@@ -131,7 +131,7 @@ def readGlobalData(sourceFile,fnHash):
 
         if stopPrint == 0:
             #print "Debug. Printing lines from C file"
-            print line;
+            print line,;
 
         line=f.readline();
 

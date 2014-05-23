@@ -18,7 +18,7 @@ import mem
 def process(sourceFile,fnHash):
     labelStart = "bb ";  # assuming that all labels names start with BB. 
                             # Change if label prefix changes - Suhas, 31 March 2012
-    f=open(sourceFile+".125t.blocks");#".t99.blocks");
+    f=open(sourceFile+".127t.blocks");#".t99.blocks");
     line=f.readline();
     printFlag=1;
     memFlag=0;
@@ -154,4 +154,5 @@ def process(sourceFile,fnHash):
             print line,
         printFlag = 1;
         line = f.readline()
+        
     return 1;
