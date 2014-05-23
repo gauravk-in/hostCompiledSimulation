@@ -38,26 +38,12 @@ run_test_all:
 	  $(MAKE) APPBASEDIR=$$e run_test;		\
 	done
 
-
 ir2c: run_ir2c compile_ir2c test_ir2c
 
 ir2c_all:
 	set -e; for e in $(EXAMPLES); do	\
 	  $(MAKE) APPBASEDIR=$$e ir2c;		\
 	done
-
-#As part of running IR2C
-#Then extracting the name without extension from filename and
-#adding IR.c extension
-#run_ir2c: $(SRC)
-#	$(PY) $(IR2C) $^ >&  $(IRDIR)/$(basename $(notdir $^))_IR.c
-#run_ir2c: 
-#	for s in $(SRC); \
-#        do \
-#          srcFile=`notdir $$s`; \
-#          irFile=$(basename $$srcFile)_IR.c; \
-#          $(PY) $(IR2C) $$s >&  $(IRDIR)/$$irFile; \
-#	done
 
 run_ir2c:
 	set -e; $(foreach s,$(SRC), $(IR2C) $(s) > $(APPBASEDIR)/$(IRDIR)/$(basename $(notdir $(s)))_IR.c ;)
@@ -95,7 +81,6 @@ compile_hc:
 
 test_hc:
 	$(MAKE) -C $(APPBASEDIR)/$(HC_DIR) test
-
 
 #adding - to rm so that errors are ignored	
 clean_ba:
