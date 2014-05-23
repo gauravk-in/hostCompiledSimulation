@@ -2,12 +2,9 @@
 # Makefile for adpcm and test programs
 # -------------------
 
-######################################################################
-#CFLAGS = -static -O3
+include ../../Makefile.macros
 
 APP1 = my_ctop
-
-#PHASE = final #when not defined, CC = gcc. otherwise cc = ppc-gcc
 
 TREEDUMP = -fdump-tree-all-blocks-details
 OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
@@ -16,22 +13,22 @@ IRDUMP = 1 #defined - dump IR files, undefined - don't.
 #PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point
 
 ifdef PHASE
-  CC = powerpc-elf-gcc
-  OBJDUMP = powerpc-elf-objdump
+  CC = $(CROSS_GCC)
+  OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   #ifeq (${IRDUMP},1)
   ifdef IRDUMP
-    COPTS = -static -msim ${OPT} ${TREEDUMP}
+    COPTS = -static ${OPT} ${TREEDUMP}
   else
-    COPTS = -static -msim ${OPT}
+    COPTS = -static ${OPT}
   endif
  
   ifdef PRINT
     COPTS += -msoft-float
   endif
 else
-  CC = gcc
-  OBJDUMP = objdump
+  CC = $(GCC)
+  OBJDUMP = $(HOST_OBJDUMP)
   OEXT = out
   #ifeq (${IRDUMP}, 1)
   ifdef IRDUMP

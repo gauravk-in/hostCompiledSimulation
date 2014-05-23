@@ -1,3 +1,5 @@
+include ../../Makefile.macros
+
 APP1 = basicmath_small_IR
 APP1PRINT = basicmath_small_print
 APP2 = basicmath_large
@@ -12,8 +14,8 @@ OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
 DEBUG = -g
 
 ifdef PHASE
-  CC = powerpc-elf-gcc
-  OBJDUMP = powerpc-elf-objdump
+  CC = $(CROSS_GCC)
+  OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   ifeq (${MATH}, libsource)
     COPTS = -D_IEEE_LIBM -D__IEEE_BIG_ENDIAN -I${MY_MPATH2} -I${MY_MPATH3} -static -msim -msoft-float ${OPT} ${TREEDUMP} -I.
@@ -21,8 +23,8 @@ ifdef PHASE
     COPTS = -static -msim -msoft-float ${OPT} ${TREEDUMP} -I.
   endif
 else
-  CC = gcc
-  OBJDUMP = objdump
+  CC = $(GCC)
+  OBJDUMP = $(HOST_OBJDUMP)
   OEXT = out
   ifeq (${MATH}, libsource)
     COPTS = -D_IEEE_LIBM -D__IEEE_LITTLE_ENDIAN -I${MY_MPATH2} -I${MY_MPATH3} -static ${OPT} -I../../../include -I../../../ir2c/include

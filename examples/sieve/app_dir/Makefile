@@ -1,50 +1,52 @@
-TREEDUMP=-fdump-tree-all-blocks-details
+include ../../Makefile.macros
+
+TREEDUMP = -fdump-tree-all-blocks-details
+OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
+DEBUG = -g
+IRDUMP = 1 #defined - dump IR files, undefined - don't.
+#PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point
+DUMPEXT = objdump
 
 ifdef PHASE
-
-OEXT=.elf
-DUMPEXT=objdump
-
-DEBUG=-g
-OPT=-O2
-
-CFLAGS=-pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msim -msoft-float $(OPT) $(TREEDUMP)
-
-CC=powerpc-elf-gcc
-
-OBJDUMP=powerpc-elf-objdump
-
+  CC = $(CROSS_GCC)
+  OBJDUMP = $(CROSS_OBJDUMP)
+  OEXT = elf
+  #ifeq (${IRDUMP},1)
+  ifdef IRDUMP
+    COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT) $(TREEDUMP)
+  else
+    COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT)
+  endif
+ 
+  ifdef PRINT
+    COPTS += -msoft-float
+  endif
 else
-
-OEXT=.out
-DUMPEXT=objdump
-
-DEBUG=-g
-OPT=-O2
-
-CFLAGS=$(OPT)
-
-CC=gcc
-
-OBJDUMP=objdump
-
+  CC = $(GCC)
+  OBJDUMP = $(HOST_OBJDUMP)
+  OEXT = out
+  #ifeq (${IRDUMP}, 1)
+  ifdef IRDUMP
+    COPTS = -static ${OPT} 
+  else
+    COPTS = -static ${OPT}
+  endif
 endif
-
 
 all: erat_sieve_no_print erat_sieve_print
 
 test:
-	./erat_sieve_print$(OEXT)
+	./erat_sieve_print.$(OEXT)
 
 erat_sieve_no_print:: erat_sieve_no_print.c
-	$(CC) $(CFLAGS) -o $@$(OEXT) $^
-	$(OBJDUMP) -D  $@$(OEXT) >& $@.$(DUMPEXT)
+	$(CC) $(CFLAGS) -o $@.$(OEXT) $^
+	$(OBJDUMP) -D  $@.$(OEXT) >& $@.$(DUMPEXT)
 
 erat_sieve_print:: erat_sieve_print.c
-	$(CC) $(CFLAGS) -o $@$(OEXT) $^
-	$(OBJDUMP) -D  $@$(OEXT) >& $@.$(DUMPEXT)
+	$(CC) $(CFLAGS) -o $@.$(OEXT) $^
+	$(OBJDUMP) -D  $@.$(OEXT) >& $@.$(DUMPEXT)
 
 #adding - to rm so that errors are ignored	
 clean::
 	@echo Cleaning up massaged IR build
-	-rm *$(OEXT) *.objdump erat_sieve_no_print.c.* erat_sieve_print.c.*
+	-rm *.$(OEXT) *.objdump erat_sieve_no_print.c.* erat_sieve_print.c.*

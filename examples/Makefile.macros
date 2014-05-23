@@ -5,26 +5,48 @@
 APPBASEDIR=adpcm
 #APPBASEDIR=sha
 
+##################
 #Define directory where application source files are stored. Must contain IR files too
+##################
 APPDIR	= app_dir
 
+##################
 #Directory for storing massaged IR files
+##################
 IRDIR	= ir_c
 OBJDIR	= ir_c
-#IRDIR	= golden_IR
-#OBJDIR	= golden_IR/objdir
 
+
+##################
 #Directories for characterization files
+##################
 IN_DAT_DIR 	= dat_inputs
 OUT_DAT_DIR	= dat_outputs
 
+
+##################
 #Directory for host-compiled model
+##################
 HC_DIR	= hc_model
 
+
+##################
 #Tools
+##################
 IR2C	= $(PYTHON) $(IR2CDIR)/src/ir2c.py
 # BA	= env PYTHONPATH=$(APPBASEDIR) $(PYTHON) $(BADIR)/src/back_annotator.py
 # MAP	= env PYTHONPATH=$(APPBASEDIR) $(PYTHON) $(BADIR)/src/mapping.py
 # RUNALYSE= env PYTHONPATH=$(APPBASEDIR) $(PYTHON) $(BADIR)/src/adlSim_runalyse.py
 
 
+##################
+# other tools
+##################
+PYTHON  = python
+RM  = rm
+TOUCH   = touch
+LN  = ln -s
+CROSS_GCC = arm-linux-gnueabi-gcc-4.4
+CROSS_OBJDUMP = arm-linux-gnueabi-objdump
+GCC = gcc-4.4
+HOST_OBJDUMP = objdump

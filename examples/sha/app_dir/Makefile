@@ -13,6 +13,7 @@
 #clean:
 #	rm -rf *.o sha output*
 
+include ../../Makefile.macros
 
 APP1 = sha_driver
 APP2 = sha_driver_create_input_array
@@ -26,14 +27,14 @@ IRDUMP = 1 #1 - dump IR files, 0 - don't.
 #PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point
 
 ifdef PHASE
-  CC = powerpc-elf-gcc
-  OBJDUMP = powerpc-elf-objdump
+  CC = $(CROSS_GCC)
+  OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   #ifeq (${IRDUMP},1)
   ifdef IRDUMP
-    COPTS = -Wall -msim ${OPT} ${TREEDUMP}
+    COPTS = -Wall ${OPT} ${TREEDUMP}
   else
-    COPTS = -Wall -msim ${OPT} 
+    COPTS = -Wall ${OPT} 
   endif
 
   ifdef PRINT
@@ -41,8 +42,8 @@ ifdef PHASE
   endif
 
 else
-  CC = arm-none-eabi-gcc 
-  OBJDUMP = arm-none-eabi-objdump
+  CC = $(GCC)
+  OBJDUMP = $(HOST_OBJDUMP)
   OEXT = out
   #ifeq (${IRDUMP}, 1)
   ifdef IRDUMP

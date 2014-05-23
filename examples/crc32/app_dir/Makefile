@@ -1,3 +1,5 @@
+include ../../Makefile.macros
+
 APP1 = crc_top
 
 #PHASE = final #when not defined, CC = gcc. otherwise cc = ppc-gcc
@@ -9,26 +11,26 @@ IRDUMP = 1 #1 - dump IR files, 0 - don't.
 #PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point
 
 ifdef PHASE
-  CC = powerpc-elf-gcc
-  OBJDUMP = powerpc-elf-objdump
+  CC = $(CROSS_GCC)
+  OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   #ifeq (${IRDUMP},1)
   ifdef IRDUMP
-    COPTS = -static -msim ${OPT} ${TREEDUMP}
+    COPTS = -static ${OPT} ${TREEDUMP}
   else
-    COPTS = -static -msim ${OPT} 
+    COPTS = -static ${OPT}
   endif
-
+ 
   ifdef PRINT
     COPTS += -msoft-float
   endif
 else
-  CC = gcc
-  OBJDUMP = objdump
+  CC = $(GCC)
+  OBJDUMP = $(HOST_OBJDUMP)
   OEXT = out
   #ifeq (${IRDUMP}, 1)
   ifdef IRDUMP
-    COPTS = -static ${OPT}
+    COPTS = -static ${OPT} 
   else
     COPTS = -static ${OPT}
   endif

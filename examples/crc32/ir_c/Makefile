@@ -1,3 +1,5 @@
+include ../../Makefile.macros
+
 APP1 = crc_top_IR
 
 #PHASE = final #when not defined, CC = gcc. otherwise cc = ppc-gcc
@@ -8,18 +10,18 @@ DEBUG = -g
 IRDUMP = 1 #1 - dump IR files, 0 - don't.
 
 ifdef PHASE
-  CC = powerpc-elf-gcc
-  OBJDUMP = powerpc-elf-objdump
+  CC = $(CROSS_GCC)
+  OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   #ifeq (${IRDUMP},1)
   ifdef IRDUMP
-    COPTS = -static -msim ${OPT} ${TREEDUMP} -I.
+    COPTS = -static ${OPT} ${TREEDUMP} -I.
   else
-    COPTS = -static -msim ${OPT} -I.
+    COPTS = -static ${OPT} -I.
   endif
 else
-  CC = gcc
-  OBJDUMP = objdump
+  CC = $(GCC)
+  OBJDUMP = $(HOST_OBJDUMP)
   OEXT = out
   #ifeq (${IRDUMP}, 1)
   ifdef IRDUMP

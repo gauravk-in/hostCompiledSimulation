@@ -3,7 +3,8 @@
 # -------------------
 
 ######################################################################
-#CFLAGS = -static -O3
+
+include ../../Makefile.macros
 
 APP1 = my_ctop_IR
 
@@ -15,29 +16,30 @@ DEBUG = -g
 #IRDUMP = 1 #defined - dump IR files, undefined - don't.
 #PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point
 
+
 ifdef PHASE
-  CC = arm-none-linux-gnueabi-gcc
-  OBJDUMP = arm-none-linux-gnueabi-objdump
+  CC = $(CROSS_GCC)
+  OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   #ifeq (${IRDUMP},1)
   ifdef IRDUMP
-    COPTS = -static -msim ${OPT} ${TREEDUMP} -I.
+    COPTS = -static ${OPT} ${TREEDUMP}
   else
-    COPTS = -static -msim ${OPT} -I.
+    COPTS = -static ${OPT}
   endif
-  
+ 
   ifdef PRINT
     COPTS += -msoft-float
   endif
 else
-  CC = gcc
-  OBJDUMP = objdump
+  CC = $(GCC)
+  OBJDUMP = $(HOST_OBJDUMP)
   OEXT = out
   #ifeq (${IRDUMP}, 1)
   ifdef IRDUMP
-    COPTS = -static ${OPT} ${TREEDUMP} -I../../../ir2c/include
+    COPTS = -static ${OPT} 
   else
-    COPTS = -static ${OPT} -I../../../ir2c/include
+    COPTS = -static ${OPT}
   endif
 endif
 

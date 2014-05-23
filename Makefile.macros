@@ -6,9 +6,3 @@ IR2CDIR=$(MYBASEDIR)/ir2c
 
 #Directory for back annotation tool source
 BADIR=$(MYBASEDIR)/back_annotate
-
-# other tools
-PYTHON	= python
-RM	= rm
-TOUCH	= touch
-LN	= ln -s
