@@ -1,1 +1,6 @@
 .svn
+*.c.*
+*.elf
+*.out
+*.o
+*.tmp
