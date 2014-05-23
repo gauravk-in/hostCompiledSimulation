@@ -1,5 +1,4 @@
 import re
-import fn
 import keywords
 
 TARGET_BITWIDTH = 32
@@ -43,7 +42,7 @@ def resolveMEM(mem,func,lhs):
     varHash = func.getVars()
     re_memsplit=re.compile('\w+: [^,|^\]]+');     #('\w+: [\w|\.]+')
     re_tokensplit=re.compile(': ');
-    re_plus=re.compile('\+\s*(\([\w\s]+\))?');
+#     re_plus=re.compile('\+\s*(\([\w\s]+\))?');
     re_cast=re.compile('\s*\([\w\s]+\)')
     mem_components={};
     # resolve type
