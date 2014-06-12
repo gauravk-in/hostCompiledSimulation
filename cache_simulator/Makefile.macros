@@ -1,0 +1,19 @@
+# Configuration for cache simulator
+
+# Path to Cache Simulator
+CSIM_DIR = /home/gaurav/eclipse-workspace/sls_thesis_project/cache_simulator
+
+# No need to change
+SRC_DIR = $(CSIM_DIR)/src
+TEST_DIR = $(CSIM_DIR)/test
+
+# Hardware Model to use
+CACHESIM_HWMOD = generic
+
+# Cache Simulation Source Code
+SOURCES=cacheSim.c cacheSim.h cacheSimStat.c cacheSimStat.h cacheSimHwMod.h
+
+# Add the source file(s) for the cache simulator hardware models
+ifeq ($(CACHESIM_HWMOD),generic)
+    SOURCES += genericHwMod.c
+endif
