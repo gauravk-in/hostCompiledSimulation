@@ -9,8 +9,8 @@ import re
 re_sectionStart = re.compile('Disassembly of section .(.*):')
 re_Declaration = re.compile('\s*([0-9a-f]*)\s*<(.*)>:')
 re_instruction = re.compile('\s*([0-9a-f]*):\s*([0-9a-f])*\s*(.*)')
-re_branchInst = re.compile('\s*(b[l|x|lx|xj]?)\s*([0-9a-f]*)\s*<(.*)>')
-re_conditionBranchInst = re.compile('\s*(b[l|x|lx|xj]?[eq|ne|mi|pl|hi|ls|ge|lt|gt|le])\s*([0-9a-f]*)\s*<(.*)>')
+re_unconditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?)\s*([0-9a-f]*)\s*<(.*)>')
+re_conditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?(?:eq|ne|mi|pl|hi|ls|ge|lt|gt|le))\s*([0-9a-f]*)\s*<(.*)>')
 re_returnInst = re.compile('\s*(bx)\s*(lr)')
 re_startWithSemiColon = re.compile('\s*_+.*')
 
@@ -116,22 +116,27 @@ class ControlFlowGraph:
         for block in self.listBlocks:
             blockEndAdd = block.endAdd
             if blockEndAdd in branchInstAtAdd:
-                m = re_branchInst.match(branchInstAtAdd[blockEndAdd])
+                m = re_unconditionalBranchInst.match(branchInstAtAdd[blockEndAdd])
                 if m is not None:
+                    # unconditional branch, add edge to target but not to next instruction
                     self.addEdge(blockEndAdd, m.group(2))
-                    if m.group(1) != "b":
-                        self.addEdge(blockEndAdd, "%x" % (int(blockEndAdd, 16) + 4))
                 else:
-                    m = re_returnInst.match(branchInstAtAdd[blockEndAdd])
+                    m = re_conditionalBranchInst.match(branchInstAtAdd[blockEndAdd])
                     if m is not None:
-                        continue
+                        # conditional branch, add edge to target and next instruction
+                        self.addEdge(blockEndAdd, m.group(2))
+                        self.addEdge(blockEndAdd, "%x" % (int(blockEndAdd, 16) + 4))
+                    else:
+                        m = re_returnInst.match(branchInstAtAdd[blockEndAdd])
+                        if m is not None:
+                            continue
             else:
                 self.addEdge(blockEndAdd, "%x" % (int(blockEndAdd, 16) + 4))
 
         # For return instructions
         # Fucking Ugly Code
         for address in branchInstAtAdd:
-            m = re_branchInst.match(branchInstAtAdd[address])
+            m = re_unconditionalBranchInst.match(branchInstAtAdd[address])
             if m is not None:
                 targetAddress = m.group(2)
                 for funcBody in listFunctionBodies:
@@ -277,7 +282,21 @@ def matched_codeLine(address, inst):
         #Algo 3.a
         listBlockStartAdd.append(address)
         
-    m = re_branchInst.match(inst)
+    m = re_conditionalBranchInst.match(inst)
+    if m is not None:
+        branchInstAtAdd[address] = inst;
+        # Algo 3.b. End of a Basic Block at branch
+        listBlockEndAdd.append(address)
+        # Algo 3.c. Start of a basic block from target address of branch inst.
+        listBlockStartAdd.append(m.group(2))
+        # Algo 3.d. End of a basic block at inst before target address of branch
+        if m.group(3).startswith(currentFunctionName):
+            listBlockEndAdd.append("%x" % (int(m.group(2), 16) - 4))
+        # Algo 3.e Start of a basic block from next inst to the branch inst.
+        addOfNextInst = "%x" % (int(address, 16) + 4)
+        listBlockStartAdd.append(addOfNextInst)
+        
+    m = re_unconditionalBranchInst.match(inst)
     if m is not None:
         branchInstAtAdd[address] = inst;
         # Algo 3.b. End of a Basic Block at branch
