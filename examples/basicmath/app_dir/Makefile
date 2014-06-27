@@ -18,9 +18,9 @@ ifdef PHASE
   OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   ifeq (${MATH}, libsource)
-    COPTS = -D_IEEE_LIBM -D__IEEE_BIG_ENDIAN -I${MY_MPATH2} -I${MY_MPATH3} -static -msoft-float ${OPT} ${TREEDUMP}
+    COPTS = -D_IEEE_LIBM -D__IEEE_BIG_ENDIAN -I${MY_MPATH2} -I${MY_MPATH3} -static -msoft-float ${OPT} ${TREEDUMP} -T generic-hosted.ld
   else
-    COPTS = -static -msoft-float ${OPT} ${TREEDUMP}
+    COPTS = -static -msoft-float ${OPT} ${TREEDUMP} -T generic-hosted.ld
   endif
 else
   CC = $(GCC)

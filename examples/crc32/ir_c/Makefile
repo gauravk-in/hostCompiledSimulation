@@ -15,9 +15,9 @@ ifdef PHASE
   OEXT = elf
   #ifeq (${IRDUMP},1)
   ifdef IRDUMP
-    COPTS = -static ${OPT} ${TREEDUMP} -I.
+    COPTS = -static ${OPT} ${TREEDUMP} -I. -T generic-hosted.ld
   else
-    COPTS = -static ${OPT} -I.
+    COPTS = -static ${OPT} -I. -T generic-hosted.ld
   endif
 else
   CC = $(GCC)

@@ -13,9 +13,9 @@ ifdef PHASE
   OEXT = elf
   #ifeq (${IRDUMP},1)
   ifdef IRDUMP
-    COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT) $(TREEDUMP)
+    COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT) $(TREEDUMP) -T generic-hosted.ld
   else
-    COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT)
+    COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT) -T generic-hosted.ld
   endif
  
   ifdef PRINT
@@ -39,11 +39,11 @@ test:
 	./erat_sieve_print.$(OEXT)
 
 erat_sieve_no_print:: erat_sieve_no_print.c
-	$(CC) $(CFLAGS) -o $@.$(OEXT) $^
+	$(CC) $(COPTS) $(CFLAGS) -o $@.$(OEXT) $^
 	$(OBJDUMP) -D  $@.$(OEXT) >& $@.$(DUMPEXT)
 
 erat_sieve_print:: erat_sieve_print.c
-	$(CC) $(CFLAGS) -o $@.$(OEXT) $^
+	$(CC) $(COPTS) $(CFLAGS) -o $@.$(OEXT) $^
 	$(OBJDUMP) -D  $@.$(OEXT) >& $@.$(DUMPEXT)
 
 #adding - to rm so that errors are ignored	
