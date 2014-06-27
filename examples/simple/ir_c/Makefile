@@ -15,9 +15,9 @@ ifdef PHASE
   OEXT = elf
   
   ifdef IRDUMP
-    COPTS = -static ${OPT} ${TREEDUMP}
+    COPTS = -static ${OPT} ${TREEDUMP} -T generic-hosted.ld
   else
-    COPTS = -static ${OPT}
+    COPTS = -static ${OPT} -T generic-hosted.ld
   endif
  
   ifdef PRINT
@@ -35,12 +35,18 @@ else
   endif
 endif
 
-all: simple_IR
+APP1 = simple_IR
 
-simple_IR: simple_IR.c
-	$(CC) $(COPTS) -o $@.$(OEXT) $^
-	
+all: simple_IR.$(OEXT) simple_IR.objdump
+
+simple_IR.$(OEXT): simple_IR.c
+	$(CC) $(COPTS) -o $@ $^
+        
+simple_IR.objdump: simple_IR.$(OEXT)
+	${OBJDUMP} -D $^ >& ${APP1}.objdump
+
+
 test:
 		
 clean:
-	rm -rf *.o *.c.* simple_IR.elf simple_IR.out
+	rm -rf *.o *.c.* simple_IR.elf simple_IR.out simple_IR.objdump

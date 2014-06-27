@@ -1,6 +1,7 @@
 # Makefile to compile the C Example code
 # make all - generates the debug information, and binary code for all the
 #			examples in the folder.
+include ../../Makefile.macros
 
 TREEDUMP = -fdump-tree-all-blocks-details
 OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
@@ -9,22 +10,22 @@ IRDUMP = 1 #defined - dump IR files, undefined - don't.
 #PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point
 
 ifdef PHASE
-  CC = arm-none-linux-gnueabi-gcc
-  OBJDUMP = arm-none-linux-gnueabi-objdump
+  CC = $(CROSS_GCC)
+  OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   
   ifdef IRDUMP
-    COPTS = -static ${OPT} ${TREEDUMP}
+    COPTS = -static ${OPT} ${TREEDUMP} -T generic-hosted.ld
   else
-    COPTS = -static ${OPT}
+    COPTS = -static ${OPT} -T generic-hosted.ld
   endif
  
   ifdef PRINT
     COPTS += -msoft-float
   endif
 else
-  CC = gcc
-  OBJDUMP = objdump
+  CC = $(GCC)
+  OBJDUMP = $(HOST_OBJDUMP)
   OEXT = out
   
   ifdef IRDUMP
@@ -34,12 +35,17 @@ else
   endif
 endif
 
-all: simple
+APP1 = simple
 
-simple: simple.c
-	$(CC) $(COPTS) -o $@.$(OEXT) $^
+all: simple.$(OEXT) simple.objdump
+
+simple.$(OEXT): simple.c
+	$(CC) $(COPTS) -o $@ $^
+	
+simple.objdump: simple.$(OEXT)	
+	${OBJDUMP} -D $^ >& ${APP1}.objdump
 	
 test:
 		
 clean:
-	rm -rf *.o *.c.* simple.elf simple.out
+	rm -rf *.o *.c.* simple.elf simple.out simple.objdump
