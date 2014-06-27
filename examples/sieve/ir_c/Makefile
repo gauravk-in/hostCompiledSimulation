@@ -6,6 +6,8 @@ DEBUG = -g
 IRDUMP = 0 #defined - dump IR files, undefined - don't.
 #PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point
 
+DUMPEXT = objdump
+
 ifdef PHASE
   CC = $(CROSS_GCC)
   OBJDUMP = $(CROSS_OBJDUMP)
