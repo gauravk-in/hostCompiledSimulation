@@ -6,9 +6,18 @@ class BBEdge:
         self.toBlockIndex = toBlockIndex;
 
 class BasicBlock:
-    def __init__(self, startLine, endLine):
-        self.startLine = startLine;
-        self.endLine = endLine;
+    def __init__(self, startLine, endLine, isReturning=0, listFuncCalls = None, name = None):
+        if name is None:
+            self.name = ""
+        else:
+            self.name = name
+        self.startLine = startLine
+        self.endLine = endLine
+        self.isReturning = isReturning
+        if listFuncCalls is None:
+            self.listFunctionCalls = []
+        else:
+            self.listFunctionCalls = listFuncCalls
 
 class ControlFlowGraph:
     def __init__(self, listBlocks, listEdges):
@@ -23,4 +32,3 @@ class FunctionDesc:
         self.endLine = endLine
         self.cfg = cfg
         
- 

@@ -4,34 +4,7 @@
 
 import sys
 import re
-import cfg
-
-class BBEdge:
-    def __init__(self, fromBlockIndex, toBlockIndex):
-        self.fromBlockIndex = fromBlockIndex;
-        self.toBlockIndex = toBlockIndex;
-
-class BasicBlock:
-    def __init__(self, startLine, endLine, isReturning=0, listFuncCalls = None):
-        self.startLine = startLine
-        self.endLine = endLine
-        self.isReturning = isReturning
-        if listFuncCalls is None:
-            self.listFunctionCalls = []
-
-class ControlFlowGraph:
-    def __init__(self, listBlocks, listEdges):
-        self.listBlocks = listBlocks
-        self.listEdges = listEdges
-        
-class FunctionDesc:
-    def __init__(self, functionName, fileName, startLine, endLine, cfg):
-        self.functionName = functionName
-        self.fileName = fileName
-        self.startLine = startLine
-        self.endLine = endLine
-        self.cfg = cfg
-        
+from cfg import *
 
 re_sectionStart = re.compile('Disassembly of section .(.*):')
 re_funcDef = re.compile('\s*([0-9a-f]*)\s*<(.*)>:')
@@ -279,7 +252,7 @@ def parse_binary(fileName):
                     
 def print_debug(listFunctions):
     for func in listFunctions:
-        print("\nFileName : %s" % (func.fileName))
+        print("\nlFileName : %s" % (func.fileName))
         print("Function : %s" % (func.functionName))
         i = 0
         for block in func.cfg.listBlocks:
