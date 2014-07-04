@@ -1,7 +1,0 @@
-this
-is
-a
-<main>
-simple
-example
-file
