@@ -32,9 +32,6 @@ def map_cfg(listISCFileNames, listObjdumpFileNames):
         listObjdumpFunctions = listObjdumpFunctions + parse_binary(ObjdumpFileName, 
                                                                    listFunctionNames)
         
-    print_debug_isc (listISCFunctions)
-    print_debug_binary (listObjdumpFunctions)
-        
     # Check that we found all functions in ISC in Objdump
     if len(listISCFunctions) != len(listObjdumpFunctions):
         raise ParseError("all functions in ISC file not found in Objdump file!")
@@ -47,6 +44,8 @@ def map_cfg(listISCFileNames, listObjdumpFileNames):
         logging.debug("Computing flow for function %s from file %s" % (function.functionName, function.fileName))
         function.cfg.computeFlow()
 
+    print_debug_isc (listISCFunctions)
+    print_debug_binary (listObjdumpFunctions)
 
 
 if __name__ == "__main__":

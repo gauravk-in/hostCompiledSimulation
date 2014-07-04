@@ -1,0 +1,1 @@
+../app_dir/snipmath.h

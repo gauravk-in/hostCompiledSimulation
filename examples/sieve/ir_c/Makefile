@@ -41,11 +41,11 @@ test:
 	./erat_sieve_no_print_IR.$(OEXT)
 
 erat_sieve_no_print_IR:: erat_sieve_no_print_IR.c
-	$(CC) $(CFLAGS) -o $@.$(OEXT) $^
+	$(CC) $(COPTS) -o $@.$(OEXT) $^
 	$(OBJDUMP) -D  $@.$(OEXT) >& $@.$(DUMPEXT)
 
 erat_sieve_print_IR:: erat_sieve_print_IR.c
-	$(CC) $(CFLAGS) -o $@.$(OEXT) $^
+	$(CC) $(OPTS) -o $@.$(OEXT) $^
 	$(OBJDUMP) -D  $@.$(OEXT) >& $@.$(DUMPEXT)
 
 #adding - to rm so that errors are ignored	

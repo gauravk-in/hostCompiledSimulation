@@ -5,3 +5,7 @@
 *.o
 *.tmp
 *.objdump
+*.swp
+*.project
+*.pydevproject
+

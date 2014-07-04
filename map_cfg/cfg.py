@@ -64,7 +64,7 @@ class ControlFlowGraph:
         edgeIndex = 0
         for edge in self.listEdges:
             if edge.toBlockIndex == blockIndex and edgeIndex not in self.listBackEdges:
-                listPredBlockIndices.append(edge.toBlockIndex)
+                listPredBlockIndices.append(edge.fromBlockIndex)
             edgeIndex = edgeIndex + 1
         logging.debug("returns from predecessorBlocksWOBackEdges(blockIndex)")
         return listPredBlockIndices
@@ -111,33 +111,46 @@ class ControlFlowGraph:
         '''
         currBlockPredNotVisited = 0
         queuePending = deque([])
+        
+        # Make a list of the back edges to be ignored while computing flow
         self.findBackEdges()
+        # Set flow of starting block, and insert the successors in a queue
         self.listBlocks[0].flow = 1.0
         for blockIndex in self.successorBlocksWOBackEdges(0):
             queuePending.append(blockIndex)
             
         while queuePending:
+            # treat each block in the queue
             currBlockIndex = queuePending.popleft()
+            
+            # Add the successors of the block to the queue
+            for succBlockIndex in self.successorBlocksWOBackEdges(currBlockIndex):
+                queuePending.append(succBlockIndex)
+            
+            # init flow to 0
             currBlockFlow = 0.0
             for predBlockIndex in self.predecessorBlocksWOBackEdges(currBlockIndex):
+                # compute flow from predecessors
                 if self.listBlocks[predBlockIndex].flow == 0:
                     # predecessor block still not visited
-                    # add the current block back into queue, set flag and break from loop.
+                    #     add the current block back into queue, 
+                    #     set flag and break from loop.
                     queuePending.append(currBlockIndex)
                     currBlockPredNotVisited = 1
                     break
                 else:
                     currBlockFlow = currBlockFlow + (self.listBlocks[predBlockIndex].flow / len(self.successorBlocksWOBackEdges(predBlockIndex)))
-                    
-                if currBlockPredNotVisited == 1:
-                    currBlockPredNotVisited = 0
-                    continue
+
+            # if flag set, reset it and continue                    
+            if currBlockPredNotVisited == 1:
+                currBlockPredNotVisited = 0
+                continue
+            else:
+                if currBlockFlow > 1.0:
+                    raise ParseError("Flow in graph greater than 1!!")
+                    exit(1)
                 else:
-                    if currBlockFlow > 1.0:
-                        raise ParseError("Flow in graph greater than 1!!")
-                        exit(1)
-                    else:
-                        self.listBlocks[currBlockIndex].flow = currBlockFlow
+                    self.listBlocks[currBlockIndex].flow = currBlockFlow
         
 class FunctionDesc:
     def __init__(self, functionName, fileName, startLine, endLine, cfg):

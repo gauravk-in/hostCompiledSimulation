@@ -1,3 +1,1 @@
-
-// unsigned int ARR_SIZE = 13305601;
- unsigned int ARR_SIZE = 684433;
+../app_dir/my_variables.h
