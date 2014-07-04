@@ -2,8 +2,9 @@
 #APPBASEDIR=sieve
 #APPBASEDIR=basicmath
 #APPBASEDIR=crc32
-APPBASEDIR=adpcm
+#APPBASEDIR=adpcm
 #APPBASEDIR=sha
+APPBASEDIR=simple
 
 ##################
 #Define directory where application source files are stored. Must contain IR files too
@@ -46,7 +47,7 @@ PYTHON  = python
 RM  = rm
 TOUCH   = touch
 LN  = ln -s
-CROSS_GCC = arm-linux-gnueabi-gcc-4.4
-CROSS_OBJDUMP = arm-linux-gnueabi-objdump
+CROSS_GCC = arm-none-eabi-gcc 
+CROSS_OBJDUMP = arm-none-eabi-objdump 
 GCC = gcc-4.4
 HOST_OBJDUMP = objdump

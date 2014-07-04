@@ -2,8 +2,8 @@ include ../Makefile.macros
 include Makefile.macros
 
 #EXAMPLES = sieve crc32 adpcm sha basicmath
-EXAMPLES = sha sieve
-#EXAMPLES = simple
+#EXAMPLES = sha sieve
+EXAMPLES = sieve
 STARTADR = 0x10000214
 
 # Space separated list of all C files in APPDIR
@@ -29,21 +29,14 @@ app:
 	  $(MAKE) -C $$e/$(APPDIR) PHASE=final all;	\
 	done
 
-run: run_ir2c hc_dev
+#run: run_ir2c
 
-run_test: ir2c back_annotate
-
-run_test_all: 
+ir2c:
 	set -e; for e in $(EXAMPLES); do	\
-	  $(MAKE) APPBASEDIR=$$e run_test;		\
+	  $(MAKE) APPBASEDIR=$$e ir2c_full;		\
 	done
 
-ir2c: run_ir2c compile_ir2c test_ir2c
-
-ir2c_all:
-	set -e; for e in $(EXAMPLES); do	\
-	  $(MAKE) APPBASEDIR=$$e ir2c;		\
-	done
+ir2c_full: run_ir2c compile_ir2c test_ir2c
 
 run_ir2c:
 	set -e; $(foreach s,$(SRC), $(IR2C) $(s) > $(APPBASEDIR)/$(IRDIR)/$(basename $(notdir $(s)))_IR.c ;)
@@ -59,40 +52,13 @@ test_ir2c:
 	
 clean_ir2c:
 	@echo Cleaning up IR 2 C test
-	-rm $(APPBASEDIR)/$(IRDIR)/*IR.c
-
-
-back_annotate: hc_dev compile_hc test_hc
-
-back_annotate_all:
-	set -e; for e in $(EXAMPLES); do	\
-	  $(MAKE) APPBASEDIR=$$e back_annotate;	\
-	done
-
-hc_dev: 
-	$(BA) -i $(APPBASEDIR)/$(IRDIR)$(IRFILE) -I $(APPBASEDIR)/$(OBJDIR)
-	set -e; $(foreach h,$(HDR), $(LN) -f ../$(APPDIR)/$(basename $(notdir $(h))).h $(APPBASEDIR)/$(HC_DIR)/$(basename $(notdir $(h))).h ;)
-
-mapping: 
-	$(MAP) -i $(APPBASEDIR)/$(IRDIR)$(IRFILE) -I $(APPBASEDIR)/$(OBJDIR)
-
-compile_hc:
-	$(MAKE) -C $(APPBASEDIR)/$(HC_DIR)
-
-test_hc:
-	$(MAKE) -C $(APPBASEDIR)/$(HC_DIR) test
-
-#adding - to rm so that errors are ignored	
-clean_ba:
-	@echo Cleaning up back annotation test
-	-rm $(ENV_IN_DAT_DIR)/*.dat $(ENV_OUT_DAT_DIR)/*.dat $(ENV_IN_PWR_TOOL_DIR)/*.xml $(ENV_OUT_PWR_TOOL_DIR)/* $(ENV_HC_DIR)/*.c  $(ENV_HC_DIR)/*.out
-
+	-rm -rf $(APPBASEDIR)/$(IRDIR)/*IR.c
+	$(MAKE) -C $(APPBASEDIR)/$(IRDIR) clean
 
 clean: 
 	for e in $(EXAMPLES); do	\
 	  $(MAKE) -C $$e/$(APPDIR) clean;		\
-	  $(MAKE) APPBASEDIR=$$e clean_plat_app clean_plat_hc;	\
-	  $(MAKE) APPBASEDIR=$$e clean_ir2c clean_ba ;	\
+	  $(MAKE) APPBASEDIR=$$e clean_ir2c;		\
 	done
 
 
