@@ -1,0 +1,27 @@
+Host Compiled Simulation for Timing and Power Estimation
+
+********************************************************************************
+The project is divided into following sub-projects.
+
+1. ir_c : Intermediate Code to C code conversion.
+2. cache_simulator : Cache Simulator code in C, which will be called from 
+    instrumented benchmark code.
+3. map_cfg : Python project to create a mapping between basic blocks in ISC 
+    (Intermediate Source Code) and binary (objdump).
+
+
+********************************************************************************
+Project Organization
+
+root (MYBASEDIR)    : Global Root of the project.
+ - ir2c (IR2CDIR)   : Directory containing the IR to C conversion code.
+ - map_cfg (MAPDIR) : Directory containing the code to match basic blocks.
+ - examples         : Directory containing the code for benchmarks
+
+
+********************************************************************************
+To run the project, 
+
+1. Change to the "examples" directory.
+2. The Makefile in examples/ offers following options.
+    a. 

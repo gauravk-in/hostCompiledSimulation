@@ -29,7 +29,7 @@ app:
 	  $(MAKE) -C $$e/$(APPDIR) PHASE=final all;	\
 	done
 
-#run: run_ir2c
+# IR2C Targets
 
 ir2c:
 	set -e; for e in $(EXAMPLES); do	\
@@ -61,7 +61,19 @@ clean:
 	  $(MAKE) APPBASEDIR=$$e clean_ir2c;		\
 	done
 
-
-
-
+help:
+	@printf "\nHelp information for running project\n"
+	@printf "\n\ttarget: Operation Performed\n"
+	@printf "\nGeneral Targets\n"
+	@printf "\thelp: Display this message\n"
+	@printf "\tall: Compile all the benchmarks\n"
+	@printf "\nIR2C Targets\n"
+	@printf "\tir2c: For all benchmarks run_ir2c, compile_ir2c and test_ir2c\n"
+	@printf "\trun_ir2c: Needs variable APPBASEDIR. Runs ir2c code, and generates Intermediate Source Code\n"
+	@printf "\tcompile_ir2c: Needs variable APPBASEDIR. Compile ISC.\n"
+	@printf "\ttest: Calls test target declared in ir_c/Makefile in each benchmark\n"
+	@printf "\nmap_cfg Targets\n"
+	@printf "\thelp: Display this message\n"
+	
+	@printf "\n\n"
 

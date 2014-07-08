@@ -6,6 +6,6 @@
 *.tmp
 *.objdump
 *.swp
-*.project
-*.pydevproject
-
+*.pyc
+*.gdbo
+*.gdbx

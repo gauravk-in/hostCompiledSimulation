@@ -89,7 +89,27 @@ class ControlFlowGraph:
             if succBlock not in self.dft_stack:
                 self.dft(succBlock)
             else:
+                # Awesome fix of an error identified during test
+                # if a closed loop occurs consisting of multiple blocks, we
+                #  need to remove all edges of the loop, because removing just
+                #  the last edge will lead to flow being mis-calculated.
+                # Remove edge from blockIndex to succBlock which has already
+                #  visited.
+                # Add the blockIndex to a queue.
+                # Loop until queue is empty.
+                #    Pop from queue in currBlock.
+                #    if currBlock does not have any other successor,
+                #        for each predecessor of currBlock, predBlock
+                #            remove edge between predBlock and currBlock
+                #            Add predBlock to queue
                 self.listBackEdges.append(self.findEdgeIndex(blockIndex, succBlock))
+                queueBlocksBackEdgesCheck = deque([blockIndex])
+                while len(queueBlocksBackEdgesCheck) != 0:
+                    currBlock = queueBlocksBackEdgesCheck.popleft()
+                    if len(self.successorBlocksWOBackEdges(currBlock)) == 0:
+                        for predBlock in self.predecessorBlocksWOBackEdges(currBlock):
+                            self.listBackEdges.append(self.findEdgeIndex(predBlock, currBlock))
+                            queueBlocksBackEdgesCheck.append(predBlock)
         self.dft_stack.pop()
         
                 
@@ -101,8 +121,6 @@ class ControlFlowGraph:
         self.dft_stack = []
         self.dft(0)
         self.listBackEdges = list(set(self.listBackEdges))
-        for edgeIndex in self.listBackEdges:
-            print self.listEdges[edgeIndex].fromBlockIndex, self.listEdges[edgeIndex].toBlockIndex 
         return self.listBackEdges
     
     def computeFlow(self):

@@ -10,13 +10,13 @@ from cfg import *
 #   group(1) is function Name
 #   if group(2) == "){", single line definition
 #   elif group(2) == $, multi line definition
-re_funcDef = re.compile('(?:\w*\s+)*\**(\w+)\s*\([\w\s,*]*($|\)\s*\{)')
-re_funcDefArgLine = re.compile('[\w\s,]*($|\)\s*\{)')
+re_funcDef = re.compile('(?:\w*\s+)*\**(\w+)\s*\([,\s\w&\[\]\*]*($|\)\s*\{)')
+re_funcDefArgLine = re.compile('[,\s\w&\[\]\*]*($|\)\s*\{)')
 re_basicBlockLabel = re.compile('\s*(\w*bb_[0-9]*):')
 re_basicBlockStart = re.compile('\s*//\s*#\s*PRED:./*')
 re_basicBlockEnd = re.compile('\s*//\s*#\s*SUCC:./*')
 re_gotoLine = re.compile('\s*goto\s*(\w*bb_[0-9]*);')
-re_funcCallLine = re.compile('\s*(\w*)\s*\([\w\s,]*\);')
+re_funcCallLine = re.compile('\s*(\w*)\s*\([,\s\w&\[\]\*]*\);')
 re_returnLine = re.compile('\s*return\s*.*;')
 re_funcDefEnd = re.compile('\s*\}')
 
@@ -204,7 +204,7 @@ def parse_isc(fileName):
                         # if current block had no targets, edge to next block
                         listCurrFuncBBEdges.append(BBEdge(startBlockIndex,
                                                           startBlockIndex + 1))
-                        
+                
                 listFunctions.append(FunctionDesc(currFuncName,
                                                   fileName,
                                                   currFuncStartLine,
@@ -223,8 +223,8 @@ def parse_isc(fileName):
                 listCurrFuncBBEdges = []
                 continue
 
+    file.close()
     return listFunctions
-            
 
 def print_debug_isc(listFunctions):
     for func in listFunctions:

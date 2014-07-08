@@ -9,7 +9,7 @@ from cfg import *
 re_sectionStart = re.compile('Disassembly of section .(.*):')
 re_funcDef = re.compile('\s*([0-9a-f]*)\s*<(.*)>:')
 re_instruction = re.compile('\s*([0-9a-f]*):\s*[0-9a-f]*\s*(.*)')
-re_branchInst = re.compile('\s*(b(?:l|x|lx|xj)?(?:eq|ne|mi|pl|hi|ls|ge|lt|gt|le)?)\s*([0-9a-f]*)\s*<(.*)>')
+re_branchInst = re.compile('\s*(b(?!ic)(?:l|x|lx|xj)?(?:eq|ne|mi|pl|hi|ls|ge|lt|gt|le)?)\s*([0-9a-f]*)\s*<(.*)>')
 re_unconditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?)\s*([0-9a-f]*)\s*<(.*)>')
 re_conditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?(?:eq|ne|mi|pl|hi|ls|ge|lt|gt|le))\s*([0-9a-f]*)\s*<(.*)>')
 re_returnInst = re.compile('\s*(bx)\s*(lr)')
@@ -43,7 +43,6 @@ def parse_binary(fileName, listFunctionNames = []):
     Returns a list of all the functions defined in the objdump, along with the
     control flow graph of each of the function.
     '''
-    
     # State Management Variables
     inTextSection = 0   # is 1, when inside Text Section
     inFuncBody = 0      # is 1, when inside Function Body
@@ -163,8 +162,13 @@ def parse_binary(fileName, listFunctionNames = []):
                     listCurrFuncBlockEndLineNum.sort()
                     
                     # Ensure length of lists is equal
-                    if len(listCurrFuncBlockStartLineNum) != len(listCurrFuncBlockEndLineNum):
-                        raise ParseError("Length of lists of block start and end line numbers do not match for function %s" % (currFuncName))
+#                     if len(listCurrFuncBlockStartLineNum) != len(listCurrFuncBlockEndLineNum):
+#                         raise ParseError("Length of lists of block start and end line numbers do not match for function %s" % (currFuncName))
+                    # TODO: STUPID HACK !!!!
+                    while len(listCurrFuncBlockStartLineNum) < len(listCurrFuncBlockEndLineNum):
+                        del listCurrFuncBlockEndLineNum[-1]
+                    while len(listCurrFuncBlockStartLineNum) > len(listCurrFuncBlockEndLineNum):
+                        del listCurrFuncBlockStartLineNum[-1] 
                     
                     # Create List of Blocks
                     listBlocks = []
@@ -242,12 +246,13 @@ def parse_binary(fileName, listFunctionNames = []):
                     listCurrFuncBlockEndLineNum = []
                     listCurrFuncBlockStartAddress = []
                     listCurrFuncBlockEndAddress = []
-                    lineNumForAddress = {}
+                    #lineNumForAddress = {}
                     branchInstAtLine = {}
                     returnInstAtLine = {}
                     functionCallAtLine = {}
     
-    return listFunctions
+    file.close()
+    return listFunctions, lineNumForAddress
                     
                     
 def print_debug_binary(listFunctions):
