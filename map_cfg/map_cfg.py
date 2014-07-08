@@ -60,7 +60,7 @@ def getGDBMapping(binFileName, objdumpLineNumForAddress):
             gdbMapping[objdumpLineNum] = GDBMapTarget(targetFileName, targetLineNum)
     gdbOutputFile.close()
     
-    gdbMappingDebug(gdbMapping)
+    # gdbMappingDebug(gdbMapping)
     
     return gdbMapping
 
@@ -74,7 +74,7 @@ def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
         listISCFunctions = listISCFunctions + parse_isc(ISCFileName)
         for function in listISCFunctions:
             listFunctionNames.append(function.functionName)
-            print "parsed "+ISCFileName
+            logging.debug("parsed "+ISCFileName)
     
     # Parse the objdump files
     for ObjdumpFileName in listObjdumpFileNames:

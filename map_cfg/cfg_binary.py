@@ -257,7 +257,7 @@ def parse_binary(fileName, listFunctionNames = []):
                     
 def print_debug_binary(listFunctions):
     for func in listFunctions:
-        print("\nlFileName : %s" % (func.fileName))
+        print("\nFileName : %s" % (func.fileName))
         print("Function : %s" % (func.functionName))
         i = 0
         for block in func.cfg.listBlocks:
