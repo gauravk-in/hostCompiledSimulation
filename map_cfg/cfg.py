@@ -27,6 +27,9 @@ class BasicBlock:
         else:
             self.listFunctionCalls = listFuncCalls
         self.flow = 0.0
+        self.mapsTo = []
+        self.nestingLevel = -1
+        self.hasConditionalExec = 0
 
 
 class ControlFlowGraph:
@@ -34,6 +37,19 @@ class ControlFlowGraph:
         self.listBlocks = listBlocks
         self.listEdges = listEdges
         self.listBackEdges = []
+        
+    def find(self, blockName=None, lineNum = None):
+        if blockName:
+            for block in self.listBlocks:
+                if block.name == blockName:
+                    return block
+            return None
+        
+        if lineNum:
+            for block in self.listBlocks:
+                if block.startLine <= lineNum and block.endLine >= lineNum:
+                    return block
+            return None
         
     def successorBlocks(self, blockIndex):
         listSuccBlockIndices = []
@@ -86,6 +102,8 @@ class ControlFlowGraph:
     def dft(self, blockIndex):
         self.dft_stack.append(blockIndex)
         for succBlock in self.successorBlocksWOBackEdges(blockIndex):
+            if self.listBlocks[succBlock].nestingLevel > self.listBlocks[blockIndex].nestingLevel or self.listBlocks[succBlock].nestingLevel == -1:
+                self.listBlocks[succBlock].nestingLevel = self.listBlocks[blockIndex].nestingLevel + 1
             if succBlock not in self.dft_stack:
                 self.dft(succBlock)
             else:
@@ -119,6 +137,7 @@ class ControlFlowGraph:
         Depth First Fashion
         '''
         self.dft_stack = []
+        self.listBlocks[0].nestingLevel = 0
         self.dft(0)
         self.listBackEdges = list(set(self.listBackEdges))
         return self.listBackEdges

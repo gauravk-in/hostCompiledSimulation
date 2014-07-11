@@ -8,7 +8,7 @@ from cfg import *
 
 re_sectionStart = re.compile('Disassembly of section .(.*):')
 re_funcDef = re.compile('\s*([0-9a-f]*)\s*<(.*)>:')
-re_instruction = re.compile('\s*([0-9a-f]*):\s*[0-9a-f]*\s*(.*)')
+re_instruction = re.compile('\s*([0-9a-f]*):\s*([0-9a-f]*)\s*(.*)')
 re_branchInst = re.compile('\s*(b(?!ic)(?:l|x|lx|xj)?(?:eq|ne|mi|pl|hi|ls|ge|lt|gt|le)?)\s*([0-9a-f]*)\s*<(.*)>')
 re_unconditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?)\s*([0-9a-f]*)\s*<(.*)>')
 re_conditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?(?:eq|ne|mi|pl|hi|ls|ge|lt|gt|le))\s*([0-9a-f]*)\s*<(.*)>')
@@ -53,6 +53,8 @@ def parse_binary(fileName, listFunctionNames = []):
     listCurrFuncBlockEndLineNum = []
     listCurrFuncBlockStartAddress = []
     listCurrFuncBlockEndAddress = []
+    listCurrFuncConditionalExecInstAtLine = []
+    
     lineNumForAddress = {}
     branchInstAtLine = {}
     returnInstAtLine = {}
@@ -111,7 +113,8 @@ def parse_binary(fileName, listFunctionNames = []):
                 if m is not None:
                     address = m.group(1)
                     lineNumForAddress[address] = lineNum;
-                    inst = m.group(2)
+                    opcode = m.group(2)
+                    inst = m.group(3)
                     
                     m = re_branchInst.match(inst)
                     if m is not None and m.group(3).startswith(currFuncName):
@@ -137,6 +140,12 @@ def parse_binary(fileName, listFunctionNames = []):
                         # Return Instruction
                         returnInstAtLine[lineNum] = inst
                         listCurrFuncBlockEndAddress.append(address)
+                        continue
+                    
+                    # Not a branch or return instruction, 
+                    # Check if a conditional execution instruction
+                    if re.match('[0-9a-d]./*', opcode):
+                        listCurrFuncConditionalExecInstAtLine.append(lineNum)
                         continue
                     
                     continue
@@ -228,6 +237,12 @@ def parse_binary(fileName, listFunctionNames = []):
                         for block in listBlocks:
                             if block.startLine <= lNum and block.endLine >= lNum:
                                 block.listFunctionCalls.append(calledFuncName)
+                    
+                    # Indicate which blocks have conditional execution instructions            
+                    for lNum in listCurrFuncConditionalExecInstAtLine:
+                        for block in listBlocks:
+                            if block.startLine <= lNum and block.endLine >= lNum:
+                                block.hasConditionalExec = 1 
                         
                     # Add the current function and the CFG to the list of functions
                     listFunctions.append(FunctionDesc(currFuncName,
@@ -246,6 +261,7 @@ def parse_binary(fileName, listFunctionNames = []):
                     listCurrFuncBlockEndLineNum = []
                     listCurrFuncBlockStartAddress = []
                     listCurrFuncBlockEndAddress = []
+                    listCurrFuncConditionalExecInstAtLine = []
                     #lineNumForAddress = {}
                     branchInstAtLine = {}
                     returnInstAtLine = {}
@@ -255,22 +271,43 @@ def parse_binary(fileName, listFunctionNames = []):
     return listFunctions, lineNumForAddress
                     
                     
-def print_debug_binary(listFunctions):
-    for func in listFunctions:
-        print("\nFileName : %s" % (func.fileName))
-        print("Function : %s" % (func.functionName))
-        i = 0
-        for block in func.cfg.listBlocks:
-            print("\t Block %d: line %d - %d, flow = %f" % (i, block.startLine, block.endLine, block.flow))
-            for funcCall in block.listFunctionCalls:
-                print("\t\t calls %s()" % (funcCall))
-            if block.isReturning == 1:
-                print("\t\t returns")
-            for edge in func.cfg.listEdges:
-                if edge.fromBlockIndex == i:
-                    print("\t\t Edge to block %d" % (edge.toBlockIndex))
-            i = i + 1
-        
+def print_debug_binary(listFunctions, gdbMapping=None):
+    if gdbMapping == None:
+        for func in listFunctions:
+            print("\nFileName : %s" % (func.fileName))
+            print("Function : %s" % (func.functionName))
+            i = 0
+            for block in func.cfg.listBlocks:
+                print("\t Block %d: line %d - %d, flow = %f" % (i, block.startLine, block.endLine, block.flow))
+                for funcCall in block.listFunctionCalls:
+                    print("\t\t calls %s()" % (funcCall))
+                if block.isReturning == 1:
+                    print("\t\t returns")
+                for edge in func.cfg.listEdges:
+                    if edge.fromBlockIndex == i:
+                        print("\t\t Edge to block %d" % (edge.toBlockIndex))
+                i = i + 1
+    else:
+        for func in listFunctions:
+            print("\nFileName : %s" % (func.fileName))
+            print("Function : %s" % (func.functionName))
+            i = 0
+            for block in func.cfg.listBlocks:
+                print("\t Block %d: line %d - %d, flow = %f" % (i, block.startLine, block.endLine, block.flow))
+                for funcCall in block.listFunctionCalls:
+                    print("\t\t calls %s()" % (funcCall))
+                if block.isReturning == 1:
+                    print("\t\t returns")
+                for edge in func.cfg.listEdges:
+                    if edge.fromBlockIndex == i:
+                        print("\t\t Edge to block %d" % (edge.toBlockIndex))
+                for lineNum in range(block.startLine, block.endLine):
+                    if lineNum in gdbMapping:
+                        print("\t\t Line %d from %s:%d" % (lineNum,
+                                                           gdbMapping[lineNum].fileName,
+                                                           gdbMapping[lineNum].lineNum))
+                i = i + 1
+            
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

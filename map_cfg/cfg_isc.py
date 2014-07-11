@@ -19,6 +19,8 @@ re_gotoLine = re.compile('\s*goto\s*(\w*bb_[0-9]*);')
 re_funcCallLine = re.compile('\s*(\w*)\s*\([,\s\w&\[\]\*]*\);')
 re_returnLine = re.compile('\s*return\s*.*;')
 re_funcDefEnd = re.compile('\s*\}')
+re_commentStart = re.compile('\s*/\*.*')
+re_commentEnd = re.compile('\s*.*\*/')
 
 class BasicBlockTargets:
     def __init__(self, name, listTargets = None):
@@ -49,6 +51,8 @@ def parse_isc(fileName):
     listCurrBlockFuncCalls = []
     listCurrBasicBlockTargets = []
     
+    inMultiLineComment = 0 
+    
     lineNum = 0
     file = open(fileName, 'r')
     for line in file:
@@ -75,6 +79,23 @@ def parse_isc(fileName):
                 1. Keep note if current Basic Block Returns.
                 
         '''
+        # Comment Handling
+        m = re_commentStart.match(line)
+        if m is not None:
+            if re_commentEnd.match(line) == None:
+                inMultiLineComment = 1
+                continue
+            else:
+                continue
+                
+        if inMultiLineComment == 1:
+            m = re_commentEnd.match(line)
+            if m is not None:
+                inMultiLineComment = 0
+                continue
+            else:
+                continue
+        
         # 1. Look for function definition
         m = re_funcDef.match(line)
         if m is not None:
