@@ -9,9 +9,9 @@ from cfg import *
 re_sectionStart = re.compile('Disassembly of section .(.*):')
 re_funcDef = re.compile('\s*([0-9a-f]*)\s*<(.*)>:')
 re_instruction = re.compile('\s*([0-9a-f]*):\s*([0-9a-f]*)\s*(.*)')
-re_branchInst = re.compile('\s*(b(?!ic)(?:l|x|lx|xj)?(?:eq|ne|mi|pl|hi|ls|ge|lt|gt|le)?)\s*([0-9a-f]*)\s*<(.*)>')
+re_branchInst = re.compile('\s*(b(?!ic)(?:l|x|lx|xj)?(?:eq|ne|cs|hs|lo|cc|mi|pl|hi|ls|ge|lt|gt|le)?)\s*([0-9a-f]*)\s*<(.*)>')
 re_unconditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?)\s*([0-9a-f]*)\s*<(.*)>')
-re_conditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?(?:eq|ne|mi|pl|hi|ls|ge|lt|gt|le))\s*([0-9a-f]*)\s*<(.*)>')
+re_conditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?(?:eq|ne|cs|hs|lo|cc|mi|pl|hi|ls|ge|lt|gt|le))\s*([0-9a-f]*)\s*<(.*)>')
 re_returnInst = re.compile('\s*(bx)\s*(lr)')
 
 listFunctionsIgnore = ['__cs3_interrupt_vector',

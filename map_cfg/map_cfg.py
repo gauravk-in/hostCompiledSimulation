@@ -156,30 +156,51 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                 for succSucc1BlockISC in cfgISC.successorBlocks(succ1BlockISC):
                     if succSucc1BlockISC in mappingStackISC:
                         continue
-                    if succSucc1BlockISC in (set(listSuccISC) - {succ1BlockISC}):
-                        # case 1
-                        print "\t\tcase 1"
-                        for succSuccSucc1BlockISC in cfgISC.successorBlocks(succSucc1BlockISC):
-                            if succSuccSucc1BlockISC in mappingStackISC:
-                                continue
-                            for succBlockObj in listSuccObj:
-                                if succBlockObj in mappingStackObj:
-                                    continue
-                                mappingStackISC.append(succ1BlockISC)
-                                mappingStackISC.append(succSucc1BlockISC)
-                                if mapping(cfgISC, succSuccSucc1BlockISC, cfgObj, succBlockObj, mergedLevelsISC+1) == 0: 
-                                    cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
-                                    cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
-                                    cfgISC.listBlocks[succSucc1BlockISC].mapsTo.append(blockIndObj)
-                                    cfgObj.listBlocks[blockIndObj].mapsTo.append(succSucc1BlockISC)
-                                    mappingStackISC.pop()
-                                    mappingStackISC.pop()
-                                    mappingStackISC.pop()
-                                    mappingStackObj.pop()
-                                    return 0
-                                else:
-                                    mappingStackISC.pop()
-                                    mappingStackISC.pop()
+                    for succ2BlockISC in list(set(listSuccISC) - {succ1BlockISC}):
+                        if succ2BlockISC in mappingStackISC:
+                            continue
+                        if succSucc1BlockISC == succ2BlockISC:
+                            # case 1
+                            print "\t\t case 1"
+                            mappingStackISC.append(succ1BlockISC)
+                            mappingStackObj.pop() # popping blockIndObj, because mapping it again
+                            if mapping(cfgISC, succ2BlockISC, cfgObj, blockIndObj, mergedLevelsISC + 1) == 0:
+                                cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
+                                cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
+                                cfgISC.listBlocks[succ2BlockISC].mapsTo.append(blockIndObj)
+                                cfgObj.listBlocks[blockIndObj].mapsTo.append(succ2BlockISC)
+                                mappingStackISC.pop()
+                                mappingStackISC.pop()
+                                return 0
+                            else:
+                                mappingStackISC.pop()
+                                mappingStackObj.append(blockIndObj)
+                                
+                            
+#                     if succSucc1BlockISC in (set(listSuccISC) - {succ1BlockISC}):
+#                         # case 1
+#                         print "\t\tcase 1"
+#                         for succSuccSucc1BlockISC in cfgISC.successorBlocks(succSucc1BlockISC):
+#                             if succSuccSucc1BlockISC in mappingStackISC:
+#                                 continue
+#                             for succBlockObj in listSuccObj:
+#                                 if succBlockObj in mappingStackObj:
+#                                     continue
+#                                 mappingStackISC.append(succ1BlockISC)
+#                                 mappingStackISC.append(succSucc1BlockISC)
+#                                 if mapping(cfgISC, succSuccSucc1BlockISC, cfgObj, succBlockObj, mergedLevelsISC+1) == 0: 
+#                                     cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
+#                                     cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
+#                                     cfgISC.listBlocks[succSucc1BlockISC].mapsTo.append(blockIndObj)
+#                                     cfgObj.listBlocks[blockIndObj].mapsTo.append(succSucc1BlockISC)
+#                                     mappingStackISC.pop()
+#                                     mappingStackISC.pop()
+#                                     mappingStackISC.pop()
+#                                     mappingStackObj.pop()
+#                                     return 0
+#                                 else:
+#                                     mappingStackISC.pop()
+#                                     mappingStackISC.pop()
                                     
                     for succ2BlockISC in list(set(listSuccISC) - {succ1BlockISC}):
                         if succ2BlockISC in mappingStackISC:
@@ -189,43 +210,64 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                                 continue
                             if succSucc1BlockISC == succSucc2BlockISC:
                                 # case 2
-                                print "\t\tcase 2"
-                                for succSuccSucc1BlockISC in cfgISC.successorBlocks(succSucc1BlockISC):
-                                    if succSuccSucc1BlockISC in mappingStackISC:
-                                        continue
-                                    for succBlockObj in listSuccObj:
-                                        if succBlockObj in mappingStackObj:
-                                            continue
-                                        mappingStackISC.append(succ1BlockISC)
-                                        mappingStackISC.append(succ2BlockISC)
-                                        mappingStackISC.append(succSucc1BlockISC)
-                                        if mapping(cfgISC, succSuccSucc1BlockISC, cfgObj, succBlockObj, mergedLevelsISC+2) == 0: 
-                                            cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
-                                            cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
-                                            cfgISC.listBlocks[succ2BlockISC].mapsTo.append(blockIndObj)
-                                            cfgISC.listBlocks[succSucc1BlockISC].mapsTo.append(blockIndObj)
-                                            cfgObj.listBlocks[blockIndObj].mapsTo.append(succSucc1BlockISC)
-                                            mappingStackISC.pop()
-                                            mappingStackISC.pop()
-                                            mappingStackISC.pop()
-                                            mappingStackISC.pop()
-                                            mappingStackObj.pop()
-                                            return 0
-                                        else:
-                                            mappingStackISC.pop()
-                                            mappingStackISC.pop()
-                                            mappingStackISC.pop()
+                                print "\t\t case 2"
+                                mappingStackISC.append(succ1BlockISC)
+                                mappingStackISC.append(succ2BlockISC)
+                                mappingStackObj.pop() # popping blockIndObj, because mapping it again
+                                if mapping(cfgISC, succSucc1BlockISC, cfgObj, blockIndObj, mergedLevelsISC+2) == 0:
+                                    cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
+                                    cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
+                                    cfgISC.listBlocks[succ2BlockISC].mapsTo.append(blockIndObj)
+                                    cfgISC.listBlocks[succSucc1BlockISC].mapsTo.append(blockIndObj)
+                                    cfgObj.listBlocks[blockIndObj].mapsTo.append(succSucc1BlockISC)
+                                    mappingStackISC.pop()
+                                    mappingStackISC.pop()
+                                    mappingStackISC.pop()
+                                    return 0
+                                else:
+                                    mappingStackISC.pop()
+                                    mappingStackISC.pop()
+                                    mappingStackObj.append(blockIndObj)
+                                    
+#                                 for succSuccSucc1BlockISC in cfgISC.successorBlocks(succSucc1BlockISC):
+#                                     if succSuccSucc1BlockISC in mappingStackISC:
+#                                         continue
+#                                     for succBlockObj in listSuccObj:
+#                                         if succBlockObj in mappingStackObj:
+#                                             continue
+#                                         mappingStackISC.append(succ1BlockISC)
+#                                         mappingStackISC.append(succ2BlockISC)
+#                                         mappingStackISC.append(succSucc1BlockISC)
+#                                         if mapping(cfgISC, succSuccSucc1BlockISC, cfgObj, succBlockObj, mergedLevelsISC+2) == 0: 
+#                                             cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
+#                                             cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
+#                                             cfgISC.listBlocks[succ2BlockISC].mapsTo.append(blockIndObj)
+#                                             cfgISC.listBlocks[succSucc1BlockISC].mapsTo.append(blockIndObj)
+#                                             cfgObj.listBlocks[blockIndObj].mapsTo.append(succSucc1BlockISC)
+#                                             mappingStackISC.pop()
+#                                             mappingStackISC.pop()
+#                                             mappingStackISC.pop()
+#                                             mappingStackISC.pop()
+#                                             mappingStackObj.pop()
+#                                             return 0
+#                                         else:
+#                                             mappingStackISC.pop()
+#                                             mappingStackISC.pop()
+#                                             mappingStackISC.pop()
         else:
             print "no. of successors not same, and difference more than one."
             print "ISC Block %d; Obj Block %d" % (blockIndISC, blockIndObj)
             exit(1)
-            
-    for succBlockISC in listSuccISC:
+
+    print "Successors of ISC:%d" % (blockIndISC),
+    print cfgISC.successorBlocks(blockIndISC)                
+    for succBlockISC in cfgISC.successorBlocks(blockIndISC):
         if succBlockISC in mappingStackISC:
             continue
         for succBlockObj in listSuccObj:
             if succBlockObj in mappingStackObj:
                 continue
+            print "recursing on mapping"
             if mapping(cfgISC, succBlockISC, cfgObj, succBlockObj, mergedLevelsISC) == 0:
                 blockISC.mapsTo.append(blockIndObj)
                 blockObj.mapsTo.append(blockIndISC)
