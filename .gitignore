@@ -1,3 +1,4 @@
+examples/crc32/app_dir/in_large.h
 .svn
 *.c.*
 *.elf

@@ -22,47 +22,48 @@ struct test {
 
 
 void sieve() {
-  uintptr_t ivtmp_84;
-  int j_82;
-  int i_81;
-  uintptr_t ivtmp_77;
-  uintptr_t D_2271;
-  uintptr_t ivtmp_67;
-  uintptr_t D_2260;
+  int j_76;
+  uintptr_t ivtmp_74;
+  int i_72;
+  uintptr_t ivtmp_68;
+  uintptr_t D_2263;
   uintptr_t ivtmp_58;
-  uintptr_t D_2248;
-  uintptr_t ivtmp_45;
+  uintptr_t D_2252;
+  uintptr_t ivtmp_49;
+  uintptr_t D_2240;
+  uintptr_t D_2230;
+  uintptr_t ivtmp_36;
   int j;
   int i;
   unsigned int sieve[500000];
 
 sievebb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
-  ivtmp_77 = 0;
+  ivtmp_68 = 0;
 //  # SUCC: 3 [100.0%]  (fallthru,exec)
 
 sievebb_3:
-//  # PRED: 3 [99.0%]  (dfs_back,true,exec) 2 [100.0%]  (fallthru,exec)
-  *(unsigned int*)((uintptr_t)&results + (uintptr_t)ivtmp_77) = 0;
-  *(unsigned int*)((uintptr_t)&sieve + (uintptr_t)ivtmp_77) = 1;
-  ivtmp_77 = ivtmp_77 + 4;
-  if (ivtmp_77 != 2000000)
+//  # PRED: 3 [99.0%]  (true,exec) 2 [100.0%]  (fallthru,exec)
+  *(unsigned int*)((uintptr_t)&results + (uintptr_t)ivtmp_68) = 0;
+  *(unsigned int*)((uintptr_t)&sieve + (uintptr_t)ivtmp_68) = 1;
+  ivtmp_68 = ivtmp_68 + 4;
+  if (ivtmp_68 != 2000000)
     goto sievebb_3;
   else
-    goto sievebb_15;
-//  # SUCC: 3 [99.0%]  (dfs_back,true,exec) 15 [1.0%]  (false,exec)
+    goto sievebb_17;
+//  # SUCC: 3 [99.0%]  (true,exec) 17 [1.0%]  (false,exec)
 
-sievebb_15:
+sievebb_17:
 //  # PRED: 3 [1.0%]  (false,exec)
-  ivtmp_84 = 6;
-  ivtmp_67 = 4;
-  i_81 = 2;
+  ivtmp_49 = 6;
+  ivtmp_58 = 4;
+  i_72 = 2;
 //  # SUCC: 4 [100.0%]  (fallthru)
 
 sievebb_4:
-//  # PRED: 15 [100.0%]  (fallthru) 7 [99.0%]  (dfs_back,true,exec)
-  D_2271 = (unsigned int) i_81;
-  if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2271 * 4) != 0)
+//  # PRED: 7 [99.0%]  (true,exec) 17 [100.0%]  (fallthru)
+  D_2263 = (unsigned int) i_72;
+  if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2263 * 4) != 0)
     goto sievebb_5;
   else
     goto sievebb_7;
@@ -70,40 +71,40 @@ sievebb_4:
 
 sievebb_5:
 //  # PRED: 4 [50.0%]  (true,exec)
-  j_82 = (int) ivtmp_67;
-  if (j_82 <= 499999)
-    goto sievebb_16;
+  j_76 = (int) ivtmp_58;
+  if (j_76 <= 499999)
+    goto sievebb_18;
   else
     goto sievebb_7;
-//  # SUCC: 16 [91.0%]  (true,exec) 7 [9.0%]  (false,exec)
+//  # SUCC: 18 [91.0%]  (true,exec) 7 [9.0%]  (false,exec)
 
-sievebb_16:
+sievebb_18:
 //  # PRED: 5 [91.0%]  (true,exec)
-  ivtmp_58 = ivtmp_84;
+  ivtmp_74 = ivtmp_49;
 //  # SUCC: 6 [100.0%]  (fallthru)
 
 sievebb_6:
-//  # PRED: 6 [91.0%]  (dfs_back,true,exec) 16 [100.0%]  (fallthru)
-  sieve[j_82] = 0;
-  D_2260 = (unsigned int) j_82 + D_2271;
-  j_82 = (int) D_2260;
-  ivtmp_58 = ivtmp_58 + D_2271;
-  if ((int) (ivtmp_58 - D_2271) <= 499999)
+//  # PRED: 6 [91.0%]  (true,exec) 18 [100.0%]  (fallthru)
+  sieve[j_76] = 0;
+  D_2252 = (unsigned int) j_76 + D_2263;
+  j_76 = (int) D_2252;
+  ivtmp_74 = D_2263 + ivtmp_74;
+  if ((int) (ivtmp_74 - D_2263) <= 499999)
     goto sievebb_6;
   else
     goto sievebb_7;
-//  # SUCC: 6 [91.0%]  (dfs_back,true,exec) 7 [9.0%]  (false,exec)
+//  # SUCC: 6 [91.0%]  (true,exec) 7 [9.0%]  (false,exec)
 
 sievebb_7:
 //  # PRED: 4 [50.0%]  (false,exec) 6 [9.0%]  (false,exec) 5 [9.0%]  (false,exec)
-  i_81 = i_81 + 1;
-  ivtmp_67 = ivtmp_67 + 2;
-  ivtmp_84 = ivtmp_84 + 3;
-  if (i_81 * i_81 <= 499999)
+  i_72 = i_72 + 1;
+  ivtmp_58 = ivtmp_58 + 2;
+  ivtmp_49 = ivtmp_49 + 3;
+  if (i_72 * i_72 <= 499999)
     goto sievebb_4;
   else
     goto sievebb_8;
-//  # SUCC: 4 [99.0%]  (dfs_back,true,exec) 8 [1.0%]  (false,exec)
+//  # SUCC: 4 [99.0%]  (true,exec) 8 [1.0%]  (false,exec)
 
 sievebb_8:
 //  # PRED: 7 [1.0%]  (false,exec)
@@ -112,9 +113,9 @@ sievebb_8:
 //  # SUCC: 9 [100.0%]  (fallthru,exec)
 
 sievebb_9:
-//  # PRED: 11 [99.0%]  (dfs_back,true,exec) 8 [100.0%]  (fallthru,exec)
-  D_2248 = (unsigned int) j;
-  if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2248 * 4) != 0)
+//  # PRED: 11 [99.0%]  (true,exec) 8 [100.0%]  (fallthru,exec)
+  D_2240 = (unsigned int) j;
+  if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2240 * 4) != 0)
     goto sievebb_10;
   else
     goto sievebb_11;
@@ -122,7 +123,7 @@ sievebb_9:
 
 sievebb_10:
 //  # PRED: 9 [50.0%]  (true,exec)
-  results[i] = D_2248;
+  results[i] = D_2240;
   i = i + 1;
 //  # SUCC: 11 [100.0%]  (fallthru,exec)
 
@@ -132,33 +133,42 @@ sievebb_11:
   if (j != 500000)
     goto sievebb_9;
   else
-    goto sievebb_17;
-//  # SUCC: 9 [99.0%]  (dfs_back,true,exec) 17 [1.0%]  (false,exec)
-
-sievebb_17:
-//  # PRED: 11 [1.0%]  (false,exec)
-  ivtmp_45 = 0;
-//  # SUCC: 12 [100.0%]  (fallthru)
+    goto sievebb_12;
+//  # SUCC: 9 [99.0%]  (true,exec) 12 [1.0%]  (false,exec)
 
 sievebb_12:
-//  # PRED: 17 [100.0%]  (fallthru) 13 [98.9%]  (dfs_back,true,exec)
-  if (*(unsigned int*)((uintptr_t)&results + (uintptr_t)ivtmp_45) == 0)
-    goto sievebb_14;
+//  # PRED: 11 [1.0%]  (false,exec)
+  if (results[0] == 0)
+    goto sievebb_16;
   else
     goto sievebb_13;
-//  # SUCC: 14 [4.5%]  (true,exec) 13 [95.5%]  (false,exec)
+//  # SUCC: 16 [4.5%]  (true,exec) 13 [95.5%]  (false,exec)
 
 sievebb_13:
 //  # PRED: 12 [95.5%]  (false,exec)
-  ivtmp_45 = ivtmp_45 + 4;
-  if (ivtmp_45 != 2000000)
-    goto sievebb_12;
-  else
-    goto sievebb_14;
-//  # SUCC: 12 [98.9%]  (dfs_back,true,exec) 14 [1.1%]  (false,exec)
+  ivtmp_36 = (uintptr_t)&results;
+  D_2230 = ivtmp_36 + 1999996;
+//  # SUCC: 14 [100.0%]  (fallthru,exec)
 
 sievebb_14:
-//  # PRED: 12 [4.5%]  (true,exec) 13 [1.1%]  (false,exec)
+//  # PRED: 15 [98.9%]  (true,exec) 13 [100.0%]  (fallthru,exec)
+  if (*(unsigned int*)((uintptr_t)ivtmp_36 + 4) == 0)
+    goto sievebb_16;
+  else
+    goto sievebb_15;
+//  # SUCC: 16 [4.5%]  (true,exec) 15 [95.5%]  (false,exec)
+
+sievebb_15:
+//  # PRED: 14 [95.5%]  (false,exec)
+  ivtmp_36 = ivtmp_36 + 4;
+  if (ivtmp_36 != D_2230)
+    goto sievebb_14;
+  else
+    goto sievebb_16;
+//  # SUCC: 14 [98.9%]  (true,exec) 16 [1.1%]  (false,exec)
+
+sievebb_16:
+//  # PRED: 14 [4.5%]  (true,exec) 15 [1.1%]  (false,exec) 12 [4.5%]  (true,exec)
   m.v = 0;
   return;
 //  # SUCC: EXIT [100.0%] 

@@ -3,7 +3,7 @@ include Makefile.macros
 
 #EXAMPLES = sieve crc32 adpcm sha basicmath
 #EXAMPLES = sha sieve
-EXAMPLES = sieve
+EXAMPLES = adpcm 
 STARTADR = 0x10000214
 
 # Space separated list of all C files in APPDIR

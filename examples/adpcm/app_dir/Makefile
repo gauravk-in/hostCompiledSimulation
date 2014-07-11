@@ -7,7 +7,7 @@ include ../../Makefile.macros
 APP1 = my_ctop
 
 TREEDUMP = -fdump-tree-all-blocks-details
-OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
+OPT = -O1 #is O3 in original MiBench download. Use O3 for final testing
 DEBUG = -g
 IRDUMP = 1 #defined - dump IR files, undefined - don't.
 #PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point

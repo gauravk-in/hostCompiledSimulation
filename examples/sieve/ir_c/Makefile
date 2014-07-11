@@ -1,7 +1,7 @@
 include ../../Makefile.macros
 
-TREEDUMP = -fdump-tree-all-blocks-details
-OPT = -g -O2 #is O3 in original MiBench download. Use O3 for final testing
+#TREEDUMP = -fdump-tree-all-blocks-details
+OPT = -g -O1 #is O3 in original MiBench download. Use O3 for final testing
 DEBUG = -g
 IRDUMP = 0 #defined - dump IR files, undefined - don't.
 #PRINT = 1 #if defined and PHASE defined, include soft-float lib. fprintf uses floating point
@@ -14,7 +14,7 @@ ifdef PHASE
   OEXT = elf
   #ifeq (${IRDUMP},1)
   ifdef IRDUMP
-    COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT) $(TREEDUMP) -I. -T generic-hosted.ld
+    COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT) -I. -T generic-hosted.ld
   else
     COPTS = -pedantic -Wcomment -fno-asm -fsigned-char -W -Wparentheses -Wreturn-type -Wswitch -Wunused -Wsign-compare -Wimplicit -Wreturn-type -Wshadow -Wpointer-arith -Wwrite-strings -Wsign-compare -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -msoft-float $(OPT) -I. -T generic-hosted.ld
   endif
@@ -51,4 +51,5 @@ erat_sieve_print_IR:: erat_sieve_print_IR.c
 #adding - to rm so that errors are ignored	
 clean::
 	@echo Cleaning up massaged IR build
-	-rm *.$(OEXT) *.objdump
+	rm -rf *.elf *.out *.objdump
+	rm -rf *.c.*
