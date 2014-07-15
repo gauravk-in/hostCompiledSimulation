@@ -6,12 +6,15 @@ from optparse import OptionParser
 from subprocess import call
 import logging
 import re
+from collections import deque
+import sys
+from PyQt4 import QtGui, QtCore
 
 from cfg_binary import parse_binary, print_debug_binary
 from cfg_isc import parse_isc, print_debug_isc
+from display_cfg import display_cfgs
 
-
-from collections import deque
+app = None
 
 listISCFileNames = []
 listObjdumpFileNames = []
@@ -58,6 +61,28 @@ def printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping):
                     print("\t\t Line %d from %s:%s" % (lineNum,
                                                        gdbMapping[lineNum].fileName,
                                                        ISCBlockName))
+            i = i + 1
+            
+    for func in listISCFunctions:
+        print("\nFileName : %s" % (func.fileName))
+        print("Function : %s" % (func.functionName))
+        ObjFuncCfg = find(lambda fn: fn.functionName == func.functionName, listObjdumpFunctions).cfg
+        i = 0
+        for block in func.cfg.listBlocks:
+            print("\t Block %s: line %d - %d, flow = %f, nestingLevel = %d" % 
+                  (func.cfg.listBlocks[i].name, block.startLine, block.endLine, 
+                   block.flow, block.nestingLevel))
+            print "\t Maps to ",
+            print list(set(block.mapsTo))
+            for funcCall in block.listFunctionCalls:
+                print("\t\t calls %s()" % (funcCall))
+            if block.hasConditionalExec == 1:
+                print("\t\t Conditional Execution Instruction!")
+            if block.isReturning == 1:
+                print("\t\t returns")
+            for edge in func.cfg.listEdges:
+                if edge.fromBlockIndex == i:
+                    print("\t\t Edge to block %s" % (func.cfg.listBlocks[edge.toBlockIndex].name))
             i = i + 1
 
 def gdbMappingDebug(gdbMapping):
@@ -116,12 +141,12 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
     mappingStackObj.append(blockIndObj)
     blockISC = cfgISC.listBlocks[blockIndISC]
     blockObj = cfgObj.listBlocks[blockIndObj]
-    print "\tMapping blocks ISC:%s and OBJ:%d" % (blockISC.name, blockIndObj)
-    print "\tmergedLevelsISC = %d" % (mergedLevelsISC)
+    logging.debug("\tMapping blocks ISC:%s and OBJ:%d" % (blockISC.name, blockIndObj))
+    logging.debug( "\tmergedLevelsISC = %d" % (mergedLevelsISC))
     
     if (blockISC.isReturning == 1 and
         blockObj.isReturning == 1):
-        print "\t\tBoth Blocks return!!!"
+        logging.debug( "\t\tBoth Blocks return!!!")
         blockISC.mapsTo.append(blockIndObj)
         blockObj.mapsTo.append(blockIndISC)
         mappingStackISC.pop()
@@ -131,7 +156,7 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
     if (blockISC.flow != blockObj.flow or 
         (blockISC.nestingLevel - mergedLevelsISC) != blockObj.nestingLevel or
         blockISC.isReturning != blockObj.isReturning):
-        print "\t\tFlow, or nesting level did not match or only one of them returns!"
+        logging.debug( "\t\tFlow, or nesting level did not match or only one of them returns!")
         mappingStackISC.pop()
         mappingStackObj.pop()
         return -1
@@ -148,7 +173,7 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
     if(len(listSuccWOBackEdgeISC) != len(listSuccWOBackEdgeObj)):
         if(blockObj.hasConditionalExec == 1 and 
            len(listSuccWOBackEdgeObj) == len(listSuccWOBackEdgeISC) - 1):
-            print "\t\t Conditional Execution Found!"
+            logging.debug( "\t\t Conditional Execution Found!")
             # Conditional Execution!
             for succ1BlockISC in listSuccISC:
                 if succ1BlockISC in mappingStackISC:
@@ -156,12 +181,13 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                 for succSucc1BlockISC in cfgISC.successorBlocks(succ1BlockISC):
                     if succSucc1BlockISC in mappingStackISC:
                         continue
+                    
                     for succ2BlockISC in list(set(listSuccISC) - {succ1BlockISC}):
                         if succ2BlockISC in mappingStackISC:
                             continue
                         if succSucc1BlockISC == succ2BlockISC:
                             # case 1
-                            print "\t\t case 1"
+                            logging.debug( "\t\t case 1")
                             mappingStackISC.append(succ1BlockISC)
                             mappingStackObj.pop() # popping blockIndObj, because mapping it again
                             if mapping(cfgISC, succ2BlockISC, cfgObj, blockIndObj, mergedLevelsISC + 1) == 0:
@@ -175,33 +201,7 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                             else:
                                 mappingStackISC.pop()
                                 mappingStackObj.append(blockIndObj)
-                                
-                            
-#                     if succSucc1BlockISC in (set(listSuccISC) - {succ1BlockISC}):
-#                         # case 1
-#                         print "\t\tcase 1"
-#                         for succSuccSucc1BlockISC in cfgISC.successorBlocks(succSucc1BlockISC):
-#                             if succSuccSucc1BlockISC in mappingStackISC:
-#                                 continue
-#                             for succBlockObj in listSuccObj:
-#                                 if succBlockObj in mappingStackObj:
-#                                     continue
-#                                 mappingStackISC.append(succ1BlockISC)
-#                                 mappingStackISC.append(succSucc1BlockISC)
-#                                 if mapping(cfgISC, succSuccSucc1BlockISC, cfgObj, succBlockObj, mergedLevelsISC+1) == 0: 
-#                                     cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
-#                                     cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
-#                                     cfgISC.listBlocks[succSucc1BlockISC].mapsTo.append(blockIndObj)
-#                                     cfgObj.listBlocks[blockIndObj].mapsTo.append(succSucc1BlockISC)
-#                                     mappingStackISC.pop()
-#                                     mappingStackISC.pop()
-#                                     mappingStackISC.pop()
-#                                     mappingStackObj.pop()
-#                                     return 0
-#                                 else:
-#                                     mappingStackISC.pop()
-#                                     mappingStackISC.pop()
-                                    
+                                                                  
                     for succ2BlockISC in list(set(listSuccISC) - {succ1BlockISC}):
                         if succ2BlockISC in mappingStackISC:
                             continue
@@ -210,7 +210,7 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                                 continue
                             if succSucc1BlockISC == succSucc2BlockISC:
                                 # case 2
-                                print "\t\t case 2"
+                                logging.debug( "\t\t case 2")
                                 mappingStackISC.append(succ1BlockISC)
                                 mappingStackISC.append(succ2BlockISC)
                                 mappingStackObj.pop() # popping blockIndObj, because mapping it again
@@ -228,46 +228,18 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                                     mappingStackISC.pop()
                                     mappingStackISC.pop()
                                     mappingStackObj.append(blockIndObj)
-                                    
-#                                 for succSuccSucc1BlockISC in cfgISC.successorBlocks(succSucc1BlockISC):
-#                                     if succSuccSucc1BlockISC in mappingStackISC:
-#                                         continue
-#                                     for succBlockObj in listSuccObj:
-#                                         if succBlockObj in mappingStackObj:
-#                                             continue
-#                                         mappingStackISC.append(succ1BlockISC)
-#                                         mappingStackISC.append(succ2BlockISC)
-#                                         mappingStackISC.append(succSucc1BlockISC)
-#                                         if mapping(cfgISC, succSuccSucc1BlockISC, cfgObj, succBlockObj, mergedLevelsISC+2) == 0: 
-#                                             cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
-#                                             cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
-#                                             cfgISC.listBlocks[succ2BlockISC].mapsTo.append(blockIndObj)
-#                                             cfgISC.listBlocks[succSucc1BlockISC].mapsTo.append(blockIndObj)
-#                                             cfgObj.listBlocks[blockIndObj].mapsTo.append(succSucc1BlockISC)
-#                                             mappingStackISC.pop()
-#                                             mappingStackISC.pop()
-#                                             mappingStackISC.pop()
-#                                             mappingStackISC.pop()
-#                                             mappingStackObj.pop()
-#                                             return 0
-#                                         else:
-#                                             mappingStackISC.pop()
-#                                             mappingStackISC.pop()
-#                                             mappingStackISC.pop()
+                                
         else:
-            print "no. of successors not same, and difference more than one."
-            print "ISC Block %d; Obj Block %d" % (blockIndISC, blockIndObj)
+            logging.debug( "no. of successors not same, and difference more than one.")
+            logging.debug( "ISC Block %d; Obj Block %d" % (blockIndISC, blockIndObj))
             exit(1)
-
-    print "Successors of ISC:%d" % (blockIndISC),
-    print cfgISC.successorBlocks(blockIndISC)                
+           
     for succBlockISC in cfgISC.successorBlocks(blockIndISC):
         if succBlockISC in mappingStackISC:
             continue
         for succBlockObj in listSuccObj:
             if succBlockObj in mappingStackObj:
                 continue
-            print "recursing on mapping"
             if mapping(cfgISC, succBlockISC, cfgObj, succBlockObj, mergedLevelsISC) == 0:
                 blockISC.mapsTo.append(blockIndObj)
                 blockObj.mapsTo.append(blockIndISC)
@@ -276,7 +248,6 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
     
     mappingStackISC.pop()
     mappingStackObj.pop()                                    
-    print "Here"    
     return 0
 
 def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
@@ -314,8 +285,7 @@ def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
     for binaryFileName in listBinaryFileNames:
         gdbMapping = getGDBMapping(binaryFileName, objdumpLineNumForAddress)
 
-    print_debug_isc (listISCFunctions)
-    print_debug_binary (listObjdumpFunctions, gdbMapping)
+
 
     mappingStackISC = []  
     mappingStackObj = []      
@@ -324,18 +294,27 @@ def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
         fnObj = find(lambda fn: fn.functionName == fnISC.functionName, listObjdumpFunctions)
         cfgObj = fnObj.cfg
         
-        print "Mapping Function %s" % (fnISC.functionName)
+        logging.debug( "Mapping Function %s" % (fnISC.functionName))
         if mapping(cfgISC, 0, cfgObj, 0, 0) == 0:
-            print "Mapping Found!!!!"
+            logging.debug( "Mapping Found!!!!s")
         else:
-            print "Fuck my life!!!"
+            logging.debug( "Fuck my life!!!")
+            
+#     print_debug_isc (listISCFunctions)
+#     print_debug_binary (listObjdumpFunctions, gdbMapping)
             
     printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping)
+    display_cfgs(app, listISCFunctions[0].cfg, listObjdumpFunctions[0].cfg, "%s" % listISCFunctions[0].functionName)
+#     display_cfg(app, listISCFunctions[1].cfg, "%s" % listISCFunctions[0].functionName)
+    
+#     app.exec_()
 
 
 if __name__ == "__main__":
 #     listISCFileNames = []
 #     listObjdumpFileNames = []
+    app = QtGui.QApplication(sys.argv)
+
     logging.basicConfig(level=logging.WARNING)
     optparser = OptionParser()
     optparser.add_option("-i", "--isc", action="append", dest="listISCFileNames",

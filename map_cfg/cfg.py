@@ -68,11 +68,11 @@ class ControlFlowGraph:
             edgeIndex = edgeIndex + 1
         return listSuccBlockIndices
     
-    def successorBlocks(self, blockIndex):
+    def predecessorBlocks(self, blockIndex):
         listSuccBlockIndices = []
         for edge in self.listEdges:
-            if edge.fromBlockIndex == blockIndex:
-                listSuccBlockIndices.append(edge.toBlockIndex)
+            if edge.toBlockIndex == blockIndex:
+                listSuccBlockIndices.append(edge.fromBlockIndex)
         return listSuccBlockIndices
     
     def predecessorBlocksWOBackEdges(self, blockIndex):

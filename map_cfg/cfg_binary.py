@@ -183,7 +183,8 @@ def parse_binary(fileName, listFunctionNames = []):
                     listBlocks = []
                     for i in range(len(listCurrFuncBlockStartLineNum)):
                         listBlocks.append(BasicBlock(listCurrFuncBlockStartLineNum[i],
-                                                     listCurrFuncBlockEndLineNum[i]))
+                                                     listCurrFuncBlockEndLineNum[i],
+                                                     name = "%d" % i))
                     
                     
                     
