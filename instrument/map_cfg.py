@@ -286,7 +286,11 @@ def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
         gdbMapping = getGDBMapping(binaryFileName, objdumpLineNumForAddress)
 
 
-
+    print_debug_isc (listISCFunctions)
+    print_debug_binary (listObjdumpFunctions, gdbMapping)
+    
+    display_cfgs(app, listISCFunctions[0].cfg, listObjdumpFunctions[0].cfg, "%s" % listISCFunctions[0].functionName)
+    
     mappingStackISC = []  
     mappingStackObj = []      
     for fnISC in listISCFunctions:
@@ -300,14 +304,12 @@ def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
         else:
             logging.debug( "Fuck my life!!!")
             
-#     print_debug_isc (listISCFunctions)
-#     print_debug_binary (listObjdumpFunctions, gdbMapping)
+    print_debug_isc (listISCFunctions)
+    print_debug_binary (listObjdumpFunctions, gdbMapping)
             
     printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping)
     display_cfgs(app, listISCFunctions[0].cfg, listObjdumpFunctions[0].cfg, "%s" % listISCFunctions[0].functionName)
-#     display_cfg(app, listISCFunctions[1].cfg, "%s" % listISCFunctions[0].functionName)
-    
-#     app.exec_()
+    return listISCFunctions, listObjdumpFunctions
 
 
 if __name__ == "__main__":
