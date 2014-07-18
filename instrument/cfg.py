@@ -82,7 +82,6 @@ class ControlFlowGraph:
             if edge.toBlockIndex == blockIndex and edgeIndex not in self.listBackEdges:
                 listPredBlockIndices.append(edge.fromBlockIndex)
             edgeIndex = edgeIndex + 1
-        logging.debug("returns from predecessorBlocksWOBackEdges(blockIndex)")
         return listPredBlockIndices
     
     def findEdgeIndex(self, fromBlockIndex, toBlockIndex):
