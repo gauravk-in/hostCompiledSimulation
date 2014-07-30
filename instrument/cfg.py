@@ -189,10 +189,14 @@ class ControlFlowGraph:
                     self.listBlocks[currBlockIndex].flow = currBlockFlow
         
 class FunctionDesc:
-    def __init__(self, functionName, fileName, startLine, endLine, cfg):
+    def __init__(self, functionName, fileName, startLine, endLine, cfg, stackSize = -1):
         self.functionName = functionName
         self.fileName = fileName
         self.startLine = startLine
         self.endLine = endLine
         self.cfg = cfg
+        self.stackSize = stackSize
+    
+    def setStackSize(self, stackSize):
+        self.stackSize = stackSize
         

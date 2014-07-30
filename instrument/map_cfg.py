@@ -24,9 +24,9 @@ COND_EXEC_BLOCKLEN_THRESH = 4
 
 app = None
 
-listISCFileNames = []
-listObjdumpFileNames = []
-listBinaryFileNames = []
+# listISCFileNames = []
+# listObjdumpFileNames = []
+# listBinaryFileNames = []
 
 class GDBMapTarget:
     def __init__(self, fileName, lineNum):
@@ -37,6 +37,7 @@ def printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping):
     for func in listObjdumpFunctions:
         print("\nFileName : %s" % (func.fileName))
         print("Function : %s" % (func.functionName))
+        print "\t Stack Size = %d" % func.stackSize
         ISCFuncCfg = find(lambda fn: fn.functionName == func.functionName, listISCFunctions).cfg
         i = 0
         for block in func.cfg.listBlocks:
@@ -207,17 +208,18 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
     
     '''
     
-#     a = input("Press Enter to continue...")
-    mappingStackISC.append(blockIndISC)
-    mappingStackObj.append(blockIndObj)
+    a = raw_input("Press Enter to continue...")
+    mappingStackISC.append((blockIndISC, [blockIndObj]))
+    mappingStackObj.append((blockIndObj, [blockIndISC]))
     blockISC = cfgISC.listBlocks[blockIndISC]
     blockObj = cfgObj.listBlocks[blockIndObj]
-    logging.debug("\tMapping blocks ISC:%s and OBJ:%d" % (blockISC.name, blockIndObj))
-    logging.debug( "\tmergedLevelsISC = %d" % (mergedLevelsISC))
+    logging.debug("")
+    logging.debug(" Mapping blocks ISC:%s and OBJ:%d" % (blockISC.name, blockIndObj))
+    logging.debug("\t mergedLevelsISC = %d" % (mergedLevelsISC))
     
     if (blockISC.isReturning == 1 and
         blockObj.isReturning == 1):
-        logging.debug( "\t\tBoth Blocks return!!!")
+        logging.debug("\t\t Both Blocks return!!!")
         blockISC.mapsTo.append(blockIndObj)
         blockObj.mapsTo.append(blockIndISC)
         mappingStackISC.pop()
@@ -229,10 +231,11 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
     listSuccWOBackEdgeISC = cfgISC.successorBlocksWOBackEdges(blockIndISC)
     listSuccWOBackEdgeObj = cfgObj.successorBlocksWOBackEdges(blockIndObj)
 
+    logging.debug("\t Checking if blockISC returns, and successor of blockObj returns!")
     if (blockISC.isReturning == 1 and 
         len(listSuccObj) == 1 and 
         cfgObj.listBlocks[listSuccObj[0]].isReturning == 1):
-        print "Here"
+        logging.debug("\t\t It does!")
         blockISC.mapsTo.append(blockIndObj)
         blockObj.mapsTo.append(blockIndISC)
         cfgObj.listBlocks[listSuccObj[0]].mapsTo.append(blockIndISC)
@@ -241,10 +244,8 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
         return 0
 
     if (blockISC.flow != blockObj.flow or 
-#         (blockISC.nestingLevel - mergedLevelsISC) != blockObj.nestingLevel or
         blockISC.isReturning != blockObj.isReturning):
-        logging.debug( "\t\tFlow did not match or only one of them returns!")
-        logging.debug( "")
+        logging.debug("\t\t Flow did not match or only one of them returns!")
 #         logging.debug( "\t\tblockISC.nestingLevel - mergedLevelsISC = %d; blockObj.nestingLevel = %d" % ((blockISC.nestingLevel-mergedLevelsISC), blockObj.nestingLevel))
         mappingStackISC.pop()
         mappingStackObj.pop()
@@ -264,7 +265,7 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
                 minSuccBlockLength = blockLength
                 
         if minSuccBlockLength < COND_EXEC_BLOCKLEN_THRESH:
-            logging.debug( "\t\t Conditional Execution Found!")
+            logging.debug("\t\t Conditional Execution Found!")
             # Conditional Execution!
             for succ1BlockISC in listSuccISC:
                 if succ1BlockISC in mappingStackISC:
@@ -277,9 +278,9 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
                             continue
                         if succSucc1BlockISC == succ2BlockISC:
                             # case 1
-                            logging.debug( "\t\t case 1")
-                            mappingStackISC.append(succ1BlockISC)
-                            mappingStackObj.pop() # popping blockIndObj, because mapping it again
+                            logging.debug("\t\t case 1")
+                            mappingStackISC.append((succ1BlockISC, [blockIndObj]))
+                            blockObjStackEntry = mappingStackObj.pop() # popping blockIndObj, because mapping it again
                             if mapping(cfgISC, succ2BlockISC, cfgObj, blockIndObj, mergedLevelsISC + 1, gdbMapping) == 0:
                                 cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
                                 cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
@@ -289,10 +290,9 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
                                 mappingStackISC.pop()
                                 return 0
                             else:
-                                print "HERE!!"
-                                mappingStackObj.append(blockIndObj) # Adding what was removed above
-                                # mappingStackISC.append(succ2BlockISC) # was already done above, no need to do again
-                                mappingStackISC.append(succ2BlockISC)
+                                mappingStackObj.append(blockObjStackEntry) # Adding what was removed above
+                                # mappingStackISC.append((succ2BlockISC, [blockIndObj])) # was already done above, no need to do again
+                                mappingStackISC.append((succ2BlockISC, [blockIndObj]))
                                 listSuccSucc2BlockISC = cfgISC.successorBlocks(succ2BlockISC)
                                 for succSucc2BlockISC in listSuccSucc2BlockISC:
                                     if succSucc2BlockISC in mappingStackISC:
@@ -324,9 +324,9 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
                             if succSucc1BlockISC == succSucc2BlockISC:
                                 # case 2
                                 logging.debug( "\t\t case 2")
-                                mappingStackISC.append(succ1BlockISC)
-                                mappingStackISC.append(succ2BlockISC)
-                                mappingStackObj.pop() # popping blockIndObj, because mapping it again
+                                mappingStackISC.append((succ1BlockISC, [blockIndObj]))
+                                mappingStackISC.append((succ2BlockISC, [blockIndObj]))
+                                blockObjStackEntry = mappingStackObj.pop() # popping blockIndObj, because mapping it again
                                 if mapping(cfgISC, succSucc1BlockISC, cfgObj, blockIndObj, mergedLevelsISC+2, gdbMapping) == 0:
                                     cfgISC.listBlocks[blockIndISC].mapsTo.append(blockIndObj)
                                     cfgISC.listBlocks[succ1BlockISC].mapsTo.append(blockIndObj)
@@ -340,8 +340,8 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
                                 else:
                                     # mappingStackISC.append(succ1BlockISC) # Was already done above, no need twice
                                     # mappingStackISC.append(succ2BlockISC) # Was already done above, no need twice
-                                    mappingStackISC.append(succSucc1BlockISC)
-                                    mappingStackObj.append(blockIndObj) # was popped above, restoring it
+                                    mappingStackISC.append((succSucc1BlockISC, [blockIndObj]))
+                                    mappingStackObj.append(blockObjStackEntry) # was popped above, restoring it
                                     listSuccSuccSucc1BlockISC = cfgISC.successorBlocks(succSucc1BlockISC)
                                     for succSuccSucc1BlockISC in listSuccSuccSucc1BlockISC:
                                         if succSuccSucc1BlockISC in mappingStackISC:
@@ -365,54 +365,72 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC, gdbMappin
                                     mappingStackISC.pop() # succSucc1BlockISC
                                     
             # Should not come here!
-            logging.warning ("Expected Conditional Execution, but not of the matches were valid!")
+            logging.warning ("\t\t Expected Conditional Execution, but not of the matches were valid!")
             #TODO: Add more information about warning
         else:
-            logging.warning("Conditional Execution found, but suspecting it to be last node, since length of successor block is more than threshold")
+            logging.warning("\t\t Conditional Execution found, but suspecting it to be last node, since length of successor block is more than threshold")
             #TODO: Add more information about warning
 
-    logging.debug("\t Checking if length of successors is same!")
-    logging.debug("\t len(listSuccISC) = %d; len(listSuccObj) = %d" % (len(listSuccISC), len(listSuccObj)))
+
+    # Trying to map using Depth First Search traversal of each successor edge,
+    #     if the number of successors is same.
+    numSuccBlocksMapped = 0
     if len(listSuccISC) == len(listSuccObj):
-        logging.debug ("\t\t length of successors lists is same!")                                        
+        logging.debug("\t Matching ISC:%s and OBJ:%s using DFT (number of successors is same)" % (blockISC.name, blockObj.name))
         for succBlockISC in listSuccISC:
             if succBlockISC in mappingStackISC:
-                logging.debug("%d in mappingStackISC" % succBlockISC)
+                numSuccBlocksMapped = numSuccBlocksMapped + 1
                 continue
+            succBlockISCMapped = 0
             for succBlockObj in listSuccObj:
                 if succBlockObj in mappingStackObj:
-                    logging.debug("%d in mappingStackISC" % succBlockObj)
+#                     numSuccBlocksMapped = numSuccBlocksMapped + 1
                     continue
                 if mapping(cfgISC, succBlockISC, cfgObj, succBlockObj, mergedLevelsISC, gdbMapping) == 0:
-                    blockISC.mapsTo.append(blockIndObj)
-                    blockObj.mapsTo.append(blockIndISC)
-                    mappingStackISC.pop()
-                    mappingStackObj.pop() 
-                    return 0
+#                     numSuccBlocksMapped = numSuccBlocksMapped + 1
+                    succBlockISCMapped = 1
+                    break
                 else:
                     continue
+            if succBlockISCMapped == 1:
+                numSuccBlocksMapped = numSuccBlocksMapped + 1
 
+        print "len(listSuccISC) = %d; len(listSuccObj) = %d" % (len(listSuccISC), len(listSuccObj))
+        print "len(listSuccWOBEISC) = %d; len(listSuccWOBEObj) = %d" % (len(listSuccWOBackEdgeISC), len(listSuccWOBackEdgeObj))
+        print "numSuccBlocksMapped = %d" % numSuccBlocksMapped
+    
+        numBackEdgesISC = (len(listSuccISC) - len(listSuccWOBackEdgeISC))
+        numBackEdgesObj = (len(listSuccObj) - len(listSuccWOBackEdgeObj))
+    
+        if len(listSuccISC) == numSuccBlocksMapped:
+            # All successor blocks were mapped!
+            blockISC.mapsTo.append(blockIndObj)
+            blockObj.mapsTo.append(blockIndISC)
+            mappingStackISC.pop()
+            mappingStackObj.pop() 
+            return 0
+    
+    # Trying to map using gdbMapping
     deepestISCBlock = -1
     deepestISCBlockNestingLevel = -1
-    logging.debug ("GDBMAPPING:  using gdbMapping to map blockObj %d:%d-%d" % (blockIndObj, blockObj.startLine, blockObj.endLine))
+    logging.debug ("\t Matching ISC:%s and OBJ:%s using gdbMapping" % (blockISC.name, blockObj.name))
     blockObj.mapsTo = []
     for lineNum in range(blockObj.startLine, blockObj.endLine):
         if lineNum in gdbMapping:
-            ISCFileName = gdbMapping[lineNum].fileName
             ISCLineNum = gdbMapping[lineNum].lineNum
-#             logging.debug("GDBMAPPING:  objline %d maps to %s:%d" % (lineNum, ISCFileName, ISClineNum))
             for i in range(len(cfgISC.listBlocks)):
                 if (cfgISC.listBlocks[i].startLine <= ISCLineNum and
                     cfgISC.listBlocks[i].endLine >= ISCLineNum):
                     if i not in blockObj.mapsTo:
                         blockObj.mapsTo.append(i)
+                    if blockIndObj not in cfgISC.listBlocks[i].mapsTo:
+                        cfgISC.listBlocks[i].mapsTo.append(blockIndObj)
                     if deepestISCBlockNestingLevel < cfgISC.listBlocks[i].nestingLevel and i != blockIndISC:
                         # The deepest ISC Block is not inserted in mappingStackISC
                         #    because mapping will be called on this block, and
                         #    it will be inserted by the next iteration of the
                         #    mapping function. Insert the block in stack, which
                         #    was previously thought of being deepest.
-                        logging.debug ("GDBMAPPING:  deepestISCBlock = %s" % cfgISC.listBlocks[i].name)
                         if deepestISCBlock != -1:
                             mappingStackISC.append(deepestISCBlock)
                         deepestISCBlock = i
@@ -468,17 +486,14 @@ def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
     for function in listObjdumpFunctions:
         logging.debug("Computing flow for function %s from file %s" % (function.functionName, function.fileName))
         function.cfg.computeFlow()
+        
+    for funcISC in listISCFunctions:
+        funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
+        display_cfgs(app, funcISC.cfg, funcObj.cfg, "%s" % funcISC.functionName)
 
     for binaryFileName in listBinaryFileNames:
         gdbMapping = getGDBMapping(binaryFileName, objdumpLineNumForAddress)
 
-
-#     print_debug_isc (listISCFunctions)
-#     print_debug_binary (listObjdumpFunctions, gdbMapping)
-    printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping)
-     
-#     display_cfgs(app, listISCFunctions[0].cfg, listObjdumpFunctions[0].cfg, "%s" % listISCFunctions[0].functionName)
-    
     for fnISC in listISCFunctions:
         mappingStackISC = []  
         mappingStackObj = []  
@@ -494,21 +509,16 @@ def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
         else:
             logging.debug( "Fuck my life!!!")
             
-#     print_debug_isc (listISCFunctions)
-#     print_debug_binary (listObjdumpFunctions, gdbMapping)
-            
     printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping)
-    
+#     
     for funcISC in listISCFunctions:
         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
-        display_cfgs(app, funcISC.cfg, funcObj.cfg, "%s" % fnISC.functionName)
-        
+        display_cfgs(app, funcISC.cfg, funcObj.cfg, "%s" % funcISC.functionName)
+         
     return listISCFunctions, listObjdumpFunctions
 
 
 if __name__ == "__main__":
-#     listISCFileNames = []
-#     listObjdumpFileNames = []
     app = QtGui.QApplication(sys.argv)
 
     logging.basicConfig(level=logging.DEBUG)

@@ -329,15 +329,16 @@ def draw_cfg(cfg, isISC, v):
                 continue
             else:
                 # 4.c. Successor has not yet been plotted
-                predBlocks = cfg.predecessorBlocksWOBackEdges(succBlock)
+                predBlocks = cfg.predecessorBlocks(succBlock)
 
                 if len(predBlocks) > 1:
                     posSuccBlockX = 0
                     posSuccBlockY = 0
                     for predBlock in predBlocks:
-                        posSuccBlockX = pos[posOfBlock[predBlock]][0] + posSuccBlockX
-                        if posSuccBlockY > pos[posOfBlock[predBlock]][1] - verticalGap:
-                            posSuccBlockY = pos[posOfBlock[predBlock]][1] - verticalGap
+                        if predBlock in posOfBlock:
+                            posSuccBlockX = pos[posOfBlock[predBlock]][0] + posSuccBlockX
+                            if posSuccBlockY > pos[posOfBlock[predBlock]][1] - verticalGap:
+                                posSuccBlockY = pos[posOfBlock[predBlock]][1] - verticalGap
                     posSuccBlockX = posSuccBlockX / len(predBlocks)
                     posSuccBlock = [posSuccBlockX, posSuccBlockY]
                 else:

@@ -6,6 +6,8 @@ import sys
 import re
 from cfg import *
 
+sizeOfRegisters = 4
+
 re_sectionStart = re.compile('Disassembly of section .(.*):')
 re_funcDef = re.compile('\s*([0-9a-f]*)\s*<(.*)>:')
 re_instruction = re.compile('\s*([0-9a-f]*):\s*([0-9a-f]*)\s*(.*)')
@@ -13,6 +15,8 @@ re_branchInst = re.compile('\s*(b(?!ic)(?:l|x|lx|xj)?(?:eq|ne|cs|hs|lo|cc|mi|pl|
 re_unconditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?)\s*([0-9a-f]*)\s*<(.*)>')
 re_conditionalBranchInst = re.compile('\s*(b(?:l|x|lx|xj)?(?:eq|ne|cs|hs|lo|cc|mi|pl|hi|ls|ge|lt|gt|le))\s*([0-9a-f]*)\s*<(.*)>')
 re_returnInst = re.compile('\s*(bx)\s*(lr)')
+re_stackPointerSubInst = re.compile("\s*sub\s*sp, sp, #([0-9]*)\s*.*")
+re_pushInst = re.compile("\s*push\s*\{((?:\w*,\s)*\w*)\}")
 
 listFunctionsIgnore = ['__cs3_interrupt_vector',
                         '__cs3_reset',
@@ -48,6 +52,7 @@ def parse_binary(fileName, listFunctionNames = []):
     inFuncBody = 0      # is 1, when inside Function Body
     currFuncName = ""
     currFuncFileName = ""
+    currFuncStackSize = 0
     currFuncStartLine = 0
     listCurrFuncBlockStartLineNum = []
     listCurrFuncBlockEndLineNum = []
@@ -103,6 +108,7 @@ def parse_binary(fileName, listFunctionNames = []):
                                    m.group(2) not in listFunctionsIgnore)):
                 inFuncBody = 1
                 currFuncName = m.group(2)
+                currFuncStackSize = 0
                 currFuncFileName = fileName
                 currFuncStartLine = lineNum + 1
                 listCurrFuncBlockStartLineNum.append(currFuncStartLine)
@@ -115,6 +121,24 @@ def parse_binary(fileName, listFunctionNames = []):
                     lineNumForAddress[address] = lineNum;
                     opcode = m.group(2)
                     inst = m.group(3)
+                    
+                    # Look for sub instruction on sp (stack pointer) to find the
+                    #    stack size for the current function. 
+                    # Sometimes, the sub instruction on sp occurs multiple
+                    #    times. To incorporate such corner cases, increment the
+                    #    currFuncStackSize variable each time.
+                    m = re_stackPointerSubInst.match(inst)
+                    if m is not None:
+                        stackSize = int(m.group(1))
+                        currFuncStackSize = currFuncStackSize + stackSize 
+                    
+                    # Look for push instruction inside function, to add to the 
+                    #    stack size of the function.
+                    m = re_pushInst.match(inst)
+                    if m is not None:
+                        pushInstOperand = m.group(1)
+                        numRegistersPushed = pushInstOperand.count(',') + 1
+                        currFuncStackSize = currFuncStackSize + numRegistersPushed * sizeOfRegisters
                     
                     m = re_branchInst.match(inst)
                     if m is not None and m.group(3).startswith(currFuncName):
@@ -251,11 +275,13 @@ def parse_binary(fileName, listFunctionNames = []):
                                                       currFuncStartLine,
                                                       currFuncEndLine,
                                                       ControlFlowGraph(listBlocks,
-                                                                       listEdges)))
+                                                                       listEdges),
+                                                      currFuncStackSize))
                     
                     # reset the state management variables
                     currFuncName = ""
                     currFuncFileName = ""
+                    currFuncStackSize = 0
                     currFuncStartLine = 0
                     currFuncEndLine = 0
                     listCurrFuncBlockStartLineNum = []
