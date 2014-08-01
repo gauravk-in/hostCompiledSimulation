@@ -10,7 +10,7 @@ TRUNCAPP1 = basicmath_small_truncated3_IR
 MATH = my_math #when libsource, COPTS is as per lib source compilation. Uncomment paths, VPATH in that case
 
 TREEDUMP = -fdump-tree-all-blocks-details
-OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
+OPT = -O1 #is O3 in original MiBench download. Use O3 for final testing
 DEBUG = -g
 
 ifdef PHASE
@@ -48,7 +48,7 @@ OFILE2 = ${APP2}.${OEXT}
 DEBUGFILE1 = ${DEBUGAPP}.c rad2deg.c  cubic_debug.c   isqrt.c
 DEBUGOFILE1 = ${DEBUGAPP}.${OEXT}
 
-OBJDIR = ./objdir
+OBJDIR = .
 
 #### mathlib source paths and names
 #MY_MPATH1=/home/local/grimlock/suhas/libm_some_sources/math
@@ -63,7 +63,7 @@ MATHFILES1 = w_acos.c s_cos.c w_pow.c w_sqrt.c
 MATHFILES2 = e_acos.c e_pow.c e_sqrt.c k_cos.c k_sin.c e_rem_pio2.c k_rem_pio2.c
 MATHFILES3 = s_scalbn.c s_floor.c s_copysign.c s_fabs.c s_nan.c
 
-all: basicmath_small_my_math_trunc
+all: basicmath_small_my_math_trunc objdump_small_my_math_trunc
 
 test:
 	./$(TRUNCOFILE1MYMATH)

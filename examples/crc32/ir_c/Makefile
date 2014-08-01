@@ -5,7 +5,7 @@ APP1 = crc_top_IR
 #PHASE = final #when not defined, CC = gcc. otherwise cc = ppc-gcc
 
 TREEDUMP = #-fdump-tree-all-blocks-details
-OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
+OPT = -O1 #is O3 in original MiBench download. Use O3 for final testing
 DEBUG = -g
 IRDUMP = 1 #1 - dump IR files, 0 - don't.
 

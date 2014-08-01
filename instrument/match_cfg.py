@@ -14,7 +14,7 @@ from display_cfg import display_cfgs
 ## Global Variables
 ######################################################
 
-COND_EXEC_BLOCKLEN_THRESH = 4
+COND_EXEC_BLOCKLEN_THRESH = 6
 
 app = None
 
@@ -183,7 +183,7 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                 succBlockISC = cfgISC.listBlocks[listSuccBlocksISC[0]]
                 if (succBlockISC.isReturning == 1):
                     logging.debug("/t OBJ:%s returns, and is mapped to ISC:%s" 
-                                  % (blockObj.name, succBlockObj.name))
+                                  % (blockObj.name, succBlockISC.name))
                     blockISC.mapsTo.append(blockIndObj)
                     succBlockISC.mapsTo.append(blockIndObj)
                     blockObj.mapsTo.append(blockIndISC)
@@ -288,7 +288,8 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
         return -1
 
     # If none of the blocks return, it means we have to continue the DFT
-    if(len(listSuccBlocksWOBackEdgeISC) != len(listSuccBlocksWOBackEdgeObj)) and blockObj.hasConditionalExec == 1:
+#     len(listSuccBlocksWOBackEdgeISC) != len(listSuccBlocksWOBackEdgeObj) and 
+    if blockObj.hasConditionalExec == 1:
         
         # Check that length of each successor block is less than threshold for Conditional Execution
         lenLongestSuccBlock = 0
@@ -386,75 +387,55 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
     if len(listSuccBlocksISC) == len(listSuccBlocksObj):
         logging.debug("\t %s::%s length of successors is same, trying DFT" %
                       (blockISC.name, blockObj.name))
-        succBlocISCkMatchingFound = 0
+        allSuccBlocksISCMatchingFound = 1
         for succBlockIndISC in listSuccBlocksISC:
-#             stackEntryISC = find(lambda stackEntry: stackEntry[0] == succBlockIndISC, mappingStackISC) 
-#             if stackEntryISC != None:
-#                 # look for all successors of blockObj which are in the stack,
-#                 #     and check if the succBlockIndISC maps to the obj node
-#                 backEdgeMatched = 0
-#                 for succBlockIndObj in listSuccBlocksObj:
-#                     stackEntryObj = find(lambda stackEntry: stackEntry[0] == succBlockIndObj, mappingStackObj)
-#                     if stackEntryObj != None:
-#                         if (succBlockIndObj in stackEntryISC[1] and
-#                             succBlockIndISC in stackEntryObj[1]):
-#                             # back edge matched!
-#                             logging.debug("%s::%s Back Edge to %s::%s matched!" %
-#                                           (blockISC.name, blockObj.name,
-#                                            cfgISC.listBlocks[succBlockIndISC].name,
-#                                            cfgObj.listBlocks[succBlockIndObj].name))
-#                             backEdgeMatched = 1
-#                             succBlocISCkMatchingFound = 1
-#                             break
-#                 if backEdgeMatched == 1:
-#                     continue
-#                 else:
-#                     logging.error("%s::%s ISC block has back edge, that could not be matched to Obj Block" % 
-#                                   (blockISC.name, blockObj.name))
-#                     succBlocISCkMatchingFound = 0
-#                     break
             succBlockISCMatchFoundUsingDFT = 0
             for succBlockIndObj in listSuccBlocksObj:
-#                 stackEntryObj = find(lambda stackEntry: stackEntry[0] == succBlockIndObj, mappingStackObj)
-#                 if stackEntryObj != None:
-#                     # TODO: Check for some trouble
-#                     # We should just skip this back edge
-#                     continue
-                
-                logging.debug("\t\t %s::%s Trying DFT on %s::%s" %
-                      (blockISC.name, blockObj.name,
-                       cfgISC.listBlocks[succBlockIndISC].name,
-                       cfgObj.listBlocks[succBlockIndObj].name))
-                mappingStackISC.append((succBlockIndISC, [succBlockIndObj]))
-                mappingStackObj.append((succBlockIndObj, [succBlockIndISC]))
-                if (mapping(cfgISC, succBlockIndISC,
-                            cfgObj, succBlockIndObj,
-                            mergedLevelsISC) == 0):
-                    cfgISC.listBlocks[succBlockIndISC].mapsTo.append(blockIndObj)
-                    cfgObj.listBlocks[succBlockIndObj].mapsTo.append(blockIndISC)
-                    mappingStackISC.pop()
-                    mappingStackObj.pop()
-                    succBlockISCMatchFoundUsingDFT = 1
-                    succBlocISCkMatchingFound = 1
-                    break
+                if cfgObj.listBlocks[succBlockIndObj].mapsTo:
+                    if succBlockIndISC in cfgObj.listBlocks[succBlockIndObj].mapsTo:
+                        # Both have already been mapped.
+                        succBlockISCMatchFoundUsingDFT = 1
+                        break # to continue matching the next successor in ISC
+                    else:
+                        # Obj has been mapped to some other node.
+                        continue
                 else:
-                    mappingStackISC.pop()
-                    mappingStackObj.pop()
-                    continue # to try to match next successor of blockObj with current successor of blockISC
+                    # Obj blocked hasn't yet been mapped. Try mapping
+                    logging.debug("\t\t %s::%s Trying DFT on %s::%s" %
+                          (blockISC.name, blockObj.name,
+                           cfgISC.listBlocks[succBlockIndISC].name,
+                           cfgObj.listBlocks[succBlockIndObj].name))
+                    mappingStackISC.append((succBlockIndISC, [succBlockIndObj]))
+                    mappingStackObj.append((succBlockIndObj, [succBlockIndISC]))
+                    if (mapping(cfgISC, succBlockIndISC,
+                                cfgObj, succBlockIndObj,
+                                mergedLevelsISC) == 0):
+                        cfgISC.listBlocks[succBlockIndISC].mapsTo.append(succBlockIndObj)
+                        cfgObj.listBlocks[succBlockIndObj].mapsTo.append(succBlockIndISC)
+                        mappingStackISC.pop()
+                        mappingStackObj.pop()
+                        succBlockISCMatchFoundUsingDFT = 1
+                        break
+                    else:
+                        succBlockISCMatchFoundUsingDFT = 0
+                        mappingStackISC.pop()
+                        mappingStackObj.pop()
+                        continue # to try to match next successor of blockObj with current successor of blockISC
             
             if succBlockISCMatchFoundUsingDFT == 1:
                 logging.debug("\t\t %s::%s DFT: Found matching for %s::%s" % 
                               (blockISC.name, blockObj.name,
                                cfgISC.listBlocks[succBlockIndISC].name,
                                cfgObj.listBlocks[succBlockIndObj].name))
+                succBlockISCMatchFoundUsingDFT = 0
                 continue # to match next blockISC
             else:
                 logging.error("\t\t %s::%s DFT: Matching obj block for ISC block not found!" %
                               (blockISC.name, blockObj.name))
-                succBlocISCkMatchingFound = 0
+                allSuccBlocksISCMatchingFound = 0
                 break
         
-        if succBlocISCkMatchingFound == 1:
+        if allSuccBlocksISCMatchingFound == 1:
             # Mapping was found for each successor block of blockISC
             blockISC.mapsTo.append(blockIndObj)
             blockObj.mapsTo.append(blockIndISC)

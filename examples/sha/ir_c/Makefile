@@ -20,8 +20,8 @@ APP2 = sha_driver_create_input_array_IR
 
 #PHASE = final #when not defined, CC = gcc. otherwise cc = ppc-gcc
 
-TREEDUMP = -fdump-tree-all-blocks-details
-OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
+#TREEDUMP = -fdump-tree-all-blocks-details
+OPT = -O1 #is O3 in original MiBench download. Use O3 for final testing
 OPT += -fno-optimize-sibling-calls #don't optimise for tail calls, only turn on for ppc
 DEBUG = -g
 #IRDUMP = 1 #1 - dump IR files, 0 - don't.

@@ -10,7 +10,7 @@ TRUNCAPP1 = basicmath_small_truncated3
 MATH = my_math #when libsource, COPTS is as per lib source compilation. Uncomment paths, VPATH in that case
 
 TREEDUMP = -fdump-tree-all-blocks-details
-OPT = -O2 #is O3 in original MiBench download. Use O3 for final testing
+OPT = -O1 #is O3 in original MiBench download. Use O3 for final testing
 DEBUG = -g
 
 ifdef PHASE

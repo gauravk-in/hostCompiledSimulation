@@ -11,7 +11,7 @@ from cfg import *
 #   if group(2) == "){", single line definition
 #   elif group(2) == $, multi line definition
 re_funcDef = re.compile('(?:\w*\s+)*\**(\w+)\s*\([,\s\w&\[\]\*]*($|\)\s*\{)')
-re_funcDefArgLine = re.compile('[,\s\w&\[\]\*]*($|\)\s*\{)')
+re_funcDefArgLine = re.compile('[,\s\w&\[\]\*]*($|\)\s*(?:\{)?)')
 re_basicBlockLabel = re.compile('\s*(\w*bb_[0-9]*):')
 re_basicBlockStart = re.compile('\s*//\s*#\s*PRED:./*')
 re_basicBlockEnd = re.compile('\s*//\s*#\s*SUCC:./*')
@@ -125,7 +125,7 @@ def parse_isc(fileName):
                     currFuncStartLine = lineNum + 1
                     continue
             else:
-                raise ParseError("Not found the expected Multi Line Argument List at %s:%d." & (fileName, lineNum))
+                raise ParseError("Not found the expected Multi Line Argument List at %s:%d." % (fileName, lineNum))
                 exit(1)
                 
         # 2. Inside Function Body    
