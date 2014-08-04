@@ -30,6 +30,10 @@ class BasicBlock:
         self.mapsTo = []
         self.nestingLevel = -1
         self.hasConditionalExec = 0
+        
+    def mapISCTo(self, blockInd):
+        # ISC Blocks will map to only one block in Obj
+        self.mapsTo = [blockInd]
 
 
 class ControlFlowGraph:

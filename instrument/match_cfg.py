@@ -8,7 +8,8 @@ from PyQt4 import QtGui, QtCore
 
 from cfg_binary import parse_binary, print_debug_binary
 from cfg_isc import parse_isc, print_debug_isc
-from display_cfg import display_cfgs
+# from display_cfg import display_cfgs
+from draw_cfg import draw_cfg
 
 ######################################################
 ## Global Variables
@@ -139,7 +140,7 @@ def getGDBMapping(binFileName, objdumpLineNumForAddress):
 mappingStackISC = []  
 mappingStackObj = []
 gdbMapping = {}
-    
+
 def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
 #     raw_input("Press any key to continue ...")
     
@@ -156,7 +157,8 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
     # If both blocks return, mapping found!
     if (blockISC.isReturning == 1 and blockObj.isReturning == 1):
         logging.debug("\t %s::%s Both blocks return! Matched!" % (blockISC.name, blockObj.name))
-        blockISC.mapsTo.append(blockIndObj)
+        # blockISC.mapsTo.append(blockIndObj)
+        blockISC.mapISCTo(blockIndObj)        
         blockObj.mapsTo.append(blockIndISC)
         return 0
     
@@ -168,7 +170,8 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                 if (succBlockObj.isReturning == 1):
                     logging.debug("/t ISC:%s returns, and is mapped to both OBJ:%s and OBJ:%s" 
                                   % (blockISC.name, blockObj.name, succBlockObj.name))
-                    blockISC.mapsTo.append(blockIndObj)
+                    #blockISC.mapsTo.append(blockIndObj)
+                    blockISC.mapISCTo(blockIndObj)
                     blockObj.mapsTo.append(blockIndISC)
                     succBlockObj.mapsTo.append(blockIndISC)
                     return 0
@@ -184,9 +187,11 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                 if (succBlockISC.isReturning == 1):
                     logging.debug("/t OBJ:%s returns, and is mapped to ISC:%s" 
                                   % (blockObj.name, succBlockISC.name))
-                    blockISC.mapsTo.append(blockIndObj)
-                    succBlockISC.mapsTo.append(blockIndObj)
-                    blockObj.mapsTo.append(blockIndISC)
+                    # blockISC.mapsTo.append(blockIndObj)
+                    blockISC.mapISCTo(blockIndObj)
+                    # succBlockISC.mapsTo.append(blockIndObj)
+                    succBlockISC.mapISCTo(blockIndObj)
+                    blockObj.mapsTo.append(listSuccBlocksISC[0])
                     return 0
                 else:
                     # Mapping not found!
@@ -267,7 +272,8 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                         logging.debug("\t %s::%s Back Edge Found through split block in ISC!" %
                                       (blockISC.name, blockObj.name))
                         # Match current ISC block (split block) to predecessor of current Obj Block
-                        blockISC.mapsTo.append(mappingStackObj[-1][0])
+                        # blockISC.mapsTo.append(mappingStackObj[-1][0])
+                        blockISC.mapISCTo(mappingStackObj[-1][0])
                         # TODO: Is there something else to do here?
                         return 0
                     else:
@@ -344,9 +350,12 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                 if (mapping(cfgISC, succ2BlockIndISC, cfgObj, blockIndObj, mergedLevelsISC + 1) == 0):
                     logging.debug("\t\t\t %s::%s Mapping Found (CondExec: Case 1)!" % 
                                   (blockISC.name, blockObj.name))
-                    blockISC.mapsTo.append(blockIndObj)
-                    cfgISC.listBlocks[succ1BlockIndISC].mapsTo.append(blockIndObj)
-                    cfgISC.listBlocks[succ2BlockIndISC].mapsTo.append(blockIndObj)
+                    # blockISC.mapsTo.append(blockIndObj)
+                    blockISC.mapISCTo(blockIndObj)
+                    # cfgISC.listBlocks[succ1BlockIndISC].mapsTo.append(blockIndObj)
+                    cfgISC.listBlocks[succ1BlockIndISC].mapISCTo(blockIndObj)
+                    # cfgISC.listBlocks[succ2BlockIndISC].mapsTo.append(blockIndObj)
+                    cfgISC.listBlocks[succ2BlockIndISC].mapISCTo(blockIndObj)
                     blockObj.mapsTo.append(blockIndISC)
                     mappingStackISC.pop()
                     mappingStackISC.pop()
@@ -367,10 +376,14 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                             cfgObj, blockIndObj, mergedLevelsISC + 2) == 0):
                     logging.debug("\t\t\t %s::%s Mapping Found (CondExec: Case 2)!" % 
                                   (blockISC.name, blockObj.name))
-                    blockISC.mapsTo.append(blockIndObj)
-                    cfgISC.listBlocks[succ1BlockIndISC].mapsTo.append(blockIndObj)
-                    cfgISC.listBlocks[succ2BlockIndISC].mapsTo.append(blockIndObj)
-                    cfgISC.listBlocks[succSucc1BlockIndISC].mapsTo.append(blockIndObj)
+                    # blockISC.mapsTo.append(blockIndObj)
+                    # cfgISC.listBlocks[succ1BlockIndISC].mapsTo.append(blockIndObj)
+                    # cfgISC.listBlocks[succ2BlockIndISC].mapsTo.append(blockIndObj)
+                    # cfgISC.listBlocks[succSucc1BlockIndISC].mapsTo.append(blockIndObj)
+                    blockISC.mapISCTo(blockIndObj)
+                    cfgISC.listBlocks[succ1BlockIndISC].mapISCTo(blockIndObj)
+                    cfgISC.listBlocks[succ2BlockIndISC].mapISCTo(blockIndObj)
+                    cfgISC.listBlocks[succSucc1BlockIndISC].mapISCTo(blockIndObj)
                     blockObj.mapsTo.append(blockIndISC)
                     mappingStackISC.pop()
                     mappingStackISC.pop()
@@ -394,10 +407,17 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                 if cfgObj.listBlocks[succBlockIndObj].mapsTo:
                     if succBlockIndISC in cfgObj.listBlocks[succBlockIndObj].mapsTo:
                         # Both have already been mapped.
+                        logging.debug("\t\t %s::%s DFT: Successor blocks %s::%s have already been mapped to each other!" %
+                                      (blockISC.name, blockObj.name,
+                                       cfgISC.listBlocks[succBlockIndISC].name,
+                                       cfgObj.listBlocks[succBlockIndObj].name))                        
                         succBlockISCMatchFoundUsingDFT = 1
                         break # to continue matching the next successor in ISC
                     else:
-                        # Obj has been mapped to some other node.
+                        logging.debug("\t\t %s::%s DFT: Successor blocks Obj:%s have already been mapped to some other ISC block than current ISC:%s!" %
+                                      (blockISC.name, blockObj.name,
+                                       cfgObj.listBlocks[succBlockIndObj].name,
+                                       cfgISC.listBlocks[succBlockIndISC].name))
                         continue
                 else:
                     # Obj blocked hasn't yet been mapped. Try mapping
@@ -410,7 +430,8 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                     if (mapping(cfgISC, succBlockIndISC,
                                 cfgObj, succBlockIndObj,
                                 mergedLevelsISC) == 0):
-                        cfgISC.listBlocks[succBlockIndISC].mapsTo.append(succBlockIndObj)
+                        # cfgISC.listBlocks[succBlockIndISC].mapsTo.append(succBlockIndObj)
+                        cfgISC.listBlocks[succBlockIndISC].mapISCTo(succBlockIndObj)
                         cfgObj.listBlocks[succBlockIndObj].mapsTo.append(succBlockIndISC)
                         mappingStackISC.pop()
                         mappingStackObj.pop()
@@ -437,7 +458,8 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
         
         if allSuccBlocksISCMatchingFound == 1:
             # Mapping was found for each successor block of blockISC
-            blockISC.mapsTo.append(blockIndObj)
+            # blockISC.mapsTo.append(blockIndObj)
+            blockISC.mapISCTo(blockIndObj)
             blockObj.mapsTo.append(blockIndISC)
             return 0
         else:
@@ -546,11 +568,7 @@ def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
             logging.error("*** Stack is not empty after mapping function returns ***")
             
     printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping)
-#     
-    for funcISC in listISCFunctions:
-        funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
-        display_cfgs(app, funcISC.cfg, funcObj.cfg, "%s" % funcISC.functionName)
-         
+
     return listISCFunctions, listObjdumpFunctions
 
 
@@ -570,6 +588,10 @@ if __name__ == "__main__":
                          type="string", dest="listBinaryFileNames", 
                          help="Binary Filename. For multiple files, use -b <filename> multiple times.",
                          metavar="FILE")
+    optparser.add_option("-p", "--output_path", action="store",
+                         type="string", dest="outputPath", 
+                         help="Output path to store graphs generated.",
+                         metavar="PATH")
     
     (options, args) = optparser.parse_args()
     
@@ -579,6 +601,16 @@ if __name__ == "__main__":
     listISCFileNames =  options.listISCFileNames
     listObjdumpFileNames = options.listObjdumpFileNames
     listBinaryFileNames = options.listBinaryFileNames
+    outputPath = options.outputPath
     
-    map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
+    (listISCFunctions, listObjdumpFunctions) = map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
+    
+    for funcISC in listISCFunctions:
+        funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
+#         display_cfgs(app, funcISC.cfg, funcObj.cfg, "%s" % funcISC.functionName)
+        psISCFileName = draw_cfg(funcISC, outputPath)
+        psObjFileName = draw_cfg(funcObj, outputPath)
+        call(args = ["evince", psISCFileName, psObjFileName])
+        
+         
     
