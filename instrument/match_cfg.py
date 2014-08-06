@@ -507,7 +507,7 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
 #             return 0 # successful mapping
 
     
-def map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
+def match_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
     global mappingStackISC
     global mappingStackObj
     listISCFunctions = []
@@ -603,7 +603,7 @@ if __name__ == "__main__":
     listBinaryFileNames = options.listBinaryFileNames
     outputPath = options.outputPath
     
-    (listISCFunctions, listObjdumpFunctions) = map_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
+    (listISCFunctions, listObjdumpFunctions) = match_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
     
     for funcISC in listISCFunctions:
         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
