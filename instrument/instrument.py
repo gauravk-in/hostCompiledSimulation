@@ -5,6 +5,7 @@ class GlobalVariable:
         self.name = ""
         self.address = 0
         self.type = ""
+        self.size = -1
         self.length = -1
         self.file = ""
         self.lineNum = -1

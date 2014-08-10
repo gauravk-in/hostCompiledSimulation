@@ -1,4 +1,3 @@
-import re
 import logging
 from optparse import OptionParser
 from subprocess import call
@@ -6,6 +5,7 @@ import linecache as lc
 
 from instrument import *
 from match_cfg import match_cfg
+from armEmulate import *
 
 
 def find(f, seq):
@@ -101,7 +101,6 @@ def getGlobalVariablesInfoFromGDB(listBinaryFileNames):
     debugListGlobalVariables(listGlobalVariables)
     return listGlobalVariables
 
-
 re_instructionLineObj = re.compile('\s*([0-9a-f]*):\s*([0-9a-f]*)\s*(.*)')
 re_loadPCRelative = re.compile("\s*ldr\w*\s*([\w]{2}),\s*\[pc,\s#[\d]*\]\s*;\s*([a-fA-F0-9]*)\s*<\w*\+0x[a-fA-F0-9]*>")
 re_loadStoreSPRelative = re.compile("\s*((?:str\w*)|(?:ldr\w*))\s*(\w{2}),\s*\[sp(?:,\s*#(\d*))?\]")
@@ -111,219 +110,104 @@ re_addSubInst = re.compile("\s*((?:add)|(?:sub))(?:\w{2})?\s*(\w{2}),\s*(.*),\s*
 re_instObj = re.compile("\s*(\w*)\s*(\w*)((?:,\s*[\w\[\]\#]*)*)")
 
 
-def mapRegToVar(dictGlobalVarAddInReg, fileNameObj, lsLineNum, regName):
-    if regName in dictGlobalVarAddInReg:
-        globalVar = dictGlobalVarAddInReg[regName]
-        return globalVar
-    else:
-        READ_BACKWARDS_INST_THRESHOLD = 20
-        lineNum = lsLineNum
-        # Check if register can be mapped to a global variable by reading instructions above
-        while lineNum > (lsLineNum - READ_BACKWARDS_INST_THRESHOLD):
-            lineNum = lineNum - 1
-            line = lc.getline(fileNameObj, lineNum)
-            m = re_instructionLineObj.match(line)
-            if m is not None:
-                inst = m.group(3)
-                instAdd = int(m.group(1), 16)
-                m = re_instObj.match(inst)
-                if m is not None:
-                    targetReg = m.group(2)
-                    operands = m.group(3)
-                    if targetReg == regName:
-                        # find all operands that are registers (\w{2})
-                        listRegOperands = re.findall("\s*,\s*(\w{2})", operands)
-                        for regOperand in listRegOperands:
-                            if regOperand in dictGlobalVarAddInReg:
-                                globalVar = dictGlobalVarAddInReg[regOperand]
-                                return globalVar
-                    else:
-                        continue
-                else:
-                    break
-            else:
+def getGlobalVariableAddressTableForFunc(funcObj):
+    dictGlobVarAddAtTableAddress = {}
+    lineNumObj = funcObj.endLine
+    while True:
+        lineObj = lc.getline(funcObj.fileName, lineNumObj)
+        m = re_instructionLineObj.match(lineObj)
+        if m is not None:
+            inst = m.group(3)
+            m1 = re_returnInst.match(inst)
+            if m1 is not None:
                 break
-
-        logging.debug("\t %d: Could not map register \"%s\" to a global var." % 
-                                  (lsLineNum, regName))
-        
-    # if here, the register could not be matched to a global var using above analysis
-    return None
-
-def instrument_cache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
-    '''
-    Algorithm
-    To make our process simple, we are planning to use only Global Variables.
-    We will modify the benchmark program, to make all local variables as global.
-    This will only be possible, if the function is not recursive and won't have
-    a huge impact on performance unless there are a number of functions that are
-    called, and each have a large number of local variables.
+            else:
+                instAdd = int(m.group(1), 16)
+                globalVarAdd = int(m.group(2), 16)
+                dictGlobVarAddAtTableAddress[instAdd] = globalVarAdd
+                lineNumObj = lineNumObj - 1
+        else:
+            break
     
-    1. Extract info of Global Variables from GDB.
-    2. Perform Matching of Control Flow Graphs.
-    3. For each funcObj in list of Objdump functions,
-        a. Find corresponding funcISC.
-        b. For each line in funcObj,
-            1. look for load and store instructions. Each load and store
-               should be either,
-                a. PC Relative Load/Store (Global Variable)
-                b. Stack Pointer Relative Load/Store (Local Variable)
-                PS. This is when we don't consider heap/dynamically allocated
-                    memory.
-            2. PC Relative Load/Store:
-                a. Find the address of the address of global variable.
-                b. Find name of the global variable being fetched from memory.
-                c. In the mapping basic block in ISC, look for an instruction
-                    where this global variable is being accessed. If found,
-                    1. Look if this variable is an array and is being accessed
-                        with an index.
-                        a. TODO: Find a good way, to check if the current basic
-                            block is part of a loop.
-                        b. If yes, we need to find the index variable in the
-                            source code.
-                        c. Annotate the memory access at appropriate line in
-                            the source code.
-                    
-    
-    '''
+    return dictGlobVarAddAtTableAddress
+
+
+def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
     
     (listISCFunctions, listObjdumpFunctions) = match_cfg(listISCFileNames, 
                                                          listObjdumpFileNames, 
                                                          listBinaryFileNames)
     
-    listGlobalVariables = getGlobalVariablesInfoFromGDB(listBinaryFileNames)    
+    listGlobalVariables = getGlobalVariablesInfoFromGDB(listBinaryFileNames)
     
     for funcObj in listObjdumpFunctions:
-        
-        dictGlobalVarAtPCRelativeAdd = {}
-        dictGlobalVarAddInReg = {}
-        
-        fileNameObj = funcObj.fileName
         funcISC = find(lambda fn: fn.functionName == funcObj.functionName, listISCFunctions)
-        fileNameISC = funcISC.fileName
+        assert(funcISC is not None)
+        dictGlobVarAddAtTableAddress = getGlobalVariableAddressTableForFunc(funcObj)
+        armEmu = ArmEmulator(dictGlobVarAddAtTableAddress)
         
-        logging.debug("")
-        logging.debug(" Function: %s" % funcObj.functionName)
-        
-        # Read addresses of all global variables attached at the end of the
-        #     function, by reading backwards until return instruction is found
-        
-        logging.debug(" Table of Global Variable Addresses:")
-        lineNumObj = funcObj.endLine
-        while True:
-            lineObj = lc.getline(fileNameObj, lineNumObj)
+        for lineNumObj in range(funcObj.startLine, funcObj.endLine + 1):
+            lineObj = lc.getline(funcObj.fileName, lineNumObj)
+            
             m = re_instructionLineObj.match(lineObj)
             if m is not None:
-                inst = m.group(3)
-                m1 = re_returnInst.match(inst)
-                if m1 is not None:
-                    break
-                else:
-                    instAdd = int(m.group(1), 16)
-                    globalVarAdd = int(m.group(2), 16)
-                    globalVar = find(lambda var: var.address == globalVarAdd,
-                                     listGlobalVariables)
-                    if globalVar is not None:                
-                        dictGlobalVarAtPCRelativeAdd[instAdd] = globalVar
-                        logging.debug("\t \"%s\" at address %x." % (globalVar.name, globalVar.address))
-                    else:
-                        logging.error("\t Global Var with address %x not found." % globalVarAdd)
-                    lineNumObj = lineNumObj - 1
-            else:
-                break
-        
-        logging.debug(" Load Store Instructions:")
-        for lineNumObj in range(funcObj.startLine, funcObj.endLine+1):
-            lineObj = lc.getline(fileNameObj, lineNumObj)
-            m = re_instructionLineObj.match(lineObj)
-            if m is not None:
-                instAdd = int(m.group(1), 16)
+                instAdd = m.group(1)
                 instObj = m.group(3)
+                ret = armEmu.emulate(instObj)
+                if ret == -1:
+                    logging.debug("\t %d: Instruction could not be emulated!" % lineNumObj)
+                    return -1
                 
-                # Load PC Relative - Global Variables
-                m = re_loadPCRelative.match(instObj)
+                m = re_loadInst.match(instObj)
                 if m is not None:
-                    globalVarAddInReg = m.group(1)
-                    globalVarTabAddress = int(m.group(2), 16)
-                    if globalVarTabAddress in dictGlobalVarAtPCRelativeAdd:                    
-                        globalVar = dictGlobalVarAtPCRelativeAdd[globalVarTabAddress]
-                    else:
-                        logging.debug("\t %d: PC Relative Address was loaded, but corresponding global var was not found. Ignoring!")
-                        continue
-                    dictGlobalVarAddInReg[globalVarAddInReg] = globalVar
-                    logging.debug("\t %d: %s = address of global var \"%s\"" % 
-                                  (lineNumObj, globalVarAddInReg, globalVar.name))
-                    continue
-                
-                m = re_loadStoreSPRelative.match(instObj)
-                if m is not None:
-                    lsOpcode = m.group(1)
-                    lsReg = m.group(2)
-                    if m.group(3) is None:
-                        lsSPIndexVal = 0
-                    else:
-                        lsSPIndexVal = int(m.group(3))
-                    logging.debug("\t %d: Local Variable was accessed at address sp+%d." %
-                                  (lineNumObj, lsSPIndexVal))
-                    continue
-                
-                # TODO: Look for SP relative address being loaded into a register
-                #     It can be done by moving sp to a register, or by
-                #     adding/subtracting from sp and storing to a register.
-                #     Map the address to a local variable
-                    
-                m = re_loadStoreInst.match(instObj)
-                if m is not None:
-                    lsOpcode = m.group(1)
-                    lsReg = m.group(2)
-                    lsAddReg1 = m.group(3)
-                    lsAddReg2 = m.group(4)
-                    if lsAddReg2 == None:
-                        # See if we know address of which global var is stored in lsAddReg1
-                        # TODO: Look for above instructions to see where lsAddReg1 comes from.
-                        globalVar = mapRegToVar(dictGlobalVarAddInReg, 
-                                                fileNameObj, 
-                                                lineNumObj, 
-                                                lsAddReg1)
+                    for baseRegLabel in ["am2_1BaseReg", 
+                                         "am2_2BaseReg", 
+                                         "am2_3BaseReg", 
+                                         "am2_4BaseReg", 
+                                         "am2_5BaseReg", 
+                                         "am2_6BaseReg", 
+                                         "am2_7BaseReg"]:
+                        if m.group(baseRegLabel) is not None:
+                            break
+                    baseReg = m.group(baseRegLabel)
+                    if baseReg == "pc":
+                        comment = m.group("comment")
+                        m_comment = re.match("\s*([0-9a-f]*)\s*\<.*\>", comment)
+                        assert(m_comment)
+                        addInTable = int(m_comment.group(1), 16)
+                        assert(addInTable in dictGlobVarAddAtTableAddress)
+                        address = dictGlobVarAddAtTableAddress[addInTable]
+                        globalVar = find(lambda var: var.address == address,
+                                         listGlobalVariables)
                         if globalVar is None:
-                            logging.error("\t %s:%d: Could not match load/store instruction with variable"
-                                          (fileNameObj, lineNumObj))
-                            return -1
-                        else:
-                            baseAddReg = lsAddReg1
+                            logging.debug(" PC Relative Load not for Global Var, probably for long value!")
+                            continue
                         
-                        # TODO: Verify the global variable being accessed by looking at source code
-                        logging.debug("\t %d: %s = value of global var \"%s\" (pointed to by %s)" % 
-                                      (lineNumObj, lsReg, globalVar.name, baseAddReg))
+                        logging.debug(" %d: Load Address of Global Var %s" % 
+                                      (lineNumObj, globalVar.name))
+                        continue
                     else:
-                        globalVar = mapRegToVar(dictGlobalVarAddInReg, 
-                                                fileNameObj, 
-                                                lineNumObj, 
-                                                lsAddReg1)
-                        
+                        baseRegVal = armEmu.reg[baseReg].value
+                        globalVar = find(lambda var: var.address == baseRegVal,
+                                         listGlobalVariables)
                         if globalVar is not None:
-                            baseAddReg = lsAddReg1
-                            indexReg = lsAddReg2
+                            logging.debug(" %d: Loading content of Global Var %s" % 
+                                          (lineNumObj, globalVar.name))
+                            continue
+                        elif baseRegVal > armEmu.reg["sp"]:
+                            logging.debug(" %d: Accessing some local variable" %
+                                          (lineNumObj))
+                            # TODO: Which Local Variable?
+                            continue
                         else:
-                            
-                            globalVar = mapRegToVar(dictGlobalVarAddInReg, 
-                                                    fileNameObj, 
-                                                    lineNumObj, 
-                                                    lsAddReg2)
-                            if globalVar is not None:
-                                baseAddReg = lsAddReg2
-                                indexReg = lsAddReg1
-                            else:
-                                logging.error("\t %d: Could not match load/store instruction with variable" %
-                                              (lineNumObj))
-                                
-                        if globalVar.length == 1:
-                            logging.error("From objdump, it looks like an indexed access of array, but global variable is not an array (based on info from GDB)!")
-                            quit
-                            
-                        # TODO: Look for Indexed array access in matching block in Source Code
-                        logging.debug("\t %d: %s = value of element in global var %s (pointed to by %s, indexed by %s)." % 
-                                          (lineNumObj, lsReg, globalVar.name, baseAddReg, indexReg))
+                            logging.debug(" %d: %s" % (lineNumObj, instObj))
+                            continue
+                        
+            else:
+                logging.error(" %d: Instruction does not match!")
+                return -1
+            
+        armEmu.printRegisters()
 
 
 if __name__ == "__main__":
@@ -354,14 +238,4 @@ if __name__ == "__main__":
     listObjdumpFileNames = options.listObjdumpFileNames
     listBinaryFileNames = options.listBinaryFileNames
     
-#     (listISCFunctions, listObjdumpFunctions) = map_cfg(listISCFileNames, 
-#                                                        listObjdumpFileNames, 
-#                                                        listBinaryFileNames)
-
-#     getGlobalVariablesInfoFromGDB(listBinaryFileNames)
-    
-#     instrument_cache(listISCFileNames, listISCFunctions, 
-#                      listObjdumpFileNames, listObjdumpFunctions,
-#                      listBinaryFileNames)
-#     
-    instrument_cache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
+    instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
