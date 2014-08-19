@@ -21,7 +21,7 @@ struct test {
 } m = { 1, 1 };
 
 
-void sieve() {
+void sieve_func() {
   int j_76;
   uintptr_t ivtmp_74;
   int i_72;
@@ -37,137 +37,137 @@ void sieve() {
   int i;
   unsigned int sieve[500000];
 
-sievebb_2:
+sieve_funcbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
   ivtmp_68 = 0;
 //  # SUCC: 3 [100.0%]  (fallthru,exec)
 
-sievebb_3:
+sieve_funcbb_3:
 //  # PRED: 3 [99.0%]  (true,exec) 2 [100.0%]  (fallthru,exec)
   *(unsigned int*)((uintptr_t)&results + (uintptr_t)ivtmp_68) = 0;
   *(unsigned int*)((uintptr_t)&sieve + (uintptr_t)ivtmp_68) = 1;
   ivtmp_68 = ivtmp_68 + 4;
   if (ivtmp_68 != 2000000)
-    goto sievebb_3;
+    goto sieve_funcbb_3;
   else
-    goto sievebb_17;
+    goto sieve_funcbb_17;
 //  # SUCC: 3 [99.0%]  (true,exec) 17 [1.0%]  (false,exec)
 
-sievebb_17:
+sieve_funcbb_17:
 //  # PRED: 3 [1.0%]  (false,exec)
   ivtmp_49 = 6;
   ivtmp_58 = 4;
   i_72 = 2;
 //  # SUCC: 4 [100.0%]  (fallthru)
 
-sievebb_4:
+sieve_funcbb_4:
 //  # PRED: 7 [99.0%]  (true,exec) 17 [100.0%]  (fallthru)
   D_2263 = (unsigned int) i_72;
   if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2263 * 4) != 0)
-    goto sievebb_5;
+    goto sieve_funcbb_5;
   else
-    goto sievebb_7;
+    goto sieve_funcbb_7;
 //  # SUCC: 5 [50.0%]  (true,exec) 7 [50.0%]  (false,exec)
 
-sievebb_5:
+sieve_funcbb_5:
 //  # PRED: 4 [50.0%]  (true,exec)
   j_76 = (int) ivtmp_58;
   if (j_76 <= 499999)
-    goto sievebb_18;
+    goto sieve_funcbb_18;
   else
-    goto sievebb_7;
+    goto sieve_funcbb_7;
 //  # SUCC: 18 [91.0%]  (true,exec) 7 [9.0%]  (false,exec)
 
-sievebb_18:
+sieve_funcbb_18:
 //  # PRED: 5 [91.0%]  (true,exec)
   ivtmp_74 = ivtmp_49;
 //  # SUCC: 6 [100.0%]  (fallthru)
 
-sievebb_6:
+sieve_funcbb_6:
 //  # PRED: 6 [91.0%]  (true,exec) 18 [100.0%]  (fallthru)
   sieve[j_76] = 0;
   D_2252 = (unsigned int) j_76 + D_2263;
   j_76 = (int) D_2252;
   ivtmp_74 = D_2263 + ivtmp_74;
   if ((int) (ivtmp_74 - D_2263) <= 499999)
-    goto sievebb_6;
+    goto sieve_funcbb_6;
   else
-    goto sievebb_7;
+    goto sieve_funcbb_7;
 //  # SUCC: 6 [91.0%]  (true,exec) 7 [9.0%]  (false,exec)
 
-sievebb_7:
+sieve_funcbb_7:
 //  # PRED: 4 [50.0%]  (false,exec) 6 [9.0%]  (false,exec) 5 [9.0%]  (false,exec)
   i_72 = i_72 + 1;
   ivtmp_58 = ivtmp_58 + 2;
   ivtmp_49 = ivtmp_49 + 3;
   if (i_72 * i_72 <= 499999)
-    goto sievebb_4;
+    goto sieve_funcbb_4;
   else
-    goto sievebb_8;
+    goto sieve_funcbb_8;
 //  # SUCC: 4 [99.0%]  (true,exec) 8 [1.0%]  (false,exec)
 
-sievebb_8:
+sieve_funcbb_8:
 //  # PRED: 7 [1.0%]  (false,exec)
   j = 2;
   i = 0;
 //  # SUCC: 9 [100.0%]  (fallthru,exec)
 
-sievebb_9:
+sieve_funcbb_9:
 //  # PRED: 11 [99.0%]  (true,exec) 8 [100.0%]  (fallthru,exec)
   D_2240 = (unsigned int) j;
   if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2240 * 4) != 0)
-    goto sievebb_10;
+    goto sieve_funcbb_10;
   else
-    goto sievebb_11;
+    goto sieve_funcbb_11;
 //  # SUCC: 10 [50.0%]  (true,exec) 11 [50.0%]  (false,exec)
 
-sievebb_10:
+sieve_funcbb_10:
 //  # PRED: 9 [50.0%]  (true,exec)
   results[i] = D_2240;
   i = i + 1;
 //  # SUCC: 11 [100.0%]  (fallthru,exec)
 
-sievebb_11:
+sieve_funcbb_11:
 //  # PRED: 9 [50.0%]  (false,exec) 10 [100.0%]  (fallthru,exec)
   j = j + 1;
   if (j != 500000)
-    goto sievebb_9;
+    goto sieve_funcbb_9;
   else
-    goto sievebb_12;
+    goto sieve_funcbb_12;
 //  # SUCC: 9 [99.0%]  (true,exec) 12 [1.0%]  (false,exec)
 
-sievebb_12:
+sieve_funcbb_12:
 //  # PRED: 11 [1.0%]  (false,exec)
   if (results[0] == 0)
-    goto sievebb_16;
+    goto sieve_funcbb_16;
   else
-    goto sievebb_13;
+    goto sieve_funcbb_13;
 //  # SUCC: 16 [4.5%]  (true,exec) 13 [95.5%]  (false,exec)
 
-sievebb_13:
+sieve_funcbb_13:
 //  # PRED: 12 [95.5%]  (false,exec)
   ivtmp_36 = (uintptr_t)&results;
   D_2230 = ivtmp_36 + 1999996;
 //  # SUCC: 14 [100.0%]  (fallthru,exec)
 
-sievebb_14:
+sieve_funcbb_14:
 //  # PRED: 15 [98.9%]  (true,exec) 13 [100.0%]  (fallthru,exec)
   if (*(unsigned int*)((uintptr_t)ivtmp_36 + 4) == 0)
-    goto sievebb_16;
+    goto sieve_funcbb_16;
   else
-    goto sievebb_15;
+    goto sieve_funcbb_15;
 //  # SUCC: 16 [4.5%]  (true,exec) 15 [95.5%]  (false,exec)
 
-sievebb_15:
+sieve_funcbb_15:
 //  # PRED: 14 [95.5%]  (false,exec)
   ivtmp_36 = ivtmp_36 + 4;
   if (ivtmp_36 != D_2230)
-    goto sievebb_14;
+    goto sieve_funcbb_14;
   else
-    goto sievebb_16;
+    goto sieve_funcbb_16;
 //  # SUCC: 14 [98.9%]  (true,exec) 16 [1.1%]  (false,exec)
 
-sievebb_16:
+sieve_funcbb_16:
 //  # PRED: 14 [4.5%]  (true,exec) 15 [1.1%]  (false,exec) 12 [4.5%]  (true,exec)
   m.v = 0;
   return;
@@ -180,7 +180,7 @@ sievebb_16:
 int main(void) {
 mainbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
-  sieve ();
+  sieve_func ();
   return 0;
 //  # SUCC: EXIT [100.0%] 
 

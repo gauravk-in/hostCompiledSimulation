@@ -2,10 +2,11 @@ import logging
 from optparse import OptionParser
 from subprocess import call
 import linecache as lc
+from collections import deque
 
-from instrument import *
 from match_cfg import match_cfg
 from armEmulate import *
+from gdb_info import *
 
 
 def find(f, seq):
@@ -13,93 +14,7 @@ def find(f, seq):
     for item in seq:
         if f(item): 
             return item
-
-
-def debugListGlobalVariables(listGlobalVariables):
-    print ""
-    for globVar in listGlobalVariables:
-        print ("%s\t\t0x%x\t\t(type=%s; length=%d) - %s:%d" % 
-               (globVar.name, globVar.address, globVar.type, globVar.length, 
-                globVar.file, globVar.lineNum))
-    print ""
-
-
-def getGlobalVariablesInfoFromGDB(listBinaryFileNames):
-    
-    re_AllDefinedVariables = re.compile("All Defined Variables:")
-    re_File = re.compile("File\s(.*):")
-    re_Variable = re.compile("((?:[\w_]*\s)*)([\w_]*)(?:\[([0-9]*)\])*;")
-    re_VarAdd = re.compile("Symbol \"([\w_]*)\" is static storage at address ([0-9a-fA-Fx]*).")
-    
-    listGlobalVariables = []
-    
-    for fileName in listBinaryFileNames:
         
-        # Fetch Global Variable Names from this file
-        gdbXFileName = fileName + ".globalVarNames.gdbx"
-        gdbXFile = open(gdbXFileName, 'w')
-        
-        command = "info variables\n"
-        gdbXFile.write(command)
-        gdbXFile.write("quit\n")
-        gdbXFile.close()
-        
-        gdbGlobalVarNamesOutputFileName = fileName + ".globalVarNames.gdbo"
-        gdbGlobalVarNamesOutputFile = open(gdbGlobalVarNamesOutputFileName, 'w')
-        call(args=["gdb", "--quiet", "--command="+gdbXFileName, fileName], 
-             stdout=gdbGlobalVarNamesOutputFile)
-        gdbGlobalVarNamesOutputFile.close()
-        
-        gdbGlobalVarNamesOutputFile = open(gdbGlobalVarNamesOutputFileName, 'r')
-        currFileName = ""
-        currListGlobalVariables = []
-        for line in gdbGlobalVarNamesOutputFile:
-            m = re_File.match(line)
-            if m is not None:
-                currFileName = m.group(1)
-            
-            m = re_Variable.match(line)
-            if m is not None:
-                dataType = m.group(1)
-                varName = m.group(2)
-                if m.group(3) is not None:
-                    varLen = int(m.group(3))
-                else:
-                    varLen = 1
-                
-                currListGlobalVariables.append(GlobalVariable(name=varName,
-                                                          type=dataType,
-                                                          length=varLen,
-                                                          file=currFileName))
-        gdbGlobalVarNamesOutputFile.close()
-        
-        # Fetch addresses for Global Variables in this file
-        gdbXGlobalVarAddFileName = fileName + ".globalVarAdd.gdbx"
-        gdbXGlobalVarAddFile = open(gdbXGlobalVarAddFileName, 'w')
-            
-        for var in currListGlobalVariables:
-            gdbXGlobalVarAddFile.write("info address %s\n" % (var.name))
-        
-        gdbXGlobalVarAddFile.write("quit\n")
-        gdbXGlobalVarAddFile.close()
-        
-        gdbGlobalVarAddOutputFileName = fileName + ".globalVarAdd.gdbo"
-        gdbGlobalVarAddOutputFile = open(gdbGlobalVarAddOutputFileName, 'w')
-        call(args=["gdb", "--quiet", "--command="+gdbXGlobalVarAddFileName, fileName], 
-             stdout=gdbGlobalVarAddOutputFile)
-        gdbGlobalVarAddOutputFile.close()
-        
-        gdbGlobalVarAddOutputFile = open(gdbGlobalVarAddOutputFileName, 'r')
-        for line in gdbGlobalVarAddOutputFile:
-            m = re_VarAdd.match(line)
-            if m is not None:
-                var = find(lambda v: v.name == m.group(1), currListGlobalVariables)
-                var.setAddress(int(m.group(2), 16))
-        
-        listGlobalVariables = listGlobalVariables + currListGlobalVariables
-    
-    debugListGlobalVariables(listGlobalVariables)
-    return listGlobalVariables
 
 re_instructionLineObj = re.compile('\s*([0-9a-f]*):\s*([0-9a-f]*)\s*(.*)')
 re_loadPCRelative = re.compile("\s*ldr\w*\s*([\w]{2}),\s*\[pc,\s#[\d]*\]\s*;\s*([a-fA-F0-9]*)\s*<\w*\+0x[a-fA-F0-9]*>")
@@ -131,6 +46,23 @@ def getGlobalVariableAddressTableForFunc(funcObj):
     
     return dictGlobVarAddAtTableAddress
 
+def findLocalVar(funcName, addRelSP, listLocalVariables):
+    for var in listLocalVariables:
+        if var.funcName == funcName:
+            if var.address <= addRelSP and (var.address + var.size) > addRelSP :
+                return var
+    return None
+
+def findGlobalVar(address, listGlobalVariables):
+    for var in listGlobalVariables:
+        if var.address <= address and (var.address + var.size) > address:
+            return var
+    return None
+
+class FunctionInitState:
+    def __init__(self, name, initRegState = None):
+        self.name = name
+        self.initRegState = initRegState
 
 def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
     
@@ -140,11 +72,25 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
     
     listGlobalVariables = getGlobalVariablesInfoFromGDB(listBinaryFileNames)
     
-    for funcObj in listObjdumpFunctions:
-        funcISC = find(lambda fn: fn.functionName == funcObj.functionName, listISCFunctions)
+    listLocalVariables = getLocalVariablesForAllFunc(listBinaryFileNames, listObjdumpFunctions)
+    
+    listEmulatedFunctions = []
+    queuePendingFunction = deque([FunctionInitState("main")])
+    
+    currFuncSpilledRegister = {}
+    
+    while queuePendingFunction:
+        func = queuePendingFunction.popleft()
+        logging.debug("")
+        logging.debug("Starting Emulation of Func %s" % func.name)
+        funcObj = find(lambda fn: fn.functionName == func.name, listObjdumpFunctions)
+        assert(funcObj is not None)
+        funcISC = find(lambda fn: fn.functionName == func.name, listISCFunctions)
         assert(funcISC is not None)
+        listEmulatedFunctions.append(func.name)
+        
         dictGlobVarAddAtTableAddress = getGlobalVariableAddressTableForFunc(funcObj)
-        armEmu = ArmEmulator(dictGlobVarAddAtTableAddress)
+        armEmu = ArmEmulator(dictGlobVarAddAtTableAddress, func.initRegState)
         
         for lineNumObj in range(funcObj.startLine, funcObj.endLine + 1):
             lineObj = lc.getline(funcObj.fileName, lineNumObj)
@@ -157,7 +103,74 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                 if ret == -1:
                     logging.debug("\t %d: Instruction could not be emulated!" % lineNumObj)
                     return -1
+                                
+                m = re_branchInst.match(instObj)
+                if m is not None:
+                    branchToFunction = m.group("labelFunction")
+                    if branchToFunction is not None:
+                        if branchToFunction == (funcObj.functionName or 
+                                                branchToFunction in listEmulatedFunctions):
+                            continue
+                        else:
+                            funcInQueue = find(lambda fn: fn.name == branchToFunction, queuePendingFunction)
+                            if funcInQueue is not None:
+                                continue
+                            else:
+                                initRegState = armEmu.reg
+                                logging.debug("Adding func %s to queue!" % branchToFunction)
+                                queuePendingFunction.append(FunctionInitState(branchToFunction,
+                                                                              initRegState))
+                                continue
+                    else:
+                        continue
                 
+                m = re_storeInst.match(instObj)
+                if m is not None:
+                    for baseRegLabel in ["am2_1BaseReg", 
+                                         "am2_2BaseReg", 
+                                         "am2_3BaseReg", 
+                                         "am2_4BaseReg", 
+                                         "am2_5BaseReg", 
+                                         "am2_6BaseReg", 
+                                         "am2_7BaseReg"]:
+                        if m.group(baseRegLabel) is not None:
+                            break
+                    baseReg = m.group(baseRegLabel)
+                    baseRegVal = armEmu.reg[baseReg].value
+                    destReg = m.group("destReg")
+                    if m.group("am2_2ImedOff") is not None:
+                        strAdd = baseRegVal + int(m.group("am2_2ImedOff"))
+                    elif m.group("am2_3OffsetReg") is not None:
+                        strAdd = baseRegVal + armEmu.reg[m.group("am2_3OffsetReg")].value
+                    else:
+                        strAdd = baseRegVal
+                    
+                    if baseRegVal >= armEmu.reg["sp"].value:
+                        localVar = findLocalVar(funcObj.functionName, 
+                                                strAdd - armEmu.reg["sp"].value, 
+                                                listLocalVariables)
+                        if localVar is not None:
+                            logging.debug(" %d: Writing local var %s" %
+                                          (lineNumObj, localVar.name))
+                        else:
+                            destRegVal = armEmu.reg[destReg].value
+                            currFuncSpilledRegister[strAdd - armEmu.reg["sp"].value] = destRegVal
+                            logging.debug(" %d: Spilling Register %s to address %d ( = %d)" % 
+                                          (lineNumObj, destReg, 
+                                           (strAdd - armEmu.reg["sp"].value),
+                                           destRegVal))
+                        continue
+                    else:
+                        globalVar = findGlobalVar(strAdd,
+                                              listGlobalVariables)
+                        if globalVar is not None:
+                            logging.debug(" %d: Writing Global Var %s" % 
+                                          (lineNumObj, globalVar.name))
+                            continue
+                        else:
+                            logging.error(" %d: %s" % (lineNumObj, instObj))
+                            continue
+                            
                 m = re_loadInst.match(instObj)
                 if m is not None:
                     for baseRegLabel in ["am2_1BaseReg", 
@@ -170,6 +183,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                         if m.group(baseRegLabel) is not None:
                             break
                     baseReg = m.group(baseRegLabel)
+                    destReg = m.group("destReg")
                     if baseReg == "pc":
                         comment = m.group("comment")
                         m_comment = re.match("\s*([0-9a-f]*)\s*\<.*\>", comment)
@@ -188,26 +202,42 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                         continue
                     else:
                         baseRegVal = armEmu.reg[baseReg].value
-                        globalVar = find(lambda var: var.address == baseRegVal,
-                                         listGlobalVariables)
-                        if globalVar is not None:
-                            logging.debug(" %d: Loading content of Global Var %s" % 
-                                          (lineNumObj, globalVar.name))
-                            continue
-                        elif baseRegVal > armEmu.reg["sp"]:
-                            logging.debug(" %d: Accessing some local variable" %
-                                          (lineNumObj))
-                            # TODO: Which Local Variable?
+                        if m.group("am2_2ImedOff") is not None:
+                            ldrAdd = baseRegVal + int(m.group("am2_2ImedOff"))
+                        elif m.group("am2_3OffsetReg") is not None:
+                            ldrAdd = baseRegVal + armEmu.reg[m.group("am2_3OffsetReg")].value
+                        else:
+                            ldrAdd = baseRegVal
+                        
+                        if baseRegVal >= armEmu.reg["sp"].value:
+                            localVar = findLocalVar(funcObj.functionName, 
+                                                    ldrAdd - armEmu.reg["sp"].value, 
+                                                    listLocalVariables)
+                            if localVar is not None:
+                                logging.debug(" %d: Reading local var %s" %
+                                              (lineNumObj, localVar.name))
+                            else:
+                                armEmu.reg[destReg].setValue(currFuncSpilledRegister[ldrAdd - armEmu.reg["sp"].value])
+                                logging.debug(" %d: Reading Spilled Register in %s from address %d ( = %d)" % 
+                                              (lineNumObj, destReg, 
+                                               (ldrAdd - armEmu.reg["sp"].value),
+                                               armEmu.reg[destReg].value))
                             continue
                         else:
-                            logging.debug(" %d: %s" % (lineNumObj, instObj))
-                            continue
+                            globalVar = findGlobalVar(ldrAdd,
+                                                  listGlobalVariables)
+                            if globalVar is not None:
+                                logging.debug(" %d: Reading Global Var %s" % 
+                                              (lineNumObj, globalVar.name))
+                                continue
+                            else:
+                                logging.error(" %d: %s" % (lineNumObj, instObj))
+                                continue
                         
             else:
                 logging.error(" %d: Instruction does not match!")
                 return -1
             
-        armEmu.printRegisters()
 
 
 if __name__ == "__main__":

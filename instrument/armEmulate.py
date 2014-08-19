@@ -36,12 +36,14 @@ listGPRegNames = ["r0",
 
 INIT_STACK_POINTER_VAL = 0xffffffff
 
-
 class ArmEmulator:
-    def __init__(self, dictGlobVarAddAtTableAddress):
-        self.reg = {}
-        for regName in listGPRegNames:
-            self.reg[regName] = Register(regName)
+    def __init__(self, dictGlobVarAddAtTableAddress, listInitRegisterState = None):
+        if listInitRegisterState == None:
+            self.reg = {}
+            for regName in listGPRegNames:
+                self.reg[regName] = Register(regName)
+        else:
+            self.reg = listInitRegisterState
             
         # For our emulation purpose, we don't care what the actual value of SP
         #     is. However, we do want to initialize the SP so that we can
@@ -51,13 +53,15 @@ class ArmEmulator:
 
     def printRegisters(self):
         for regName in listGPRegNames:
-            print "%s = %d" % (regName, self.reg[regName].value)
+            if self.reg[regName].isValid:
+                print "%s = %d" % (regName, self.reg[regName].value)
+            else:
+                print "%s = Invalid" % (regName)
 
     def setDictGlobVarTable(self, dictGlobVarAddAtTableAddress):
         self.dictGlobVarAddAtTableAddress = dictGlobVarAddAtTableAddress
 
     def emulate(self, inst):
-        
         m = re_movInst.match(inst)
         if m is not None:
             destReg = m.group("destReg")
@@ -74,11 +78,11 @@ class ArmEmulator:
             
             elif m.group("op2RegShifted") is not None:
                 self.reg[destReg].setInvalid()
-                logging.debug("\t Move Instruction with Shifted Operand Ignored!")
+                logging.debug("\t Move: with Shifted Operand: Ignored!")
                 return 0
             
             else:
-                logging.error("\t Move instruction does not match any format!")
+                logging.error("\t Move: instruction does not match any format! ***")
                 return -1
             
         m = re_mvnInst.match(inst)
@@ -97,11 +101,11 @@ class ArmEmulator:
             
             elif m.group("op2RegShifted") is not None:
                 self.reg[destReg].setInvalid()
-                logging.debug("\t Move Instruction with Shifted Operand Ignored!")
+                logging.debug("\t Move: with Shifted Operand: Ignored!")
                 return 0
             
             else:
-                logging.error("\t Move instruction does not match any format!")
+                logging.error("\t Move: instruction does not match any format! ***")
                 return -1
             
         m = re_arithInst.match(inst)
@@ -126,12 +130,12 @@ class ArmEmulator:
                     return 0
                 
                 elif m.group("op2RegShifted") is not None:
-                    self.reg[destReg].setInvalid()
-                    logging.debug("\t Add Instruction with shifted operand2 ignored!")
+                    self.reg[destReg].setValue(self.reg[op1Reg].value + self.reg[m.group("op2RegShifted")].value)
+                    logging.debug("\t Add: with shifted operand2: approximated! ( = %d)" % (self.reg[destReg].value))
                     return 0
                 
                 else:
-                    logging.error("\t Add Instruction, but operand 2 does not match expected format!")
+                    logging.error("\t Add: operand 2 does not match expected format! ***")
                     return -1
                 
             elif opcode in ["sub", "sbc", "rsb", "rsc"]:
@@ -150,19 +154,19 @@ class ArmEmulator:
                     return 0
                 
                 elif m.group("op2RegShifted") is not None:
-                    self.reg[destReg].setInvalid()
-                    logging.debug("\t Sub Instruction with shifted operand2 ignored!")
+                    self.reg[destReg].setValue(self.reg[op1Reg].value - self.reg[m.group("op2RegShifted")].value)
+                    logging.debug("\t Sub: with shifted operand2: approximated! ( = %d)" % (self.reg[destReg].value))
                     return 0
                 
                 else:
-                    logging.error("\t Sub Instruction, but operand 2 does not match expected format!")
+                    logging.error("\t Sub: operand 2 does not match expected format! ***")
                     return -1
                 
             else:
                 # All other arithmetic instructions, like mul etc.
                 # These instructions shouldn't matter for us, so ignore them.
                 self.reg[destReg].setInvalid()
-                logging.debug("\t Arithmetic Instruction ignored!")
+                logging.debug("\t Arithmetic: Instruction ignored!")
                 return 0
             
         m = re_arithLongInst.match(inst)
@@ -171,28 +175,28 @@ class ArmEmulator:
             destRegLow = m.group("destRegLow")
             self.reg[destRegHi].setInvalid()
             self.reg[destRegLow].setInvalid()
-            logging.debug("\t Ignoring Arithmetic long instructions.")
+            logging.debug("\t Arithmetic long: Ignored!.")
             return 0
         
         m = re_shiftInst.match(inst)
         if m is not None:
             destReg = m.group("destReg")
             self.reg[destReg].setInvalid()
-            logging.debug("\t Ignoring Shift Instruction.")
+            logging.debug("\t Shift: Ignored!.")
             return 0
         
         m = re_logicInst.match(inst)
         if m is not None:
             destReg = m.group("destReg")
             self.reg[destReg].setInvalid()
-            logging.debug("\t Logical Instruction Ignored!")
+            logging.debug("\t Logical: Ignored!")
             return 0
             
             
         m = re_branchInst.match(inst)
         if m is not None:
             # Ignore the branch instructions
-            logging.debug("\t Branch Instruction Ignored!")
+            logging.debug("\t Branch: Ignored!")
             return 0
             
         m = re_loadInst.match(inst)
@@ -218,7 +222,7 @@ class ArmEmulator:
                 if m is not None:
                     address = int(m.group("address"), 16)
                 else:
-                    logging.error("\t Load PC Relative, comment could not be matched!")
+                    logging.error("\t Load: PC Relative: comment could not be matched! ***")
                     return -1
                 if address in self.dictGlobVarAddAtTableAddress:
                     globVarAddress = self.dictGlobVarAddAtTableAddress[address]
@@ -227,22 +231,22 @@ class ArmEmulator:
                                   (destReg, self.reg[destReg].value))
                     return 0
                 else:
-                    logging.error("\t Load PC Relative address could not be found in table!")
+                    logging.error("\t Load: PC Relative: address could not be found in table!")
                     return -1
                 
             else:
                 # Ignoring other load instructions
-                logging.debug("\t Ignoring Load Instruction (not PC Relative).")
+                logging.debug("\t Load: Ignored! (not PC Relative).")
                 return 0
             
         m = re_storeInst.match(inst)
         if m is not None:
-            logging.debug("\t Store Instruction ignored!")
+            logging.debug("\t Store: Ignored!")
             return 0
         
         m = re_cmpInst.match(inst)
         if m is not None:
-            logging.debug("\t Compare Instruction ignored!")
+            logging.debug("\t Compare: Ignored!")
             return 0
 
         m = re_pushInst.match(inst)
@@ -250,7 +254,7 @@ class ArmEmulator:
             pushRegs = m.group("pushRegs")
             numRegs = pushRegs.count(',') + 1
             self.reg["sp"].setValue(self.reg["sp"].value + (numRegs * 4))
-            logging.debug("\t Push Instruction, sp incremented by %d ( = %d )" % 
+            logging.debug("\t Push: sp incremented by %d ( = %d )" % 
                           ((numRegs * 4), self.reg["sp"].value))
             return 0
             
@@ -259,14 +263,14 @@ class ArmEmulator:
             popRegs = m.group("popRegs")
             numRegs = popRegs.count(',') + 1
             self.reg["sp"].setValue(self.reg["sp"].value - (numRegs * 4))
-            logging.debug("\t Pop Instruction, sp decremented by %d ( = %d )" % 
+            logging.debug("\t Pop: sp decremented by %d ( = %d )" % 
                           ((numRegs * 4), self.reg["sp"].value))
             return 0
         
         m = re_ignoredInst.match(inst)
         if m is not None:
             opcode = m.group("ignoredOpcode")
-            logging.debug("\t %s instruction being ignored" % opcode)
+            logging.debug("\t %s: Ignored!" % opcode)
             return 0
         
         # If here, instruction was unable to be matched!
