@@ -2,7 +2,7 @@ include ../Makefile.macros
 include Makefile.macros
 
 #EXAMPLES = sieve crc32 adpcm sha basicmath
-EXAMPLES = crc32 basicmath
+EXAMPLES = simple 
 #EXAMPLES = sha sieve
 #EXAMPLES = sha 
 STARTADR = 0x10000214

@@ -64,6 +64,7 @@ class FunctionInitState:
         self.name = name
         self.initRegState = initRegState
 
+# TODO: Probably need to change the name of this function
 def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
     
     (listISCFunctions, listObjdumpFunctions) = match_cfg(listISCFileNames, 
@@ -103,7 +104,13 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                 if ret == -1:
                     logging.debug("\t %d: Instruction could not be emulated!" % lineNumObj)
                     return -1
-                                
+                
+                '''
+                Branch Instruction
+                  - If branch is to another function, add the called function to
+                    queue of pending functions.
+                  - Ignore all other branch instructions.
+                '''
                 m = re_branchInst.match(instObj)
                 if m is not None:
                     branchToFunction = m.group("labelFunction")
@@ -122,8 +129,21 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                                                                               initRegState))
                                 continue
                     else:
+                        logging.error("labelFunction in branch instruction could not be matched!")
                         continue
                 
+                '''
+                Store Instruction
+                  - Calculate the address in the store instruction.
+                  - If the address is in Stack, 
+                      - Writing to a local variable. Look up the list of local
+                        variables, and find which one.
+                      - Spilling Registers. Keep a dictionary mapping address 
+                        (relative to SP) and the content of the spilled register
+                  - If address not in stack, it could be accessing Global
+                    Variable. Look up table of Global Variables, and if no match
+                    found, report error.
+                '''
                 m = re_storeInst.match(instObj)
                 if m is not None:
                     for baseRegLabel in ["am2_1BaseReg", 
@@ -138,6 +158,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                     baseReg = m.group(baseRegLabel)
                     baseRegVal = armEmu.reg[baseReg].value
                     destReg = m.group("destReg")
+                    # Calculate store address based on addressing mode used.
                     if m.group("am2_2ImedOff") is not None:
                         strAdd = baseRegVal + int(m.group("am2_2ImedOff"))
                     elif m.group("am2_3OffsetReg") is not None:
@@ -170,7 +191,23 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                         else:
                             logging.error(" %d: %s" % (lineNumObj, instObj))
                             continue
-                            
+                
+                '''
+                Load Instruction
+                  - If the base address is PC,
+                      - PC Relative Load instruction is used for Global Variables
+                        or Values more than 32 bit long. Check if the value
+                        loaded matches with address of a global variable.
+                  - If base address is not PC, calculate the address to be
+                    be loaded from. If the address is in stack, it may be
+                      - trying to load a local variable. Match the address to 
+                        a local variable. 
+                      - reading from a spilled register. Fetch the value of 
+                        the spilled register stored at the address.
+                  - If the address is not in stack, it must be trying to load
+                    content of a global variable. Match the address to a global
+                    variable. If matching is not found, report error.
+                '''
                 m = re_loadInst.match(instObj)
                 if m is not None:
                     for baseRegLabel in ["am2_1BaseReg", 
@@ -184,6 +221,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                             break
                     baseReg = m.group(baseRegLabel)
                     destReg = m.group("destReg")
+                    # PC Relative Load Instruction
                     if baseReg == "pc":
                         comment = m.group("comment")
                         m_comment = re.match("\s*([0-9a-f]*)\s*\<.*\>", comment)
@@ -202,6 +240,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                         continue
                     else:
                         baseRegVal = armEmu.reg[baseReg].value
+                        # Calculate load address based on addressing mode used.
                         if m.group("am2_2ImedOff") is not None:
                             ldrAdd = baseRegVal + int(m.group("am2_2ImedOff"))
                         elif m.group("am2_3OffsetReg") is not None:
@@ -237,7 +276,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
             else:
                 logging.error(" %d: Instruction does not match!")
                 return -1
-            
+
 
 
 if __name__ == "__main__":

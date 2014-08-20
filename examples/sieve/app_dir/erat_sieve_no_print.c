@@ -9,7 +9,7 @@ struct test {
   unsigned int k;
 } m = { 1, 1 };
 
-void sieve()
+void sieve_func()
  {
    unsigned int sieve[N];
  
@@ -51,6 +51,6 @@ void sieve()
 
 int main(void)
 {
-  sieve();
+  sieve_func();
   return 0;
 }
