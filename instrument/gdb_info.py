@@ -11,35 +11,75 @@ def find(f, seq):
     for item in seq:
         if f(item): 
             return item
-
-class GlobalVariable:
+        
+class Variable:
     def __init__(self):
+        self.isLocal = False
         self.name = ""
-        self.address = 0
         self.type = ""
         self.length = -1
         self.size = -1
-        self.file = ""
-        self.lineNum = -1
-        
-    def __init__(self, name, type, length, file):
-        self.name = name
         self.address = -1
+        self.scope = ""
+    
+    def __init__(self, isLocal, name, type, length, scope, address = -1, size = -1):
+        self.isLocal = isLocal
+        self.name = name
         self.type = type
         self.length = length
-        self.file = file
-        self.lineNum = -1
-        
+        self.scope = scope
+        self.address = address
+        self.size = size
+    
     def setAddress(self, address):
         self.address = address
-        
+    
     def setSize(self, size):
         self.size = size
         
     def debug(self):
-        print ("%s\t\t0x%x\t\t(type=%s; size=%d) - %s" % 
-               (self.name, self.address, self.type, self.size, 
-                self.file))
+        if self.isLocal == True:
+            print ("LocalVar: "),
+        else:
+            print("GlobalVar: "),
+        print("%s; add=0x%x; scope=\"%s\"; type=\"%s\"; size=%d;" % 
+              (self.name, self.address, self.scope, self.type, self.size))
+            
+def debugListVariables(listVariables):
+    print ""
+    for var in listVariables:
+        var.debug()
+    print ""
+
+
+# class GlobalVariable:
+#     def __init__(self):
+#         self.name = ""
+#         self.address = 0
+#         self.type = ""
+#         self.length = -1
+#         self.size = -1
+#         self.file = ""
+#         self.lineNum = -1
+#         
+#     def __init__(self, name, type, length, file):
+#         self.name = name
+#         self.address = -1
+#         self.type = type
+#         self.length = length
+#         self.file = file
+#         self.lineNum = -1
+#         
+#     def setAddress(self, address):
+#         self.address = address
+#         
+#     def setSize(self, size):
+#         self.size = size
+#         
+#     def debug(self):
+#         print ("%s\t\t0x%x\t\t(type=%s; size=%d) - %s" % 
+#                (self.name, self.address, self.type, self.size, 
+#                 self.file))
 
 
 def debugListGlobalVariables(listGlobalVariables):
@@ -100,10 +140,11 @@ def getGlobalVariablesInfoFromGDB(listBinaryFileNames):
                     varLen = int(m.group(3))
                 else:
                     varLen = 1
-                currListGlobalVariables.append(GlobalVariable(name=varName,
-                                                          type=dataType,
-                                                          length=varLen,
-                                                          file=currFileName))
+                currListGlobalVariables.append(Variable(isLocal = False,
+                                                        name=varName,
+                                                        type=dataType,
+                                                        length=varLen,
+                                                        scope=currFileName))
         gdbOFile.close()
         
         # Fetch addresses for Global Variables in this file
@@ -145,26 +186,26 @@ def getGlobalVariablesInfoFromGDB(listBinaryFileNames):
         
         listGlobalVariables = listGlobalVariables + currListGlobalVariables
     
-    debugListGlobalVariables(listGlobalVariables)
+    debugListVariables(listGlobalVariables)
     return listGlobalVariables
 
 
-class LocalVariable:
-    def __init__(self, name, address, type, size, funcName):
-        self.name = name
-        self.type = type
-        self.address = address
-        self.funcName = funcName
-        self.size = size
-        
-    def debug(self):
-        logging.debug("LocalVar %s in func %s, address = %d, type = \"%s\", size = %d" % 
-                      (self.name, self.funcName, self.address, self.type, self.size))
-
-def debugPrintListLocalVariables(listLocalVariables):
-    for var in listLocalVariables:
-        var.debug()
-    print ""
+# class LocalVariable:
+#     def __init__(self, name, address, type, size, funcName):
+#         self.name = name
+#         self.type = type
+#         self.address = address
+#         self.funcName = funcName
+#         self.size = size
+#         
+#     def debug(self):
+#         logging.debug("LocalVar %s in func %s, address = %d, type = \"%s\", size = %d" % 
+#                       (self.name, self.funcName, self.address, self.type, self.size))
+# 
+# def debugPrintListLocalVariables(listLocalVariables):
+#     for var in listLocalVariables:
+#         var.debug()
+#     print ""
 
 def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
     binaryFileName = listBinaryFileNames[0]    
@@ -287,14 +328,18 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
             m = re_sizeLine.match(line)
             if m is not None:
                 varSize = int(m.group("varSize"))
-                listLocalVariables.append(LocalVariable(varName, address, 
-                                                        varType, 
-                                                        varSize,
-                                                        func.functionName))
+                listLocalVariables.append(Variable(isLocal = True,
+                                                   name = varName, 
+                                                   type = varType, 
+                                                   length = -1, 
+                                                   scope = func.functionName, 
+                                                   address = address, 
+                                                   size = varSize))
+                                                   
                 continue
         gdbOFile.close()
     
-    debugPrintListLocalVariables(listLocalVariables)        
+    debugListVariables(listLocalVariables)        
     return listLocalVariables
     
 def sizeOf(type):

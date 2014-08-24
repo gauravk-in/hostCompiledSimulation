@@ -16,6 +16,8 @@
 ** the decompressor on it.
 */
 
+/*sds*/
+
 #include <stdio.h>
 #include "adpcm.h"
 #include "in_small.h"
@@ -28,6 +30,8 @@
 //unsigned int ARR_SIZE = 684433;
 short int pcmdata[DATASIZE];
 char adpcmdata[DATASIZE/2];
+
+int a[123];
 
 struct adpcm_state coder_1_state;
 

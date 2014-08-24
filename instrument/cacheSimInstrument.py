@@ -48,13 +48,15 @@ def getGlobalVariableAddressTableForFunc(funcObj):
 
 def findLocalVar(funcName, addRelSP, listLocalVariables):
     for var in listLocalVariables:
-        if var.funcName == funcName:
+        assert (var.isLocal == True)
+        if var.scope == funcName:
             if var.address <= addRelSP and (var.address + var.size) > addRelSP :
                 return var
     return None
 
 def findGlobalVar(address, listGlobalVariables):
     for var in listGlobalVariables:
+        assert (var.isLocal == False)
         if var.address <= address and (var.address + var.size) > address:
             return var
     return None
@@ -64,21 +66,122 @@ class FunctionInitState:
         self.name = name
         self.initRegState = initRegState
 
+
+class LoadStoreInfo:
+    def __init__(self):
+        self.isLoad = False
+        self.var = None
+        self.isPCRelLoad = False
+        self.PCRelAdd = -1
+        self.isSpiltRegister = False
+        self.spiltRegAdd = -1
+        self.isAccuratelyMatched = False
+        self.lineNumObj = -1
+        
+    def loadVar(self, var, lineNum):
+        self.isLoad = True
+        self.var = var
+        self.isAccuratelyMatched = True
+        self.lineNumObj = lineNum
+        
+    def storeVar(self, var, lineNum):
+        self.isLoad = False
+        self.var = var
+        self.isAccuratelyMatched = True
+        self.lineNumObj = lineNum
+        
+    def loadInaccurate(self, lineNum):
+        self.isLoad = True
+        self.var = None
+        self.lineNumObj = lineNum
+        self.isAccuratelyMatched = False
+        
+    def storeInaccurate(self, lineNum):
+        self.isLoad = False
+        self.var = None
+        self.lineNumObj = lineNum
+        self.isAccuratelyMatched = False
+        
+    def loadPCRel(self, PCRelAdd, lineNum):
+        self.isLoad = True
+        self.isPCRelLoad = True
+        self.PCRelAdd = PCRelAdd
+        self.lineNumObj = lineNum
+        self.isAccuratelyMatched = True
+        
+    def spillReg(self, spiltRegAdd, lineNum):
+        self.isLoad = False
+        self.isSpiltRegister = True
+        self.spiltRegAdd = spiltRegAdd
+        self.lineNumObj = lineNum
+        self.isAccuratelyMatched = True
+        
+    def readSpiltReg(self, spiltRegAdd, lineNum):
+        self.isLoad = True
+        self.isSpiltRegister = True
+        self.spiltRegAdd = spiltRegAdd
+        self.lineNumObj = lineNum
+        self.isAccuratelyMatched = True
+        
+    def debug(self):
+        if self.isAccuratelyMatched == True:
+            if self.isLoad == True:
+                if self.isPCRelLoad == False:
+                    if self.isSpiltRegister == False:
+                        print("Load "),
+                        if self.var.isLocal == True:
+                            print("LocalVar "),
+                        else:
+                            print("GlobalVar "),
+                        print("%s at line %d" % (self.var.name, self.lineNumObj))
+                    else: # isSpiltRegister == True
+                        print("Reading Spilt Register from add %d in stack on line %d" %
+                              (self.spiltRegAdd, self.lineNumObj))
+                else: # isPCRelLoad == True
+                    print("PC Relative Load from add %d on line %d" % 
+                          (self.PCRelAdd, self.lineNumObj))
+            else: # isLoad == False
+                if self.isSpiltRegister == False:
+                    print("Store "),
+                    if self.var.isLocal == True:
+                        print("LocalVar "),
+                    else:
+                        print("GlobalVar "),
+                    print("%s at line %d" % (self.var.name, self.lineNumObj))
+                else: # isSpiltRegister == True
+                    print ("Spilling Register to add %d in stack on line %d" % 
+                           (self.spiltRegAdd, self.lineNumObj))
+        else:
+            if self.isLoad == True:
+                print("Inaccurately Matched Load at line %d" % self.lineNumObj)
+            else:
+                print("Inaccurately Matched Store at line %d" % self.lineNumObj)
+                
+
+def debugListLSInfo(listLSInfo):
+    print ""
+    for lsInfo in listLSInfo:
+        lsInfo.debug()
+    print ""
+
+listGlobalVariables = []
+listLocalVariables = []
+listISCFunctions = []
+listObjdumpFunctions = []
+
 # TODO: Probably need to change the name of this function
-def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
-    
-    (listISCFunctions, listObjdumpFunctions) = match_cfg(listISCFileNames, 
-                                                         listObjdumpFileNames, 
-                                                         listBinaryFileNames)
-    
-    listGlobalVariables = getGlobalVariablesInfoFromGDB(listBinaryFileNames)
-    
-    listLocalVariables = getLocalVariablesForAllFunc(listBinaryFileNames, listObjdumpFunctions)
+def identifyLoadStore():
+    global listISCFunctions
+    global listObjdumpFunctions
+    global listGlobalVariables
+    global listLocalVariables
     
     listEmulatedFunctions = []
     queuePendingFunction = deque([FunctionInitState("main")])
     
     currFuncSpilledRegister = {}
+    
+    listLSInfo = []
     
     while queuePendingFunction:
         func = queuePendingFunction.popleft()
@@ -92,6 +195,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
         
         dictGlobVarAddAtTableAddress = getGlobalVariableAddressTableForFunc(funcObj)
         armEmu = ArmEmulator(dictGlobVarAddAtTableAddress, func.initRegState)
+        currFuncListLSInfo = []
         
         for lineNumObj in range(funcObj.startLine, funcObj.endLine + 1):
             lineObj = lc.getline(funcObj.fileName, lineNumObj)
@@ -171,10 +275,18 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                                                 strAdd - armEmu.reg["sp"].value, 
                                                 listLocalVariables)
                         if localVar is not None:
+                            lsInfo = LoadStoreInfo()
+                            lsInfo.storeVar(localVar, lineNumObj)
+                            currFuncListLSInfo.append(lsInfo)
+                            del lsInfo
                             logging.debug(" %d: Writing local var %s" %
                                           (lineNumObj, localVar.name))
                         else:
                             destRegVal = armEmu.reg[destReg].value
+                            lsInfo = LoadStoreInfo()
+                            lsInfo.spillReg((strAdd - armEmu.reg["sp"].value), lineNumObj)
+                            currFuncListLSInfo.append(lsInfo)
+                            del lsInfo
                             currFuncSpilledRegister[strAdd - armEmu.reg["sp"].value] = destRegVal
                             logging.debug(" %d: Spilling Register %s to address %d ( = %d)" % 
                                           (lineNumObj, destReg, 
@@ -185,10 +297,18 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                         globalVar = findGlobalVar(strAdd,
                                               listGlobalVariables)
                         if globalVar is not None:
+                            lsInfo = LoadStoreInfo()
+                            lsInfo.storeVar(globalVar, lineNumObj)
+                            currFuncListLSInfo.append(lsInfo)
+                            del lsInfo
                             logging.debug(" %d: Writing Global Var %s" % 
                                           (lineNumObj, globalVar.name))
                             continue
                         else:
+                            lsInfo = LoadStoreInfo()
+                            lsInfo.storeInaccurate(lineNumObj)
+                            currFuncListLSInfo.append(lsInfo)
+                            del lsInfo
                             logging.error(" %d: %s" % (lineNumObj, instObj))
                             continue
                 
@@ -228,6 +348,10 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                         assert(m_comment)
                         addInTable = int(m_comment.group(1), 16)
                         assert(addInTable in dictGlobVarAddAtTableAddress)
+                        lsInfo = LoadStoreInfo()
+                        lsInfo.loadPCRel(addInTable, lineNumObj)
+                        currFuncListLSInfo.append(lsInfo)
+                        del lsInfo
                         address = dictGlobVarAddAtTableAddress[addInTable]
                         globalVar = find(lambda var: var.address == address,
                                          listGlobalVariables)
@@ -253,9 +377,17 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                                                     ldrAdd - armEmu.reg["sp"].value, 
                                                     listLocalVariables)
                             if localVar is not None:
+                                lsInfo = LoadStoreInfo()
+                                lsInfo.loadVar(localVar, lineNumObj)
+                                currFuncListLSInfo.append(lsInfo)
+                                del lsInfo
                                 logging.debug(" %d: Reading local var %s" %
                                               (lineNumObj, localVar.name))
                             else:
+                                lsInfo = LoadStoreInfo()
+                                lsInfo.readSpiltReg((ldrAdd - armEmu.reg["sp"].value), lineNumObj)
+                                currFuncListLSInfo.append(lsInfo)
+                                del lsInfo
                                 armEmu.reg[destReg].setValue(currFuncSpilledRegister[ldrAdd - armEmu.reg["sp"].value])
                                 logging.debug(" %d: Reading Spilled Register in %s from address %d ( = %d)" % 
                                               (lineNumObj, destReg, 
@@ -266,18 +398,72 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                             globalVar = findGlobalVar(ldrAdd,
                                                   listGlobalVariables)
                             if globalVar is not None:
+                                lsInfo = LoadStoreInfo()
+                                lsInfo.loadVar(globalVar, lineNumObj)
+                                currFuncListLSInfo.append(lsInfo)
+                                del lsInfo
                                 logging.debug(" %d: Reading Global Var %s" % 
                                               (lineNumObj, globalVar.name))
                                 continue
                             else:
+                                lsInfo = LoadStoreInfo()
+                                lsInfo.loadInaccurate(lineNumObj)
+                                currFuncListLSInfo.append(lsInfo)
+                                del lsInfo
                                 logging.error(" %d: %s" % (lineNumObj, instObj))
                                 continue
                         
             else:
                 logging.error(" %d: Instruction does not match!")
                 return -1
+            
+        debugListLSInfo(currFuncListLSInfo)
+        listLSInfo = listLSInfo + currFuncListLSInfo
 
+    return listLSInfo
 
+def findLoadStoreBetweenLines(listLSInfo, startLine, endLine):
+    listLSInfoInBlock = []
+    for lsInfo in listLSInfo:
+        if lsInfo.lineNumObj in range(startLine, endLine+1):
+            listLSInfoInBlock.append(lsInfo)
+    return listLSInfoInBlock
+
+def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
+    global listISCFunctions
+    global listObjdumpFunctions
+    global listGlobalVariables
+    global listLocalVariables
+    global listLSInfo
+    
+    (listISCFunctions, listObjdumpFunctions) = match_cfg(listISCFileNames, 
+                                                         listObjdumpFileNames, 
+                                                         listBinaryFileNames)
+    
+    listGlobalVariables = getGlobalVariablesInfoFromGDB(listBinaryFileNames)
+    
+    listLocalVariables = getLocalVariablesForAllFunc(listBinaryFileNames, listObjdumpFunctions)
+
+    listLSInfo = identifyLoadStore()
+    
+    for funcObj in listObjdumpFunctions:
+        fileNameObj = funcObj.fileName
+        funcISC = find(lambda fn: fn.functionName == funcObj.name, 
+                       listISCFunctions)
+        fileNameISC = funcISC.fileName
+        for blockObj in funcObj.listBlocks:
+            listLSInfoInBlock = findLoadStoreBetweenLines(listLSInfo,
+                                                          blockObj.startLine,
+                                                          blockObj.endLine)
+            for lsInfo in listLSInfoInBlock:
+                for blockIndISC in blockObj.mapsTo:
+                    blockISC = funcISC.listBlocks[blockIndISC]
+                    for lineNumISC in range(blockISC.startLine, blockISC.endLine+1):
+                        lineISC = lc.getline(fileNameISC, lineNumISC)
+                        
+                        
+    
+    
 
 if __name__ == "__main__":
 #     listISCFileNames = []
