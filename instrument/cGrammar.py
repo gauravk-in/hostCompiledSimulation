@@ -202,14 +202,23 @@ def parseStatement(line):
         logging.debug(" Writing to variable %s" % var_name)
         annotation = (var_name, "simDCache((%s_addr), \"w\");" % (var_name))
 
+    print r.value
+    # Parse the Value Expression
+    try:
+        r_value = expression.parseString(r.value[0])
+    except ParseException, e:
+        logging.error(e.msg, e.line)
+        logging.error(" Parsing Destination (LHS): %s" % e.msg)
+
+    print r_value.add.add_op.deref.deref_exp
+
     logging.debug(" Annotation = %s" % annotation[1])
     return annotation
 
-if __name__ == "__main__":
+def test():
     logging.basicConfig(level=logging.DEBUG)
     
-    lines = [ 
-             "pcmdata[start - start_40] = *(short int*)((uintptr_t)ivtmp_28);"
+    lines = [  "pcmdata[start - start_40] = *(short int*)((uintptr_t)ivtmp_28);"
              , "a = b + c;"
              , "diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;"
              , "D_2252 = (unsigned int) j_76 + D_2263;"
@@ -217,12 +226,11 @@ if __name__ == "__main__":
              , "*(outp + i) = (signed char) (signed char) outputbuffer;"
              ]
     
-    annotations = [ 
-                   "simDCache((pcmdata_addr + (start-start_40)), \"w\");"
+    annotations = [  "simDCache((pcmdata_addr + (start-start_40)), \"w\");"
                    , "simDCache((a_addr), \"w\");"
                    , "simDCache((diff_addr), \"w\");"
                    , "simDCache((D_2252_addr), \"w\");"
-                   , "simDCache((outp_addr, \"w\");"
+                   , "simDCache((outp_addr), \"w\");"
                    , "simDCache((outp_addr + (+i)), \"w\");"
                    ]
     
@@ -231,8 +239,14 @@ if __name__ == "__main__":
         annotation = parseStatement(lines[i])
         if annotation[1] != annotations[i]:
             logging.error(" Line %d does not give expected results!" % i)
-            exit
+            quit
     
     print "\n\n All Tests Passed!"
-        
-    
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+
+    line = "pcmdata[start - start_40] = *(short int*)((uintptr_t)ivtmp_28);"
+
+    parseStatement(line)
+
