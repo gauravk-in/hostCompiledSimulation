@@ -79,6 +79,7 @@ deref_index_string = ""
 array_name = ""
 array_index_lbrace_seen = 0
 array_index_string = ""
+assign_operator_seen = 0
 
 
 list_identifiers = []
@@ -149,7 +150,7 @@ def act_identifier(tokens):
                 pointer_var_name = tokens[0]
                 logging.debug(" Pointer Var Name = " + pointer_var_name)
                 # TODO Annotate Deref without Index here.
-                annotation = (pointer_var_name, "simDCache(%s_addr, \"r\");" % (pointer_var_name))
+                annotation = (pointer_var_name, "simDCache((%s_addr), %d);" % (pointer_var_name, assign_operator_seen))
                 if annotation not in list_annotations:
                     list_annotations.append(annotation)
                 deref_operator_seen = 0
@@ -159,7 +160,7 @@ def act_identifier(tokens):
             var_name = tokens[0]
             if (var_name not in list_identifiers):
                 logging.debug(" Variable name = " + var_name)
-                annotation = (var_name, "simDCache(%s_addr, \"r\");" % (var_name))
+                annotation = (var_name, "simDCache((%s_addr), %d);" % (var_name, assign_operator_seen))
                 if annotation not in list_annotations:
                     list_annotations.append(annotation)
                 # TODO Annotate Variable Access Here.
@@ -180,10 +181,11 @@ def act_rparen_expression(tokens):
         deref_index_seen = 0
         base_pointer_var_seen = 0
         # TODO ANNOTATE Deref with Index here
-        if deref_index_string != "":
-            annotation = (base_pointer_var_name, "simDCache((%s_addr + (%s)), \"r\");" % (base_pointer_var_name, deref_index_string))
-        else:
-            annotation = (base_pointer_var_name, "simDCache(%s_addr, \"r\");" % (base_pointer_var_name))
+        annotation = (base_pointer_var_name, "simDCache((%s_addr%s), %d);" % (base_pointer_var_name, deref_index_string, assign_operator_seen))
+#         if deref_index_string != "":
+#             annotation = (base_pointer_var_name, "simDCache((%s_addr + (%s)), %d);" % (base_pointer_var_name, deref_index_string, assign_operator_seen))
+#         else:
+#             annotation = (base_pointer_var_name, "simDCache(%s_addr, %d);" % (base_pointer_var_name, assign_operator_seen))
         if annotation not in list_annotations:
             list_annotations.append(annotation)
 
@@ -210,7 +212,7 @@ def act_array_index_rbrace(tokens):
     array_index_lbrace_seen = 0
 
     # TODO Annotate Array Indexed Access Here
-    annotation = (array_name, "simDCache((%s_addr + (%s)), \"r\");" % (array_name, array_index_string))
+    annotation = (array_name, "simDCache((%s_addr + (%s)), %d);" % (array_name, array_index_string, assign_operator_seen))
     if annotation not in list_annotations:
         list_annotations.append(annotation)
 
@@ -277,18 +279,11 @@ def act_add_second_operand_onwards(tokens):
     global deref_index_seen
     global deref_index_string
 
-    if tokens[0] is not "":
-        if deref_operator_seen == 1 and deref_expression_lparen_seen == 1 and base_pointer_var_seen == 1 and deref_index_seen == 0:
-            deref_index_seen = 1
-            deref_index_string = tokens[0]
-            logging.debug(" Deref Index String = " + deref_index_string)
+    if deref_operator_seen == 1 and deref_expression_lparen_seen == 1 and base_pointer_var_seen == 1 and deref_index_seen == 0:
+        deref_index_seen = 1
+        deref_index_string = tokens[0]
+        logging.debug(" Deref Index String = " + deref_index_string)
 
-    # Can happen when the derefed pointer was written in a paranthesis without an index. In this case, annotate deref pointer without index
-    else:
-        if deref_operator_seen == 1 and deref_expression_lparen_seen == 1 and base_pointer_var_seen == 1 and deref_index_seen == 0:
-            deref_index_seen = 1
-            deref_index_string = ""
-            logging.debug(" Deref Index String = " + deref_index_string)
 
 # Left Factored
 additive_expression_1 = Forward()
@@ -362,8 +357,16 @@ conditional_expression << ( (logical_or_expression + Literal("?") + expression +
                             | (logical_or_expression)
                             )
 
+def act_assign_op(tokens):
+    global assign_operator_seen
+    if (assign_operator_seen == 1):
+        # TODO: Should only occur once?
+        logging.warning (" WARNING: 2 Assignment Operations found! Is that right? ***")
+    logging.debug(" Found Assignment Operator!")
+    assign_operator_seen = 1
+
 assignment_expression = Forward()
-assignment_expression << ( ((unary_expression) + ASSIGN_OP + (assignment_expression))
+assignment_expression << ( ((unary_expression) + ASSIGN_OP.setParseAction(act_assign_op) + (assignment_expression))
                            | (conditional_expression)
                            )
 
@@ -388,6 +391,7 @@ def parse_statement(line):
     global array_index_string
     global list_identifiers
     global list_annotations
+    global assign_operator_seen
 
     deref_operator_seen = 0
     deref_expression_lparen_seen = 0
@@ -400,8 +404,11 @@ def parse_statement(line):
     array_name = ""
     array_index_lbrace_seen = 0
     array_index_string = ""
+    assign_operator_seen = 0
     list_identifiers = []
     list_annotations = []
+    
+    print assign_operator_seen
 
     r = statement.parseString(line)
 
@@ -412,23 +419,49 @@ def test():
     lines = [  "pcmdata[start - start_40] = *(short int*)((uintptr_t)ivtmp_28);"
              , "a = b + c;"
              , "diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;"
-             , "D_2252 = (unsigned int) j_76 + D_2263;"
              , "*outp = (signed char) (signed char) outputbuffer;"
              , "*(outp + i) = (signed char) (signed char) outputbuffer;"
              ]
+    
+    expected_annotations = [[("start", "simDCache((start_addr), 0);" ),
+                             ("start_40", "simDCache((start_40_addr), 0);"),
+                             ("pcmdata", "simDCache((pcmdata_addr + (start-start_40)), 0);"),
+                             ("ivtmp_28", "simDCache((ivtmp_28_addr), 1);")
+                             ],
+                            [("a", "simDCache((a_addr), 0);"),
+                             ("b", "simDCache((b_addr), 1);"),
+                             ("c", "simDCache((c_addr), 1);")
+                             ],
+                            [("diff", "simDCache((diff_addr), 0);"),
+                             ("indata", "simDCache((indata_addr+ivtmp_28), 1);"),
+                             ("indata", "simDCache((indata_addr), 1);"),
+                             ("ivtmp_28", "simDCache((ivtmp_28_addr), 1);"),
+                             ("valpred", "simDCache((valpred_addr), 1);")
+                             ],
+                            [("outp", "simDCache((outp_addr), 0);"),
+                             ("outputbuffer", "simDCache((outputbuffer_addr), 1);")
+                             ],
+                            [("outp", "simDCache((outp_addr+i), 0);"),
+                             ("outputbuffer", "simDCache((outputbuffer_addr), 1);")
+                             ]
+                            ]
 
 
-    for line in lines:
+    for i in range(len(lines)):
+        line = lines[i]
         print ""
         print line
-        annotations = parse_statement(line)
+        annotations = parse_statement(line)        
         print "Annotations:"
         for annotation in annotations:
             print "%s  ::  %s" % (annotation[0], annotation[1])
+        if annotations != expected_annotations[i]:
+            logging.error(" ERROR : Annotation for %d does not match expected value! ***" % i)
+            return -1
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     deref_operator_seen = 0
     deref_expression_lparen_seen = 0
@@ -438,104 +471,4 @@ if __name__ == "__main__":
     list_identifiers = []
 
     test()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def parseStatement(line):
-
-    logging.debug(" line: " + line)
-
-    # Parse the Entire Statement
-    try:
-        r = statement.parseString(line)
-    except ParseException, e:
-        logging.error(" Parsing Statement: %s" % e.msg)
-        return
-
-    logging.debug(" Simplified Expression = " + "".join([str(e) for e in r])),
-    logging.debug(" Destination = " + "".join([str(e) for e in r.dest]))
-    logging.debug(" RHS = " + "".join([str(e) for e in r.value]))
-
-    # Parse the Destination String
-    try:
-        r_dest = unary_expression.parseString(r.dest[0])
-    except ParseException, e:
-        logging.error(e.msg, e.line)
-        logging.error(" Parsing Destination (LHS): %s" % e.msg)
-
-    '''
-    Analysing the Destination
-    The Destination can only be either a dereferenced pointer, an indexed
-    array element or a variable. Writing to a pointer itself is also
-    basically writing to a variable.
-    '''
-
-    # If the destination variable, a dereferenced pointer?
-    if r_dest.deref is not "":
-        logging.debug(" \t Writing to address pointed by " + "".join([str(e) for e in r_dest.deref.deref_exp]))
-        # Is the pointer being indexed?
-        if r_dest.deref.deref_exp.prim.add is not "":
-            ptr_name = r_dest.deref.deref_exp.prim.add.add_op[0][0]
-            ptr_index = r_dest.deref.deref_exp.prim.add.add_op_rest[0]
-            logging.debug(" Address in %s is indexed by %s" % (ptr_name, ptr_index))
-            annotation = (ptr_name, "simDCache((%s_addr + (%s)), \"w\");" %
-                          (ptr_name, ptr_index))
-        else:
-            ptr_name = r_dest.deref.deref_exp.prim[0]
-            logging.debug(" Address in %s" % (ptr_name))
-            annotation = (ptr_name,"simDCache((%s_addr), \"w\");" % (ptr_name))
-
-    # If the destination variable and indexed element in an array
-    elif r_dest.post.array_index is not "":
-        array_name = r_dest.post.prim[0]
-        array_index = r_dest.post.array_index[0]
-        logging.debug(" Writing to element of array %s indexed by %s" % (array_name,
-                                                                         array_index))
-        annotation = (array_name, "simDCache((%s_addr + (%s)), \"w\");" % (array_name,
-                                                                           array_index))
-
-    # If destination is a variable
-    else:
-        var_name = r_dest.prim[0]
-        logging.debug(" Writing to variable %s" % var_name)
-        annotation = (var_name, "simDCache((%s_addr), \"w\");" % (var_name))
-
-    print r.value
-    # Parse the Value Expression
-    try:
-        r_value = expression.parseString(r.value[0])
-    except ParseException, e:
-        logging.error(e.msg, e.line)
-        logging.error(" Parsing Destination (LHS): %s" % e.msg)
-
-    print r_value.add.add_op.deref.deref_exp
-
-    logging.debug(" Annotation = %s" % annotation[1])
-    return annotation
 
