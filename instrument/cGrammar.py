@@ -35,6 +35,8 @@ LE_OP = Literal("<=")
 RIGHT_OP = Literal(">>")
 LEFT_OP = Literal("<<")
 
+PTR_OP = Literal("->")
+
 POINTER = Literal("*")
 SEMICOLON = Literal(";")
 SIZEOF = Literal("sizeof")
@@ -236,10 +238,14 @@ def act_array_index_lbrace(tokens):
     logging.debug(" Array Name = " + array_name)
     # TODO : Previous variable name was already annotated, assuming its a variable access. Delete the last entry in the list of annotations.
     del(list_annotations[-1])
+    
+# TODO : Check if PTR_OP and Literal(".") must be handled more carefully     
 
 # Removing Left Recursion
 postfix_expression_1 = Forward()
 postfix_expression_1 << ( (Literal("[").setParseAction(act_array_index_lbrace) + Combine(expression).setParseAction(act_array_index_expression) + Literal("]").setParseAction(act_array_index_rbrace))
+                          | (PTR_OP + IDENTIFIER + postfix_expression_1)
+                          | (Literal(".") + IDENTIFIER + postfix_expression_1)
                           | Empty()
                           )
 postfix_expression = ( (primary_expression) + postfix_expression_1)
@@ -301,7 +307,7 @@ shift_expression_1 << ( (LEFT_OP + additive_expression + shift_expression_1)
 shift_expression = ( (additive_expression + shift_expression_1) )
 
 relational_expression_1 = Forward()
-relational_expression_1 << ( (LT_OP + shift_expression + relational_expression_1)
+relational_expression_1 << ( (GT_OP + shift_expression + relational_expression_1)
                             | (LT_OP + shift_expression + relational_expression_1)
                             | (GE_OP + shift_expression + relational_expression_1)
                             | (LE_OP + shift_expression + relational_expression_1)
@@ -354,7 +360,7 @@ logical_or_expression = ( (logical_and_expression + logical_or_expression_1) )
 
 conditional_expression = Forward()
 conditional_expression << ( (logical_or_expression + Literal("?") + expression + Literal(":") + conditional_expression)
-                            | (logical_or_expression)
+                            ^ (logical_or_expression)
                             )
 
 def act_assign_op(tokens):
@@ -367,7 +373,7 @@ def act_assign_op(tokens):
 
 assignment_expression = Forward()
 assignment_expression << ( ((unary_expression) + ASSIGN_OP.setParseAction(act_assign_op) + (assignment_expression))
-                           | (conditional_expression)
+                           ^ (conditional_expression)
                            )
 
 expression << ( assignment_expression )
@@ -408,8 +414,6 @@ def parse_statement(line):
     list_identifiers = []
     list_annotations = []
     
-    print assign_operator_seen
-
     r = statement.parseString(line)
 
     return list_annotations
@@ -421,6 +425,9 @@ def test():
              , "diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;"
              , "*outp = (signed char) (signed char) outputbuffer;"
              , "*(outp + i) = (signed char) (signed char) outputbuffer;"
+             , "valpred = state->valprev;"
+             , "valpred = state.valprev;"
+             , "valpred_41 = (valpred_34 > -32768) ? valpred_35 : -32768;"
              ]
     
     expected_annotations = [[("start", "simDCache((start_addr), 0);" ),
@@ -434,8 +441,6 @@ def test():
                              ],
                             [("diff", "simDCache((diff_addr), 0);"),
                              ("indata", "simDCache((indata_addr+ivtmp_28), 1);"),
-                             ("indata", "simDCache((indata_addr), 1);"),
-                             ("ivtmp_28", "simDCache((ivtmp_28_addr), 1);"),
                              ("valpred", "simDCache((valpred_addr), 1);")
                              ],
                             [("outp", "simDCache((outp_addr), 0);"),
@@ -443,6 +448,18 @@ def test():
                              ],
                             [("outp", "simDCache((outp_addr+i), 0);"),
                              ("outputbuffer", "simDCache((outputbuffer_addr), 1);")
+                             ],
+                            [("valpred", "simDCache((valpred_addr), 0);"),
+                             ("state", "simDCache((state_addr), 1);"),
+                             ("valprev", "simDCache((valprev_addr), 1);")
+                             ],
+                            [("valpred", "simDCache((valpred_addr), 0);"),
+                             ("state", "simDCache((state_addr), 1);"),
+                             ("valprev", "simDCache((valprev_addr), 1);")
+                             ],
+                            [("valpred_41", "simDCache((valpred_41_addr), 0);"),
+                             ("valpred_34", "simDCache((valpred_34_addr), 1);"),
+                             ("valpred_35", "simDCache((valpred_35_addr), 1);")
                              ]
                             ]
 
