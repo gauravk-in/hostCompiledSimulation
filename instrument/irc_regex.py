@@ -1,5 +1,6 @@
 import re
 import logging
+from cGrammar import parse_statement
 
 # Comments
 re_CommentStart = re.compile("\s*/\*.*")
@@ -13,14 +14,20 @@ PreProcDir = "\s*#(?:include|define|ifndef|endif).*"
 re_PreProcDir = re.compile("(?:%s)" % PreProcDir)
 
 # Variable Declarations
-TypeSpecifiers = "char|int|float|double"
-OptionalSpecifiers = "signed|unsigned|short|long"
+TypeSpecifiers = "char|int|float|double|short|long"
+OptionalSpecifiers = "signed|unsigned"
 StorageClass = "(?:static|extern|auto|register)"
 UserDefined = "struct\s*[\w_]*"
 IRCSpecific = "uintptr_t"
-DataTypes = "(?:%s)?\s*(?:%s\s*)*\s*(?:(?:%s)|(?:%s)|(?:%s))?\s*(?:\*)*" % (StorageClass, OptionalSpecifiers, TypeSpecifiers, UserDefined, IRCSpecific)
+DataTypes = "((?:(?:%s)|(?:%s)|(?:%s)|(?:%s)|(?:%s))\s*)+(?:\*)*" % (StorageClass, OptionalSpecifiers, TypeSpecifiers, UserDefined, IRCSpecific)
 VarSpec = "(?P<varType>%s)\s*(?P<varName>\w*)\s*(?P<varLen>(?:\[.*\])*)?" % (DataTypes)
-re_VarDecl = re.compile("\s*(?:%s);" % (VarSpec))
+VarSpecInitOneLine = "(?:%s)\s*=\s*((?:\{.*\})|(?:.*))" % (VarSpec)
+VarSpecInitMultiLine = "(?:%s)\s*=\s*(?:\{.*)" % (VarSpec)
+VarSpecInitMultiLineEnd = "\s*.*}\s*"
+re_VarDecl = re.compile("\s*(?:%s)\s*;" % (VarSpec))
+re_VarDeclInitOneLine = re.compile("\s*(?:%s)\s*;" % (VarSpecInitOneLine))
+re_VarDeclInitMultiLine = re.compile("\s*(?:%s)" % (VarSpecInitMultiLine))
+re_VarDeclInitMultiLineEnd = re.compile("\s*(?:%s)\s*;" % (VarSpecInitMultiLineEnd))
 
 # Function Definition Start
 VarSpec_ = "(?:%s)\s*(?:\w*)\s*(?:(?:\[.*\])*)?" % (DataTypes)
@@ -31,11 +38,30 @@ re_FuncDefStart = re.compile("\s*(?P<retType>%s)?\s*(?P<name>\w*)\s*\((?P<params
 # Label
 re_Label = re.compile("\s*(?P<label>\w*):")
 
-# Assignment/Arithmetic
-Var = "(?:\s*\w*\s*)"
-Const = "(?:\s*\d*\s*)"
-Oper = "(?:\+|\-|\*|/)"
-re_Assign = re.compile("\s*.*\s*=\s*.*;")
+# If Statement
+re_ifStatement = re.compile("\s*if\s*\(.*\)")
+re_elseStatement = re.compile("\s*else\s*")
+
+# Goto Instructions
+re_gotoStatement = re.compile("\s*goto\s*\w*;")
+
+# Struct Declaration Start
+re_structDecl = re.compile("\s*struct\s*\w*\s*{.*};$")
+re_structDeclMultiLine = re.compile("\s*struct\s*\w*\s*{\s*$")
+
+# Extra
+re_BlockStartLBrace = re.compile("^\s*\{\s*$")
+re_BlockEndRBrace = re.compile("^\s*\}\s*$")
+re_returnStatement = re.compile("^\s*return\s*.*;\s*$")
+re_functionCallStatement = re.compile("\s*\w*\s*\(.*\);\s*")
+# [&\s,\w\[\]\(\)\*]
+
+# 
+# # Assignment/Arithmetic
+# Var = "(?:\s*\w*\s*)"
+# Const = "(?:\s*\d*\s*)"
+# Oper = "(?:\+|\-|\*|/)"
+# re_Assign = re.compile("\s*.*\s*=\s*.*;")
 
 inMultiLineComment = False
 
@@ -78,17 +104,33 @@ def shouldIgnore(line, lineNum):
     elif isPreProcDir(line, lineNum):
         return True
     
-    elif line == "":
-#         logging.debug("%d: Empty Line" % lineNum)
+    elif line.isspace():
+        return True
+    
+    elif re_BlockStartLBrace.match(line):
+        return True
+    
+    elif re_BlockEndRBrace.match(line):
+        return True
+
+    elif re_returnStatement.match(line):
+        return True
+    
+    elif re_functionCallStatement.match(line):
         return True
     
     return False
     
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 #     fileName = "examples/adpcm/my_ctop_IR.c"
-    fileName = "examples/adpcm/adpcm_IR.c"
+#     fileName = "examples/adpcm/adpcm_IR.c"
+    fileName = "examples/sieve/erat_sieve_no_print_IR.c"
+
     file = open(fileName, "r")
+    
+    inMultiLineVarInit = 0
+    inStructDeclaration = 0
     
     lineNum = 0
     
@@ -96,6 +138,28 @@ if __name__ == "__main__":
         lineNum = lineNum + 1
         
         if shouldIgnore(line, lineNum):
+            continue
+        
+        if inMultiLineVarInit == 1:
+            m = re_VarDeclInitMultiLineEnd.match(line)
+            if m is not None:
+                logging.debug("%d: VarDecl MultiLine End " % (lineNum))
+                inMultiLineVarInit = 0
+                continue
+            else:
+                continue
+
+        m = re_VarDeclInitOneLine.match(line)
+        if m is not None:
+            varName = m.group("varName")
+            logging.debug("%d: VarDecl InitOneLine: \"%s\"" % (lineNum, varName))
+            continue
+        
+        m = re_VarDeclInitMultiLine.match(line)
+        if m is not None:
+            varName = m.group("varName")
+            logging.debug("%d: VarDecl InitMultiLine: \"%s\"" % (lineNum, varName))
+            inMultiLineVarInit = 1;
             continue
         
         m = re_VarDecl.match(line)
@@ -116,7 +180,26 @@ if __name__ == "__main__":
             logging.debug("%d: Label: \"%s\"" % (lineNum, label))
             continue
         
-        m =
-
+        m = re_ifStatement.match(line)
+        if m is not None:
+            logging.debug("%d: If Statement.")
+            continue
+        
+        m = re_elseStatement.match(line)
+        if m is not None:
+            logging.debug("%d: Else Statement.")
+            continue
+        
+        m = re_gotoStatement.match(line)
+        if m is not None:
+            logging.debug("%d: Goto Statement.")
+            continue
+        
+        print ""
+        logging.info("%d: %s" % (lineNum, line[0:-1]))
+        annotations = parse_statement(line)
+        for annotation in annotations:
+            print "%s  ::  %s" % (annotation[0], annotation[1])
+        
         continue
         
