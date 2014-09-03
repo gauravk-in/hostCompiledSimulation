@@ -1,7 +1,7 @@
 import sys
 import logging
 from pyparsing import *
-
+from irc_regex import *
 
 
 IDENTIFIER = Word(alphas, alphanums+'_')
@@ -383,6 +383,30 @@ expression << ( assignment_expression )
 statement = ( expression + SEMICOLON + stringEnd)
 # statement.ignore(cStyleComment)
 
+def ignore_statement(line):
+    m = re_Comment.match(line)
+    if m is not None:
+        logging.debug("One Line Comment : %s" % line)
+        return True
+    
+    m = re_ifStatement.match(line)
+    if m is not None:
+        logging.debug("If Statement : %s" % line)
+        return True
+    
+    m = re_elseStatement.match(line)
+    if m is not None:
+        logging.debug("Else Statement : %s" % line)
+        return True
+    
+    m = re_gotoStatement.match(line)
+    if m is not None:
+        logging.debug("Goto Statement. : %s" % line)
+        return True
+    
+    if line.isspace():
+        return True
+
 def parse_statement(line):
     global deref_operator_seen
     global deref_expression_lparen_seen
@@ -398,6 +422,9 @@ def parse_statement(line):
     global list_identifiers
     global list_annotations
     global assign_operator_seen
+
+    if ignore_statement(line):
+        return None
 
     deref_operator_seen = 0
     deref_expression_lparen_seen = 0

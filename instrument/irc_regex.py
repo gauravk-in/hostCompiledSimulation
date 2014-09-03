@@ -1,6 +1,6 @@
 import re
 import logging
-from cGrammar import parse_statement
+# from cGrammar import parse_statement
 
 # Comments
 re_CommentStart = re.compile("\s*/\*.*")
@@ -182,17 +182,17 @@ if __name__ == "__main__":
         
         m = re_ifStatement.match(line)
         if m is not None:
-            logging.debug("%d: If Statement.")
+            logging.debug("%d: If Statement." % lineNum)
             continue
         
         m = re_elseStatement.match(line)
         if m is not None:
-            logging.debug("%d: Else Statement.")
+            logging.debug("%d: Else Statement." % lineNum)
             continue
         
         m = re_gotoStatement.match(line)
         if m is not None:
-            logging.debug("%d: Goto Statement.")
+            logging.debug("%d: Goto Statement." % lineNum)
             continue
         
         print ""
