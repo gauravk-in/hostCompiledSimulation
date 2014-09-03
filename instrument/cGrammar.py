@@ -82,7 +82,7 @@ array_name = ""
 array_index_lbrace_seen = 0
 array_index_string = ""
 assign_operator_seen = 0
-
+isConditionalStatement = 0
 
 list_identifiers = []
 list_annotations = []
@@ -91,6 +91,8 @@ list_annotations = []
 ################################################################3
 
 list_type_names = ["short", "int", "long", "char", "float", "double", "void", "signed", "unsigned", "uintptr_t"]
+list_keywords = ["if", "else", "switch", "case", "for", "while", "do", "return"]
+
 
 # TODO: Extend this : struct_or_union, enum
 type_specifier = ( SHORT
@@ -136,7 +138,7 @@ def act_identifier(tokens):
     global list_identifiers
     global list_annotations
 
-    if tokens[0] not in list_type_names:
+    if tokens[0] not in list_type_names and tokens[0] not in list_keywords:
         # Deref Operation
         if deref_operator_seen == 1:
             # Deref Operation with Index
@@ -380,18 +382,26 @@ expression << ( assignment_expression )
 
 
 # Full statement with ';'
-statement = ( expression + SEMICOLON + stringEnd)
-# statement.ignore(cStyleComment)
+expression_statement = ( expression + SEMICOLON + stringEnd)
+
+IF = Literal("if")
+ELSE = Literal("else")
+
+def actConditionalStatement(tokens):
+    global isConditionalStatement
+    global assign_operator_seen
+    isConditionalStatement = 1
+    assign_operator_seen = 1
+
+selection_statement = ( IF.setParseAction(actConditionalStatement) + LPAREN + expression + RPAREN )
+
+statement = ( expression_statement 
+              | selection_statement )
 
 def ignore_statement(line):
     m = re_Comment.match(line)
     if m is not None:
         logging.debug("One Line Comment : %s" % line)
-        return True
-    
-    m = re_ifStatement.match(line)
-    if m is not None:
-        logging.debug("If Statement : %s" % line)
         return True
     
     m = re_elseStatement.match(line)
@@ -419,6 +429,7 @@ def parse_statement(line):
     global array_name
     global array_index_lbrace_seen
     global array_index_string
+    global isConditionalStatement
     global list_identifiers
     global list_annotations
     global assign_operator_seen
@@ -438,10 +449,12 @@ def parse_statement(line):
     array_index_lbrace_seen = 0
     array_index_string = ""
     assign_operator_seen = 0
+    isConditionalStatement = 0
     list_identifiers = []
     list_annotations = []
     
     r = statement.parseString(line)
+    print r
 
     return list_annotations
 
@@ -455,6 +468,7 @@ def test():
              , "valpred = state->valprev;"
              , "valpred = state.valprev;"
              , "valpred_41 = (valpred_34 > -32768) ? valpred_35 : -32768;"
+             , "if (a == b)"
              ]
     
     expected_annotations = [[("start", "simDCache((start_addr), 0);" ),
@@ -487,7 +501,9 @@ def test():
                             [("valpred_41", "simDCache((valpred_41_addr), 0);"),
                              ("valpred_34", "simDCache((valpred_34_addr), 1);"),
                              ("valpred_35", "simDCache((valpred_35_addr), 1);")
-                             ]
+                             ],
+                            [("a", "simDCache((a_addr), 1);"),
+                             ("b", "simDCache((b_addr), 1);")]                            
                             ]
 
 
@@ -495,7 +511,7 @@ def test():
         line = lines[i]
         print ""
         print line
-        annotations = parse_statement(line)        
+        annotations = parse_statement(line)       
         print "Annotations:"
         for annotation in annotations:
             print "%s  ::  %s" % (annotation[0], annotation[1])
@@ -503,6 +519,8 @@ def test():
             logging.error(" ERROR : Annotation for %d does not match expected value! ***" % i)
             return -1
 
+
+    print "Tests passed!"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
