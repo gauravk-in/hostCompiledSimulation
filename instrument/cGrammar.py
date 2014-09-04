@@ -414,6 +414,16 @@ def ignore_statement(line):
         logging.debug("Goto Statement. : %s" % line)
         return True
     
+    m = re_functionCallStatement.match(line)
+    if m is not None:
+        logging.debug("Function Call. : %s" % line)
+        return True
+    
+    m = re_returnStatement.match(line)
+    if m is not None:
+        logging.debug("Function Call. : %s" % line)
+        return True
+    
     if line.isspace():
         return True
 
@@ -454,7 +464,7 @@ def parse_statement(line):
     list_annotations = []
     
     r = statement.parseString(line)
-    print r
+#     print r
 
     return list_annotations
 

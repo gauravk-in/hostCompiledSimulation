@@ -1,5 +1,6 @@
 import linecache as lc
 from collections import deque
+import copy
 
 from arm_isa_regex import *
 from armEmulate import *
@@ -169,6 +170,7 @@ def identifyLoadStore(listISCFunctions,
     
     while queuePendingFunction:
         func = queuePendingFunction.popleft()
+        
         logging.debug("")
         logging.debug("Starting Emulation of Func %s" % func.name)
         funcObj = find(lambda fn: fn.functionName == func.name, listObjdumpFunctions)
@@ -211,13 +213,13 @@ def identifyLoadStore(listISCFunctions,
                             if funcInQueue is not None:
                                 continue
                             else:
-                                initRegState = armEmu.reg
+                                initRegState = copy.deepcopy(armEmu.reg)
                                 logging.debug("Adding func %s to queue!" % branchToFunction)
                                 queuePendingFunction.append(FunctionInitState(branchToFunction,
                                                                               initRegState))
                                 continue
                     else:
-                        logging.error("labelFunction in branch instruction could not be matched!")
+                        logging.debug("Branch function does not have a label! (branch to same function)")
                         continue
                 
                 '''

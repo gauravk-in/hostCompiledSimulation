@@ -12,7 +12,7 @@ class Register:
         self.isValid = False
     
     def setValue(self, value):
-        self.valid = True
+        self.isValid = True
         self.value = value
 
 # List of names of General Purpose Registers

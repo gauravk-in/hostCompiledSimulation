@@ -47,18 +47,18 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                 for lineNumISC in range(blockISC.startLine, blockISC.endLine + 1):
                     lineISC = lc.getline(funcISC.fileName, lineNumISC)
                     print "%s:%d: %s" % (funcISC.fileName, lineNumISC, lineISC),
-#                     lineAnnotations = parse_statement(lineISC)
-#                     if lineAnnotations == None:
-#                         continue
-#                     for annotation in lineAnnotations:
-#                         for lsInfo in blockLSInfo:
-#                             if lsInfo.var != None and annotation[0] == lsInfo.var.name:
-#                                 print "Annotation :" + annotation[1]
-                    listTerms = re_term.findall(lineISC)
-                    for term in listTerms:
+                    lineAnnotations = parse_statement(lineISC)
+                    if lineAnnotations == None:
+                        continue
+                    for annotation in lineAnnotations:
                         for lsInfo in blockLSInfo:
-                            if lsInfo.var != None and lsInfo.var.name == term:
-                                print "term %s found!" % term
+                            if lsInfo.var != None and annotation[0] == lsInfo.var.name:
+                                print "Annotation :" + annotation[1]
+#                     listTerms = re_term.findall(lineISC)
+#                     for term in listTerms:
+#                         for lsInfo in blockLSInfo:
+#                             if lsInfo.var != None and lsInfo.var.name == term:
+#                                 print "term %s found!" % term
 
 
 if __name__ == "__main__":

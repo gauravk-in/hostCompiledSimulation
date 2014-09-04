@@ -18,6 +18,7 @@ from draw_cfg import draw_cfg
 COND_EXEC_BLOCKLEN_THRESH = 6
 
 app = None
+outputPath = None
 
 # listISCFileNames = []
 # listObjdumpFileNames = []
@@ -192,6 +193,9 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                     # succBlockISC.mapsTo.append(blockIndObj)
                     succBlockISC.mapISCTo(blockIndObj)
                     blockObj.mapsTo.append(listSuccBlocksISC[0])
+                    ### ...
+                    blockObj.mapsTo.append(blockIndISC)
+                    ### ^^^
                     return 0
                 else:
                     # Mapping not found!
@@ -357,6 +361,10 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                     # cfgISC.listBlocks[succ2BlockIndISC].mapsTo.append(blockIndObj)
                     cfgISC.listBlocks[succ2BlockIndISC].mapISCTo(blockIndObj)
                     blockObj.mapsTo.append(blockIndISC)
+                    ### ...
+                    blockObj.mapsTo.append(succ1BlockIndISC)
+                    blockObj.mapsTo.append(succ2BlockIndISC)
+                    ### ^^^
                     mappingStackISC.pop()
                     mappingStackISC.pop()
                     return 0
@@ -385,6 +393,11 @@ def mapping(cfgISC, blockIndISC, cfgObj, blockIndObj, mergedLevelsISC):
                     cfgISC.listBlocks[succ2BlockIndISC].mapISCTo(blockIndObj)
                     cfgISC.listBlocks[succSucc1BlockIndISC].mapISCTo(blockIndObj)
                     blockObj.mapsTo.append(blockIndISC)
+                    ### ...
+                    blockObj.mapsTo.append(succ1BlockIndISC)
+                    blockObj.mapsTo.append(succ2BlockIndISC)
+                    blockObj.mapsTo.append(succSucc1BlockIndISC)
+                    ### ^^^
                     mappingStackISC.pop()
                     mappingStackISC.pop()
                     mappingStackISC.pop()
@@ -569,10 +582,19 @@ def match_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
             
     printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping)
 
+#     for funcISC in listISCFunctions:
+#         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
+# #         display_cfgs(app, funcISC.cfg, funcObj.cfg, "%s" % funcISC.functionName)
+#         psISCFileName = draw_cfg(funcISC, outputPath)
+#         psObjFileName = draw_cfg(funcObj, outputPath)
+#         call(args = ["evince", psISCFileName, psObjFileName])
+
     return listISCFunctions, listObjdumpFunctions
 
 
 if __name__ == "__main__":
+    global outputPath
+        
     app = QtGui.QApplication(sys.argv)
 
     logging.basicConfig(level=logging.DEBUG)
