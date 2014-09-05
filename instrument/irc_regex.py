@@ -24,6 +24,7 @@ VarSpec = "(?P<varType>%s)\s*(?P<varName>\w*)\s*(?P<varLen>(?:\[.*\])*)?" % (Dat
 VarSpecInitOneLine = "(?:%s)\s*=\s*((?:\{.*\})|(?:.*))" % (VarSpec)
 VarSpecInitMultiLine = "(?:%s)\s*=\s*(?:\{.*)" % (VarSpec)
 VarSpecInitMultiLineEnd = "\s*.*}\s*"
+re_VarSpec = re.compile("\s*(?:%s)\s*" % (VarSpec))
 re_VarDecl = re.compile("\s*(?:%s)\s*;" % (VarSpec))
 re_VarDeclInitOneLine = re.compile("\s*(?:%s)\s*;" % (VarSpecInitOneLine))
 re_VarDeclInitMultiLine = re.compile("\s*(?:%s)" % (VarSpecInitMultiLine))
