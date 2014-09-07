@@ -47,6 +47,9 @@ def addAnnotationToDict(dict, lineNum, annot):
     if lineNum not in dict:
         dict[lineNum] = [annot]
     else:
+        for a in dict[lineNum]:
+            if a.annotation == annot.annotation and a.fileName == annot.fileName:
+                return
         dict[lineNum].append(annot)
 
 def annotateVarFuncDecl(listISCFileNames, listGlobalVariables, listLocalVariables):
@@ -191,7 +194,7 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
     
     for funcISC in listISCFunctions:
         lineNumISC = funcISC.startLine
-        currFuncListParams = []
+        currFuncListParamsToAnnot = []
         while True:
             lineNumISC = lineNumISC - 1
             lineISC = lc.getline(funcISC.fileName, lineNumISC)
@@ -205,8 +208,12 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
                     for param in listParams:
                         m1 = re_VarSpec.match(param)
                         assert(m1 is not None)
-                        paramName = m1.group("varName")
-                        currFuncListParams.append(paramName)
+                        varType = m1.group("varType")
+                        varName = m1.group("varName")
+                        varLen = m1.group("varLen")
+                        m2 = re.match("(?:\s*\w*)*\*+\s*", varType)
+                        if m2 is not None or varLen is not "":
+                            currFuncListParamsToAnnot.append(varName)
                 break
         
         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
@@ -222,8 +229,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
                     lineAnnotations = parse_statement(lineISC)
                     if lineAnnotations == None:
                         continue
-                    for annotation in lineAnnotations:
-                        if annotation[0] in currFuncListParams:
+                    while lineAnnotations:
+                        annotation = lineAnnotations.pop()
+                        if annotation[0] in currFuncListParamsToAnnot:
                             annot_str = annotation[1]
                             annot = Annotation(annot_str, funcISC.fileName, lineNumISC, False)
                             annot.debug()
@@ -232,7 +240,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
                                                 annot)
 
                         else:
-                            for lsInfo in blockLSInfo:
+                            lenBlockLSInfo = len(blockLSInfo)
+                            for i in range(lenBlockLSInfo):
+                                lsInfo = blockLSInfo.pop(0)
                                 if lsInfo.var != None and annotation[0] == lsInfo.var.name:
                                     annot_str = annotation[1]
                                     annot = Annotation(annot_str, funcISC.fileName, lineNumISC, False)
@@ -240,23 +250,32 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
                                     addAnnotationToDict(dictAnnotLoadStore, 
                                                         lineNumISC,
                                                         annot)
-
+                                    break
+                                else:
+                                    blockLSInfo.append(lsInfo)
+            
+            print "******* LS Info could not be mapped in block %s" % blockObj.name
+            for lsInfo in blockLSInfo:
+                lsInfo.debug()
+            print "*******"
                                 
     debugDictAnnot(dictAnnotLoadStore)
     return dictAnnotLoadStore
 
-def generateOutputFileName(inFileName):
+def generateOutputFileName(outputPath, inFileName):
     re_fileName = re.compile("(?P<path>/?(?:\w*/)*)(?P<fileName>\w*)\.(?P<fileExt>\w*)")
     m = re_fileName.match(inFileName)
     assert(m is not None)
-    filePath = m.group("path")
+    inFilePath = m.group("path")
     inFileNameWOExt = m.group("fileName")
     inFileExt = m.group("fileExt")
-    return filePath + inFileNameWOExt + "_ins." + inFileExt
+    if outputPath is None:
+        outputPath = inFilePath
+    return outputPath + inFileNameWOExt + "_ins." + inFileExt
 
-def annotateCache(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames):
+def generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, outputPath):
     for inFileName in listISCFileNames:
-        outFileName = generateOutputFileName(inFileName)
+        outFileName = generateOutputFileName(outputPath, inFileName)
         inFile = open(inFileName, "r")
         outFile = open(outFileName, "w")
         lineNum = 0
@@ -309,7 +328,7 @@ def annotateCache(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames):
         print ("Output to file : %s" % outFileName)
             
 
-def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
+def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames, outputPath):
     
     (listISCFunctions, listObjdumpFunctions) = match_cfg(listISCFileNames, 
                                                          listObjdumpFileNames, 
@@ -324,13 +343,13 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
                                    listGlobalVariables,
                                    listLocalVariables)
     
-    debugListLSInfo(listLSInfo)
+#     debugListLSInfo(listLSInfo)
 
     dictAnnotVarFuncDecl = annotateVarFuncDecl(listISCFileNames, listGlobalVariables, listLocalVariables)
     
     dictAnnotLoadStore = annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo)
 
-    annotateCache(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames)
+    generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, outputPath)
 
 if __name__ == "__main__":
 
@@ -348,6 +367,10 @@ if __name__ == "__main__":
                          type="string", dest="listBinaryFileNames", 
                          help="Binary Filename. For multiple files, use -b <filename> multiple times.",
                          metavar="FILE")
+    optparser.add_option("-p", "--outpath", action="store",
+                         type="string", dest="outputPath", 
+                         help="Output Path to store the annotated source files.",
+                         metavar="PATH")
     
     (options, args) = optparser.parse_args()
     
@@ -357,5 +380,6 @@ if __name__ == "__main__":
     listISCFileNames =  options.listISCFileNames
     listObjdumpFileNames = options.listObjdumpFileNames
     listBinaryFileNames = options.listBinaryFileNames
+    outputPath = options.outputPath
     
-    instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames)
+    instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames, outputPath)
