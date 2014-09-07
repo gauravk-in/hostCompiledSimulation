@@ -52,7 +52,7 @@ def addAnnotationToDict(dict, lineNum, annot):
                 return
         dict[lineNum].append(annot)
 
-def annotateVarFuncDecl(listISCFileNames, listGlobalVariables, listLocalVariables):
+def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables, listLocalVariables):
     dictAnnotVarFuncDecl = OrderedDict({})
     
     for ISCFileName in listISCFileNames:
@@ -148,28 +148,26 @@ def annotateVarFuncDecl(listISCFileNames, listGlobalVariables, listLocalVariable
             if m is not None:
                 inFunction = 1
                 currFunctionName = m.group("name")
+                currFuncRetType = m.group("retType")
                 logging.debug(" Function : " + currFunctionName)
-                funcRetType = m.group("retType")
-                funcParams = m.group("params")
-                if funcParams is not None:
+                
+                funcISC = find(lambda fn: fn.functionName == currFunctionName,
+                               listISCFunctions)
+                if funcISC.listParams:
+                    # Create a list of new parameters for the annotated function signature
+                    #     Add <name>_addr parameter for each param that is a pointer
                     newFuncParamsList = []
-                    logging.debug(" Parameters : " + funcParams)
-                    listParams = funcParams.split(",")
-                    for param in listParams:
-                        newFuncParamsList.append(param)
-                        m1 = re_VarSpec.match(param)
-                        if m1 is not None:
-                            varType = m1.group("varType")
-                            varName = m1.group("varName")
-                            varLen = m1.group("varLen")
-                            m2 = re.match("(?:\s*\w*)*\*+\s*", varType)
-                            if m2 is not None or varLen is not "":
-                                # must be annotated
-                                newFuncParamsList.append("unsigned long %s_addr" % varName)
-                                annotatedFuncDecl = "%s %s (" % (funcRetType, currFunctionName)
+                    for param in funcISC.listParams:
+                        newFuncParamsList.append(param.type + param.name + param.len)
+                        if param.isPointer:
+                            newFuncParamsList.append("unsigned long " + param.name + "_addr")
+                    
+                    # create the new annotation
+                    annotatedFuncDecl = currFuncRetType + " " + currFunctionName + " ("
                     for param in newFuncParamsList[:-1]:
                         annotatedFuncDecl = annotatedFuncDecl + param + ", "
                     annotatedFuncDecl = annotatedFuncDecl + newFuncParamsList[-1] + ")"
+                    
                     annot = Annotation(annotatedFuncDecl,
                                        ISCFileName,
                                        lineNum,
@@ -195,26 +193,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
     for funcISC in listISCFunctions:
         lineNumISC = funcISC.startLine
         currFuncListParamsToAnnot = []
-        while True:
-            lineNumISC = lineNumISC - 1
-            lineISC = lc.getline(funcISC.fileName, lineNumISC)
-            m = re_FuncDefStart.match(lineISC)
-            if m is None:
-                continue
-            else:
-                funcParams = m.group("params")
-                if funcParams is not None:
-                    listParams = funcParams.split(",")
-                    for param in listParams:
-                        m1 = re_VarSpec.match(param)
-                        assert(m1 is not None)
-                        varType = m1.group("varType")
-                        varName = m1.group("varName")
-                        varLen = m1.group("varLen")
-                        m2 = re.match("(?:\s*\w*)*\*+\s*", varType)
-                        if m2 is not None or varLen is not "":
-                            currFuncListParamsToAnnot.append(varName)
-                break
+        for param in funcISC.listParams:
+            if param.isPointer:
+                currFuncListParamsToAnnot.append(param.name)
         
         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
         for blockObj in funcObj.cfg.listBlocks:
@@ -345,7 +326,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames,
     
 #     debugListLSInfo(listLSInfo)
 
-    dictAnnotVarFuncDecl = annotateVarFuncDecl(listISCFileNames, listGlobalVariables, listLocalVariables)
+    dictAnnotVarFuncDecl = annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables, listLocalVariables)
     
     dictAnnotLoadStore = annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo)
 
@@ -353,7 +334,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames,
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     
     optparser = OptionParser()
     optparser.add_option("-i", "--isc", action="append", dest="listISCFileNames",

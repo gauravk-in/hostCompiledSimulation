@@ -22,6 +22,7 @@ def parse_isc(fileName):
     inFunctionBody = 0      # is 1, when inside Function Body
     inFuncDefArgMultiLine = 0       # is 1, when inside multiline argument list for func Def.
     currFuncName = ""
+    currFuncParamStr = ""
     currFuncStartLine = 0
     currFuncEndLine = 0
     listCurrFuncBasicBlocks = []
@@ -87,12 +88,14 @@ def parse_isc(fileName):
             if m.group("openBrace") == "":
                 # 1.b. Multi Line Function Arguments
                 inFuncDefArgMultiLine = 1
-                currFuncName = m.group(1)
+                currFuncName = m.group("name")
+                currFuncParamStr = m.group("params")
                 continue
             else:
                 # 1.a. Single Line Definition
                 inFunctionBody = 1
                 currFuncName = m.group("name")
+                currFuncParamStr = m.group("params")
                 currFuncStartLine = lineNum + 1
                 continue
                 
@@ -102,9 +105,11 @@ def parse_isc(fileName):
             if m is not None:
                 if m.group("openBrace") == "":
                     # Next line is still argument list
+                    currFuncParamStr = currFuncParamStr + m.group("params")
                     continue
                 else:
                     # End of Argument List. Start of function body in next line.
+                    currFuncParamStr = currFuncParamStr + m.group("params")
                     inFuncDefArgMultiLine = 0
                     inFunctionBody = 1
                     currFuncStartLine = lineNum + 1
@@ -216,12 +221,14 @@ def parse_isc(fileName):
                                                   currFuncStartLine,
                                                   currFuncEndLine,
                                                   ControlFlowGraph(listCurrFuncBasicBlocks,
-                                                                   listCurrFuncBBEdges)))                        
+                                                                   listCurrFuncBBEdges),
+                                                  paramStr = currFuncParamStr))                        
                 
                 # Resetting State Variables
                 inFunctionBody = 0
                 inFuncDefArgMultiLine = 0
                 currFuncName = ""
+                currFuncParamStr = ""
                 currFuncStartLine = 0
                 currFuncEndLine = 0
                 listCurrFuncBasicBlocks = []

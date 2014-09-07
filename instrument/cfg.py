@@ -1,6 +1,7 @@
 import sys
 from collections import deque
 import logging
+from irc_regex import re_VarSpec
 
 class ParseError(Exception):
     def __init__(self, str):
@@ -191,16 +192,44 @@ class ControlFlowGraph:
                     exit(1)
                 else:
                     self.listBlocks[currBlockIndex].flow = currBlockFlow
+
+class FunctionParam:
+    def __init__(self, type, name, len, isPointer):
+        self.type = type
+        self.name = name
+        self.len = len
+        self.isPointer = isPointer
         
 class FunctionDesc:
-    def __init__(self, functionName, fileName, startLine, endLine, cfg, stackSize = -1):
+    def __init__(self, functionName, fileName, startLine, endLine, cfg, stackSize = -1, paramStr = None):
         self.functionName = functionName
         self.fileName = fileName
         self.startLine = startLine
         self.endLine = endLine
         self.cfg = cfg
         self.stackSize = stackSize
-    
+        self.paramStr = paramStr
+        self.listParams = []
+        if paramStr is not None and paramStr is not "":
+            print "******"
+            print paramStr
+            print "******"
+            listParams = paramStr.split(",")
+            for param in listParams:
+                m = re_VarSpec.match(param)
+                paramType = m.group("varType")
+                paramName = m.group("varName")
+                paramLen = m.group("varLen")
+                if paramType.endswith("*") or paramLen is not "":
+                    print "GKUKREJA: %s is param pointer" % paramName
+                    paramIsPointer = True
+                else:
+                    paramIsPointer = False
+                    print "GKUKREJA: %s is not param pointer" % paramName
+                self.listParams.append(FunctionParam(paramType, paramName, paramLen, paramIsPointer))        
+        else:
+            print "GKUKREJA: No Params"
+            
     def setStackSize(self, stackSize):
         self.stackSize = stackSize
         
