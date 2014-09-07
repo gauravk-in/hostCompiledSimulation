@@ -34,7 +34,8 @@ re_VarDeclInitMultiLineEnd = re.compile("\s*(?:%s)\s*;" % (VarSpecInitMultiLineE
 VarSpec_ = "(?:%s)\s*(?:\w*)\s*(?:(?:\[.*\])*)?" % (DataTypes)
 FuncParams = "(?:(?:%s)(?:\s*,\s*(?:%s))*)" % (VarSpec_, VarSpec_)
 RetTypes = "(?:%s)|void" % (DataTypes)
-re_FuncDefStart = re.compile("\s*(?P<retType>%s)?\s*(?P<name>\w*)\s*\((?P<params>%s)?\)\s*(?P<openBrace>\{)?" % (RetTypes, FuncParams))
+re_FuncDefStart = re.compile("\s*(?P<retType>%s)?\s*(?P<name>\w*)\s*\((?P<params>%s)?(?P<openBrace>$|\)\s*\{)" % (RetTypes, FuncParams))
+re_FuncDefArgLine = re.compile("\s*(?P<params>%s)(?P<openBrace>$|\)\s*\{)" % (FuncParams))
 
 # Label
 re_Label = re.compile("\s*(?P<label>\w*):")
@@ -44,7 +45,7 @@ re_ifStatement = re.compile("\s*if\s*\(.*\)")
 re_elseStatement = re.compile("\s*else\s*")
 
 # Goto Instructions
-re_gotoStatement = re.compile("\s*goto\s*\w*;")
+re_gotoStatement = re.compile("\s*goto\s*(?P<label>\w*);")
 
 # Struct Declaration Start
 re_structDecl = re.compile("\s*struct\s*\w*\s*{.*};$")
@@ -54,8 +55,13 @@ re_structDeclMultiLine = re.compile("\s*struct\s*\w*\s*{\s*$")
 re_BlockStartLBrace = re.compile("^\s*\{\s*$")
 re_BlockEndRBrace = re.compile("^\s*\}\s*$")
 re_returnStatement = re.compile("^\s*return\s*.*;\s*$")
-re_functionCallStatement = re.compile("\s*\w*\s*\(.*\);\s*")
+re_functionCallStatement = re.compile("\s*(?P<name>\w*)\s*\((?P<params>.*)\);\s*")
 # [&\s,\w\[\]\(\)\*]
+
+# TODO: Improve if necessary
+# Brought forward from old grammar
+re_basicBlockStart = re.compile('\s*//\s*#\s*PRED:./*')
+re_basicBlockEnd = re.compile('\s*//\s*#\s*SUCC:./*')
 
 # 
 # # Assignment/Arithmetic

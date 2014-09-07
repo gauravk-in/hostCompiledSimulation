@@ -5,22 +5,7 @@
 import sys
 import re
 from cfg import *
-
-# RE for function definition
-#   group(1) is function Name
-#   if group(2) == "){", single line definition
-#   elif group(2) == $, multi line definition
-re_funcDef = re.compile('(?:\w*\s+)*\**(\w+)\s*\([,\s\w&\[\]\*]*($|\)\s*\{)')
-re_funcDefArgLine = re.compile('[,\s\w&\[\]\*]*($|\)\s*(?:\{)?)')
-re_basicBlockLabel = re.compile('\s*(\w*bb_[0-9]*):')
-re_basicBlockStart = re.compile('\s*//\s*#\s*PRED:./*')
-re_basicBlockEnd = re.compile('\s*//\s*#\s*SUCC:./*')
-re_gotoLine = re.compile('\s*goto\s*(\w*bb_[0-9]*);')
-re_funcCallLine = re.compile('\s*(\w*)\s*\([,\s\w&\[\]\*]*\);')
-re_returnLine = re.compile('\s*return\s*.*;')
-re_funcDefEnd = re.compile('\s*\}')
-re_commentStart = re.compile('\s*/\*.*')
-re_commentEnd = re.compile('\s*.*\*/')
+from irc_regex import *
 
 class BasicBlockTargets:
     def __init__(self, name, listTargets = None):
@@ -80,16 +65,16 @@ def parse_isc(fileName):
                 
         '''
         # Comment Handling
-        m = re_commentStart.match(line)
+        m = re_CommentStart.match(line)
         if m is not None:
-            if re_commentEnd.match(line) == None:
+            if re_CommentEnd.match(line) == None:
                 inMultiLineComment = 1
                 continue
             else:
                 continue
                 
         if inMultiLineComment == 1:
-            m = re_commentEnd.match(line)
+            m = re_CommentEnd.match(line)
             if m is not None:
                 inMultiLineComment = 0
                 continue
@@ -97,9 +82,9 @@ def parse_isc(fileName):
                 continue
         
         # 1. Look for function definition
-        m = re_funcDef.match(line)
+        m = re_FuncDefStart.match(line)
         if m is not None:
-            if m.group(2) == "":
+            if m.group("openBrace") == "":
                 # 1.b. Multi Line Function Arguments
                 inFuncDefArgMultiLine = 1
                 currFuncName = m.group(1)
@@ -107,15 +92,15 @@ def parse_isc(fileName):
             else:
                 # 1.a. Single Line Definition
                 inFunctionBody = 1
-                currFuncName = m.group(1)
+                currFuncName = m.group("name")
                 currFuncStartLine = lineNum + 1
                 continue
                 
         if inFuncDefArgMultiLine == 1:
             # 1.b. Multi Line Function Arguments
-            m = re_funcDefArgLine.match(line)
+            m = re_FuncDefArgLine.match(line)
             if m is not None:
-                if m.group(1) == "":
+                if m.group("openBrace") == "":
                     # Next line is still argument list
                     continue
                 else:
@@ -131,10 +116,10 @@ def parse_isc(fileName):
         # 2. Inside Function Body    
         if inFunctionBody == 1:
             # 2.a Look for labels
-            m = re_basicBlockLabel.match(line)
+            m = re_Label.match(line)
             if m is not None:
                 # 2.a.1 Record name of Basic Block
-                currBasicBlockName = m.group(1)
+                currBasicBlockName = m.group("label")
                 continue
             
             # 2.a.2. Look for start of Basic Block
@@ -168,30 +153,30 @@ def parse_isc(fileName):
                     continue;
                 
                 # 2.b. look for goto instructions
-                m = re_gotoLine.match(line)
+                m = re_gotoStatement.match(line)
                 if m is not None:
                     # 2.b.1. List of targets of current basic block
-                    targetBlock = m.group(1)
+                    targetBlock = m.group("label")
                     listCurrBasicBlockTargets.append(targetBlock)
                     continue
                 
                 # 2.c. look for function calls
-                m = re_funcCallLine.match(line)
+                m = re_functionCallStatement.match(line)
                 if m is not None:
                     # 2.c.1. List of functions called by current block
-                    funcCallName = m.group(1)
+                    funcCallName = m.group("name")
                     listCurrBlockFuncCalls.append(funcCallName)
                     continue
             
                 # 2.d. look for return instructions
-                m = re_returnLine.match(line)
+                m = re_returnStatement.match(line)
                 if m is not None:
                     # Flag to say current basic block returns
                     isCurrBasicBlockReturning = 1
                     continue
             
             # look for end of function definition
-            m = re_funcDefEnd.match(line)
+            m = re_BlockEndRBrace.match(line)
             if m is not None:
                 currFuncEndLine = lineNum - 1
                 for blockTarget in listCurrFuncBasicBlockTargets:
