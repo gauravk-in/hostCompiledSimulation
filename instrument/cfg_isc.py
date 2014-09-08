@@ -85,13 +85,14 @@ def parse_isc(fileName):
         # 1. Look for function definition
         m = re_FuncDefStart.match(line)
         if m is not None:
-            if m.group("openBrace") == "":
+            if m.group("endComma") is not None:
                 # 1.b. Multi Line Function Arguments
                 inFuncDefArgMultiLine = 1
                 currFuncName = m.group("name")
                 currFuncParamStr = m.group("params")
                 continue
             else:
+                assert(m.group("openBrace") is not None)
                 # 1.a. Single Line Definition
                 inFunctionBody = 1
                 currFuncName = m.group("name")
@@ -103,13 +104,22 @@ def parse_isc(fileName):
             # 1.b. Multi Line Function Arguments
             m = re_FuncDefArgLine.match(line)
             if m is not None:
-                if m.group("openBrace") == "":
+                if m.group("endComma") is not None:
                     # Next line is still argument list
-                    currFuncParamStr = currFuncParamStr + m.group("params")
+                    # Add a comma, becase the end comma in the above line was eaten up!
+                    currFuncParamStr = currFuncParamStr + ", " + m.group("params")
+                    print "********"
+                    print "MultiLineFuncDef: Params = %s" % currFuncParamStr
+                    print "********"
                     continue
                 else:
+                    assert(m.group("openBrace") is not None)
                     # End of Argument List. Start of function body in next line.
-                    currFuncParamStr = currFuncParamStr + m.group("params")
+                    # Add a comma, becase the end comma in the above line was eaten up!
+                    currFuncParamStr = currFuncParamStr + ", " + m.group("params")
+                    print "********"
+                    print "MultiLineFuncDef: Params = %s" % currFuncParamStr
+                    print "********"
                     inFuncDefArgMultiLine = 0
                     inFunctionBody = 1
                     currFuncStartLine = lineNum + 1

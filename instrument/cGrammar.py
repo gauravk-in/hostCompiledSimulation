@@ -86,6 +86,16 @@ isConditionalStatement = 0
 
 list_identifiers = []
 list_annotations = []
+currStatementAccesses = []
+
+def addAccessToList(newAccess):
+    global currStatementAccesses
+    
+    for access in currStatementAccesses:
+        if access.varName == newAccess.varName:
+            return
+    
+    currStatementAccesses.append(newAccess)
 
 
 ################################################################3
@@ -137,6 +147,7 @@ def act_identifier(tokens):
     global var_name
     global list_identifiers
     global list_annotations
+    global currStatementAccesses
 
     if tokens[0] not in list_type_names and tokens[0] not in list_keywords:
         # Deref Operation
@@ -155,6 +166,7 @@ def act_identifier(tokens):
                 logging.debug(" Pointer Var Name = " + pointer_var_name)
                 # TODO Annotate Deref without Index here.
                 annotation = (pointer_var_name, "simDCache((%s_addr), %d);" % (pointer_var_name, assign_operator_seen))
+                addAccessToList(Access(pointer_var_name, False, "", assign_operator_seen))
                 if annotation not in list_annotations:
                     list_annotations.append(annotation)
                 deref_operator_seen = 0
@@ -165,6 +177,7 @@ def act_identifier(tokens):
             if (var_name not in list_identifiers):
                 logging.debug(" Variable name = " + var_name)
                 annotation = (var_name, "simDCache((%s_addr), %d);" % (var_name, assign_operator_seen))
+                addAccessToList(Access(var_name, False, "", assign_operator_seen))
                 if annotation not in list_annotations:
                     list_annotations.append(annotation)
                 # TODO Annotate Variable Access Here.
@@ -178,6 +191,7 @@ def act_rparen_expression(tokens):
     global deref_index_seen
     global base_pointer_var_seen
     global list_annotations
+    global currStatementAccesses
 
     if deref_operator_seen == 1 and deref_expression_lparen_seen == 1 and deref_index_seen == 1:
         deref_operator_seen = 0
@@ -186,6 +200,10 @@ def act_rparen_expression(tokens):
         base_pointer_var_seen = 0
         # TODO ANNOTATE Deref with Index here
         annotation = (base_pointer_var_name, "simDCache((%s_addr%s), %d);" % (base_pointer_var_name, deref_index_string, assign_operator_seen))
+        addAccessToList(Access(base_pointer_var_name, 
+                                            True, 
+                                            deref_index_string, 
+                                            assign_operator_seen))
 #         if deref_index_string != "":
 #             annotation = (base_pointer_var_name, "simDCache((%s_addr + (%s)), %d);" % (base_pointer_var_name, deref_index_string, assign_operator_seen))
 #         else:
@@ -211,12 +229,17 @@ primary_expression = ( IDENTIFIER.setParseAction(act_identifier)
 def act_array_index_rbrace(tokens):
     global array_index_lbrace_seen
     global list_annotations
+    global currStatementAccesses
 
     assert(array_index_lbrace_seen == 1)
     array_index_lbrace_seen = 0
 
     # TODO Annotate Array Indexed Access Here
     annotation = (array_name, "simDCache((%s_addr + (%s)), %d);" % (array_name, array_index_string, assign_operator_seen))
+    addAccessToList(Access(array_name, 
+                           True, 
+                           array_index_string, 
+                           assign_operator_seen))
     if annotation not in list_annotations:
         list_annotations.append(annotation)
 
@@ -234,12 +257,14 @@ def act_array_index_lbrace(tokens):
     global list_identifiers
     global list_annotations
     global array_name
+    global currStatementAccesses
 
     array_index_lbrace_seen = 1
     array_name = list_identifiers[-1]
     logging.debug(" Array Name = " + array_name)
     # TODO : Previous variable name was already annotated, assuming its a variable access. Delete the last entry in the list of annotations.
     del(list_annotations[-1])
+    del(currStatementAccesses[-1])
     
 # TODO : Check if PTR_OP and Literal(".") must be handled more carefully     
 
@@ -427,6 +452,26 @@ def ignore_statement(line):
     if line.isspace():
         return True
 
+class Access:
+    def __init__(self, varName, isIndexed, index, isRead):
+        self.varName = varName
+        self.isIndexed = isIndexed
+        self.index = index
+        self.isRead = isRead
+        
+    def debug(self):
+        if self.isRead:
+            if self.isIndexed:
+                logging.debug("Read var %s indexed by %s" % (var.name, var.index))
+            else:
+                logging.debug("Read var %s without index" % (var.name))
+        else: # if not self.isRead:
+            if self.isIndexed:
+                logging.debug("Write var %s indexed by %s" % (var.name, var.index))
+            else:
+                logging.debug("Write var %s without index" % (var.name))    
+            
+
 def parse_statement(line):
     global deref_operator_seen
     global deref_expression_lparen_seen
@@ -443,6 +488,7 @@ def parse_statement(line):
     global list_identifiers
     global list_annotations
     global assign_operator_seen
+    global currStatementAccesses
 
     if ignore_statement(line):
         return None
@@ -462,11 +508,14 @@ def parse_statement(line):
     isConditionalStatement = 0
     list_identifiers = []
     list_annotations = []
+    currStatementAccesses = []
     
     r = statement.parseString(line)
-#     print r
 
-    return list_annotations
+    assert (len(list_annotations) == len(currStatementAccesses))
+
+#     return list_annotations
+    return currStatementAccesses
 
 def test():
 

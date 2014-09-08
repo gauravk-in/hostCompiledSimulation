@@ -34,8 +34,8 @@ re_VarDeclInitMultiLineEnd = re.compile("\s*(?:%s)\s*;" % (VarSpecInitMultiLineE
 VarSpec_ = "(?:%s)\s*(?:\w*)\s*(?:(?:\[.*\])*)?" % (DataTypes)
 FuncParams = "(?:(?:%s)(?:\s*,\s*(?:%s))*)" % (VarSpec_, VarSpec_)
 RetTypes = "(?:%s)|void" % (DataTypes)
-re_FuncDefStart = re.compile("\s*(?P<retType>%s)?\s*(?P<name>\w*)\s*\((?P<params>%s)?(?P<openBrace>$|\)\s*\{)" % (RetTypes, FuncParams))
-re_FuncDefArgLine = re.compile("\s*(?P<params>%s)(?P<openBrace>$|\)\s*\{)" % (FuncParams))
+re_FuncDefStart = re.compile("\s*(?P<retType>%s)?\s*(?P<name>\w*)\s*\((?P<params>%s)?(?:(?P<endComma>,)|(?P<openBrace>\)\s*\{))" % (RetTypes, FuncParams))
+re_FuncDefArgLine = re.compile("\s*(?P<params>%s)(?:(?P<endComma>,)|(?P<openBrace>\)\s*\{))" % (FuncParams))
 
 # Label
 re_Label = re.compile("\s*(?P<label>\w*):")

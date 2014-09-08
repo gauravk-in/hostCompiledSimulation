@@ -60,6 +60,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
         currFunctionName = ""
         lineNum = 0
         inMultiLineVarInit = 0
+        inMultiLineFuctionSignature = 0
         inFunction = 0
         for line in ISCFile:
             lineNum = lineNum + 1
@@ -89,6 +90,20 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                                                 annot)
                     continue
                 else:
+                    continue
+                
+            if inMultiLineFuctionSignature == 1:
+                m = re_FuncDefArgLine.match(line)
+                if m is not None:
+                    if not m.group("openBrace").isspace():
+                        inMultiLineFunctionSignature = 0
+                    # replace the multi line signature with blank lines, 
+                    # the annotation for function has already been added
+                    annot_str = ""
+                    annot = Annotation(annot_str, ISCFileName, lineNum, True)
+                    addAnnotationToDict(dictAnnotVarFuncDecl,
+                                        lineNum,
+                                        annot)
                     continue
     
             m = re_VarDeclInitOneLine.match(line)
@@ -149,6 +164,10 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                 inFunction = 1
                 currFunctionName = m.group("name")
                 currFuncRetType = m.group("retType")
+                if m.group("endComma") is not None:
+                    inMultiLineFuctionSignature = 1
+                else:
+                    assert(m.group("openBrace") is not None)
                 logging.debug(" Function : " + currFunctionName)
                 
                 funcISC = find(lambda fn: fn.functionName == currFunctionName,
@@ -187,7 +206,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
     debugDictAnnot(dictAnnotVarFuncDecl)
     return dictAnnotVarFuncDecl
     
-def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
+def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGlobalVariables, listLocalVariables):
     dictAnnotLoadStore = OrderedDict({})
     
     for funcISC in listISCFunctions:
@@ -207,13 +226,17 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
                 for lineNumISC in range(blockISC.startLine, blockISC.endLine + 1):
                     lineISC = lc.getline(funcISC.fileName, lineNumISC)
                     print "%s:%d: %s" % (funcISC.fileName, lineNumISC, lineISC),
-                    lineAnnotations = parse_statement(lineISC)
-                    if lineAnnotations == None:
+                    lineAccesses = parse_statement(lineISC)
+                    if lineAccesses == None:
                         continue
-                    while lineAnnotations:
-                        annotation = lineAnnotations.pop()
-                        if annotation[0] in currFuncListParamsToAnnot:
-                            annot_str = annotation[1]
+                    while lineAccesses:
+                        access = lineAccesses.pop()
+                        if access.varName in currFuncListParamsToAnnot:
+                            if access.isIndexed:
+                                param = find(lambda p: p.name == access.varName, funcISC.listParams)
+                                annot_str = "simDCache(%s_addr + (sizeof(%s) * (%s)), %d);" % (access.varName, param.type, access.index, access.isRead)
+                            else:
+                                annot_str = "simDCache(%s_addr, %d);" % (access.varName, access.isRead)
                             annot = Annotation(annot_str, funcISC.fileName, lineNumISC, False)
                             annot.debug()
                             addAnnotationToDict(dictAnnotLoadStore, 
@@ -224,8 +247,12 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo):
                             lenBlockLSInfo = len(blockLSInfo)
                             for i in range(lenBlockLSInfo):
                                 lsInfo = blockLSInfo.pop(0)
-                                if lsInfo.var != None and annotation[0] == lsInfo.var.name:
-                                    annot_str = annotation[1]
+                                if lsInfo.var != None and access.varName == lsInfo.var.name:
+                                    if access.isIndexed:
+                                        var = find(lambda var: var.name == access.varName, listGlobalVariables + listLocalVariables)
+                                        annot_str = "simDCache(%s_addr + (%d * (%s)), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
+                                    else:
+                                        annot_str = "simDCache(%s_addr, %d);" % (access.varName, access.isRead)
                                     annot = Annotation(annot_str, funcISC.fileName, lineNumISC, False)
                                     annot.debug()
                                     addAnnotationToDict(dictAnnotLoadStore, 
@@ -328,7 +355,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames,
 
     dictAnnotVarFuncDecl = annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables, listLocalVariables)
     
-    dictAnnotLoadStore = annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo)
+    dictAnnotLoadStore = annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGlobalVariables, listLocalVariables)
 
     generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, outputPath)
 

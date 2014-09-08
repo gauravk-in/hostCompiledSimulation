@@ -42,8 +42,8 @@ class Variable:
             print ("LocalVar: "),
         else:
             print("GlobalVar: "),
-        print("%s; add=0x%x; scope=\"%s\"; type=\"%s\"; size=%d;" % 
-              (self.name, self.address, self.scope, self.type, self.size))
+        print("%s; add=0x%x; scope=\"%s\"; type=\"%s\"; size=%d, sizeof=%d;" % 
+              (self.name, self.address, self.scope, self.type, self.size, self.size/self.length))
             
 def debugListVariables(listVariables):
     print ""
