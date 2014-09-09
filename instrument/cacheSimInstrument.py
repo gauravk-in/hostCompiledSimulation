@@ -196,6 +196,39 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                                         annot)
                 continue
             
+            m = re_FuncDeclStart.match(line)
+            if m is not None:
+                currFunctionName = m.group("name")
+                currFuncRetType = m.group("retType")
+                assert(m.group("openBrace") is not None)
+                logging.debug(" Function : " + currFunctionName)
+                
+                funcISC = find(lambda fn: fn.functionName == currFunctionName,
+                               listISCFunctions)
+                if funcISC.listParams:
+                    # Create a list of new parameters for the annotated function signature
+                    #     Add <name>_addr parameter for each param that is a pointer
+                    newFuncParamsList = []
+                    for param in funcISC.listParams:
+                        newFuncParamsList.append(param.type + param.name + param.len)
+                        if param.isPointer:
+                            newFuncParamsList.append("unsigned long " + param.name + "_addr")
+                    
+                    # create the new annotation
+                    annotatedFuncDecl = currFuncRetType + " " + currFunctionName + " ("
+                    for param in newFuncParamsList[:-1]:
+                        annotatedFuncDecl = annotatedFuncDecl + param + ", "
+                    annotatedFuncDecl = annotatedFuncDecl + newFuncParamsList[-1] + ")"
+                    
+                    annot = Annotation(annotatedFuncDecl,
+                                       ISCFileName,
+                                       lineNum,
+                                       replace = True)
+                    addAnnotationToDict(dictAnnotVarFuncDecl, 
+                                        lineNum,
+                                        annot)
+                continue
+            
             m = re_BlockEndRBrace.match(line)
             if m is not None and inFunction == 1:
                 inFunction = 0

@@ -15,5 +15,4 @@ struct adpcm_state {
 #define ARGS(x) ()
 #endif
 
-void adpcm_coder ARGS((short [], char [], int, struct adpcm_state *));
-void adpcm_decoder ARGS((char [], short [], int, struct adpcm_state *));
+void adpcm_coder (short [], char [], int, struct adpcm_state *);
