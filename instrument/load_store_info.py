@@ -147,7 +147,43 @@ class LoadStoreInfo:
                 print("Inaccurately Matched Load at line %d" % self.lineNumObj)
             else:
                 print("Inaccurately Matched Store at line %d" % self.lineNumObj)
+    
+    def debug_str(self):
+        str = ""
+        if self.isAccuratelyMatched == True:
+            if self.isLoad == True:
+                if self.isPCRelLoad == False:
+                    if self.isSpiltRegister == False:
+                        str = str + "Load "
+                        if self.var.isLocal == True:
+                            str = str + "LocalVar "
+                        else:
+                            str = str + "GlobalVar "
+                        str = str + "%s at line %d" % (self.var.name, self.lineNumObj)
+                    else: # isSpiltRegister == True
+                        str = str + ("Reading Spilt Register from add %d in stack on line %d" %
+                              (self.spiltRegAdd, self.lineNumObj))
+                else: # isPCRelLoad == True
+                    str = str + ("PC Relative Load from add %d on line %d" % 
+                          (self.PCRelAdd, self.lineNumObj))
+            else: # isLoad == False
+                if self.isSpiltRegister == False:
+                    str = str + "Store "
+                    if self.var.isLocal == True:
+                        str = str + "LocalVar "
+                    else:
+                        str = str + "GlobalVar "
+                    str = str + ("%s at line %d" % (self.var.name, self.lineNumObj))
+                else: # isSpiltRegister == True
+                    str = str + ("Spilling Register to add %d in stack on line %d" % 
+                           (self.spiltRegAdd, self.lineNumObj))
+        else:
+            if self.isLoad == True:
+                str = str + ("Inaccurately Matched Load at line %d" % self.lineNumObj)
+            else:
+                str = str + ("Inaccurately Matched Store at line %d" % self.lineNumObj)
                 
+        return str
 
 def debugListLSInfo(listLSInfo):
     print ""

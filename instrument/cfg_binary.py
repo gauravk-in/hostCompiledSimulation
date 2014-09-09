@@ -301,36 +301,36 @@ def parse_binary(fileName, listFunctionNames = []):
 def print_debug_binary(listFunctions, gdbMapping=None):
     if gdbMapping == None:
         for func in listFunctions:
-            print("\nFileName : %s" % (func.fileName))
-            print("Function : %s" % (func.functionName))
+            logging.debug("\nFileName : %s" % (func.fileName))
+            logging.debug("Function : %s" % (func.functionName))
             i = 0
             for block in func.cfg.listBlocks:
-                print("\t Block %d: line %d - %d, flow = %f" % (i, block.startLine, block.endLine, block.flow))
+                logging.debug("\t Block %d: line %d - %d, flow = %f" % (i, block.startLine, block.endLine, block.flow))
                 for funcCall in block.listFunctionCalls:
-                    print("\t\t calls %s()" % (funcCall))
+                    logging.debug("\t\t calls %s()" % (funcCall))
                 if block.isReturning == 1:
-                    print("\t\t returns")
+                    logging.debug("\t\t returns")
                 for edge in func.cfg.listEdges:
                     if edge.fromBlockIndex == i:
-                        print("\t\t Edge to block %d" % (edge.toBlockIndex))
+                        logging.debug("\t\t Edge to block %d" % (edge.toBlockIndex))
                 i = i + 1
     else:
         for func in listFunctions:
-            print("\nFileName : %s" % (func.fileName))
-            print("Function : %s" % (func.functionName))
+            logging.debug("\nFileName : %s" % (func.fileName))
+            logging.debug("Function : %s" % (func.functionName))
             i = 0
             for block in func.cfg.listBlocks:
-                print("\t Block %d: line %d - %d, flow = %f" % (i, block.startLine, block.endLine, block.flow))
+                logging.debug("\t Block %d: line %d - %d, flow = %f" % (i, block.startLine, block.endLine, block.flow))
                 for funcCall in block.listFunctionCalls:
-                    print("\t\t calls %s()" % (funcCall))
+                    logging.debug("\t\t calls %s()" % (funcCall))
                 if block.isReturning == 1:
-                    print("\t\t returns")
+                    logging.debug("\t\t returns")
                 for edge in func.cfg.listEdges:
                     if edge.fromBlockIndex == i:
-                        print("\t\t Edge to block %d" % (edge.toBlockIndex))
+                        logging.debug("\t\t Edge to block %d" % (edge.toBlockIndex))
                 for lineNum in range(block.startLine, block.endLine):
                     if lineNum in gdbMapping:
-                        print("\t\t Line %d from %s:%d" % (lineNum,
+                        logging.debug("\t\t Line %d from %s:%d" % (lineNum,
                                                            gdbMapping[lineNum].fileName,
                                                            gdbMapping[lineNum].lineNum))
                 i = i + 1

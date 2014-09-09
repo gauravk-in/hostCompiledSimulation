@@ -570,10 +570,9 @@ def match_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
         mappingStackObj = [(0, [0])]
         if mapping(cfgISC=cfgISC, blockIndISC=0, cfgObj=cfgObj, blockIndObj=0, mergedLevelsISC=0) == 0:
             logging.debug("Mapping Found!!!!")
-            print mappingStackISC
-            print mappingStackObj
         else:
             logging.debug("Fuck my life!!!")
+            
         mappingStackISC.pop()
         mappingStackObj.pop()
         

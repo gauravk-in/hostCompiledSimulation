@@ -1,5 +1,7 @@
 import re
 
+re_instruction = re.compile('\s*(?P<address>[0-9a-f]*):\s*(?P<opcode>[0-9a-f]*)\s*(?P<instruction>.*)')
+
 EndLine = "\s*;\s*(?P<comment>.*)$|$"
 
 Cond = "eq|ne|cs|hs|lo|cc|mi|pl|hi|ls|ge|lt|gt|le"

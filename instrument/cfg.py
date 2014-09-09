@@ -211,9 +211,6 @@ class FunctionDesc:
         self.paramStr = paramStr
         self.listParams = []
         if paramStr is not None and paramStr is not "":
-            print "******"
-            print paramStr
-            print "******"
             listParams = paramStr.split(",")
             for param in listParams:
                 m = re_VarSpec.match(param)
@@ -221,14 +218,11 @@ class FunctionDesc:
                 paramName = m.group("varName")
                 paramLen = m.group("varLen")
                 if paramType.endswith("*") or paramLen is not "":
-                    print "GKUKREJA: %s is param pointer" % paramName
                     paramIsPointer = True
                 else:
                     paramIsPointer = False
-                    print "GKUKREJA: %s is not param pointer" % paramName
                 self.listParams.append(FunctionParam(paramType, paramName, paramLen, paramIsPointer))        
-        else:
-            print "GKUKREJA: No Params"
+        
             
     def setStackSize(self, stackSize):
         self.stackSize = stackSize

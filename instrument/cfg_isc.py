@@ -108,18 +108,12 @@ def parse_isc(fileName):
                     # Next line is still argument list
                     # Add a comma, becase the end comma in the above line was eaten up!
                     currFuncParamStr = currFuncParamStr + ", " + m.group("params")
-                    print "********"
-                    print "MultiLineFuncDef: Params = %s" % currFuncParamStr
-                    print "********"
                     continue
                 else:
                     assert(m.group("openBrace") is not None)
                     # End of Argument List. Start of function body in next line.
                     # Add a comma, becase the end comma in the above line was eaten up!
                     currFuncParamStr = currFuncParamStr + ", " + m.group("params")
-                    print "********"
-                    print "MultiLineFuncDef: Params = %s" % currFuncParamStr
-                    print "********"
                     inFuncDefArgMultiLine = 0
                     inFunctionBody = 1
                     currFuncStartLine = lineNum + 1
@@ -251,18 +245,18 @@ def parse_isc(fileName):
 
 def print_debug_isc(listFunctions):
     for func in listFunctions:
-        print("\nFileName : %s" % (func.fileName))
-        print("Function : %s" % (func.functionName))
+        logging.debug("\nFileName : %s" % (func.fileName))
+        logging.debug("Function : %s" % (func.functionName))
         i = 0
         for block in func.cfg.listBlocks:
-            print("\t Block %s: line %d - %d, flow = %f" % (block.name, block.startLine, block.endLine, block.flow))
+            logging.debug("\t Block %s: line %d - %d, flow = %f" % (block.name, block.startLine, block.endLine, block.flow))
             for funcCall in block.listFunctionCalls:
-                print("\t\t calls %s()" % (funcCall))
+                logging.debug("\t\t calls %s()" % (funcCall))
             if block.isReturning == 1:
-                print("\t\t returns")
+                logging.debug("\t\t returns")
             for edge in func.cfg.listEdges:
                 if edge.fromBlockIndex == i:
-                    print("\t\t Edge to block %s" % (func.cfg.listBlocks[edge.toBlockIndex].name))
+                    logging.debug("\t\t Edge to block %s" % (func.cfg.listBlocks[edge.toBlockIndex].name))
             i = i + 1
         
 

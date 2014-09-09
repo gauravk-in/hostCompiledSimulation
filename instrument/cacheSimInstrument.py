@@ -55,6 +55,11 @@ def addAnnotationToDict(dict, lineNum, annot):
 def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables, listLocalVariables):
     dictAnnotVarFuncDecl = OrderedDict({})
     
+    SPInitAddress = 0x1234
+    
+    mainFunc = find(lambda fn: fn.functionName == "main", listISCFunctions)
+    mainFuncFile = mainFunc.fileName
+    
     for ISCFileName in listISCFileNames:
         ISCFile = open(ISCFileName, "r")
         currFunctionName = ""
@@ -62,8 +67,41 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
         inMultiLineVarInit = 0
         inMultiLineFuctionSignature = 0
         inFunction = 0
+        isGlobalSPVarDeclared = 0
+        
         for line in ISCFile:
             lineNum = lineNum + 1
+            
+            if line.startswith('#include "ir2c.h"'):
+                annot_str = '#include "cacheSim.h"'
+                annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                addAnnotationToDict(dictAnnotVarFuncDecl,
+                                    lineNum,
+                                    annot)
+                if not isGlobalSPVarDeclared:
+                    isGlobalSPVarDeclared = 1
+                    if ISCFileName == mainFuncFile:
+                        annot_str = "unsigned long SP = 0x%x;" % (SPInitAddress)
+                        annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                        addAnnotationToDict(dictAnnotVarFuncDecl,
+                                            lineNum,
+                                            annot)
+                        annot_str = "unsigned long memAccessCycles = 0;"
+                        annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                        addAnnotationToDict(dictAnnotVarFuncDecl,
+                                            lineNum,
+                                            annot)
+                    else:
+                        annot_str = "extern unsigned long SP;"
+                        annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                        addAnnotationToDict(dictAnnotVarFuncDecl,
+                                            lineNum,
+                                            annot)
+                        annot_str = "extern unsigned long memAccessCycles;"
+                        annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                        addAnnotationToDict(dictAnnotVarFuncDecl,
+                                            lineNum,
+                                            annot)
             
             if inMultiLineVarInit == 1:
                 m = re_VarDeclInitMultiLineEnd.match(line)
@@ -185,7 +223,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                     annotatedFuncDecl = currFuncRetType + " " + currFunctionName + " ("
                     for param in newFuncParamsList[:-1]:
                         annotatedFuncDecl = annotatedFuncDecl + param + ", "
-                    annotatedFuncDecl = annotatedFuncDecl + newFuncParamsList[-1] + ")"
+                    annotatedFuncDecl = annotatedFuncDecl + newFuncParamsList[-1] + ") {"
                     
                     annot = Annotation(annotatedFuncDecl,
                                        ISCFileName,
@@ -218,7 +256,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                     annotatedFuncDecl = currFuncRetType + " " + currFunctionName + " ("
                     for param in newFuncParamsList[:-1]:
                         annotatedFuncDecl = annotatedFuncDecl + param + ", "
-                    annotatedFuncDecl = annotatedFuncDecl + newFuncParamsList[-1] + ")"
+                    annotatedFuncDecl = annotatedFuncDecl + newFuncParamsList[-1] + ");"
                     
                     annot = Annotation(annotatedFuncDecl,
                                        ISCFileName,
@@ -228,6 +266,32 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                                         lineNum,
                                         annot)
                 continue
+            
+            m = re_functionCallStatement.match(line)
+            if m is not None:
+                funcName = m.group("name")
+                funcParams = m.group("params")
+                funcISC = find(lambda fn: fn.functionName == funcName, listISCFunctions)
+                listParamsInCall = funcParams.split(",")
+                listParamsInAnnotCall = []
+                paramInd = -1
+                for param in funcISC.listParams:
+                    paramInd = paramInd + 1
+                    listParamsInAnnotCall.append(listParamsInCall[paramInd])
+                    if param.isPointer:
+                        m = re.match("\s*&(?P<varName>\w*)", listParamsInCall[paramInd])
+                        paramVarName = m.group("varName")
+                        listParamsInAnnotCall.append(paramVarName + "_addr")
+                
+                annot_str = funcName + " ("
+                for param in listParamsInAnnotCall[:-1]:
+                    annot_str = annot_str + param + ", "
+                annot_str = annot_str + listParamsInAnnotCall[-1] + ");"
+                annot = Annotation(annot_str,
+                                   ISCFileName,
+                                   lineNum,
+                                   True)
+                addAnnotationToDict(dictAnnotVarFuncDecl, lineNum, annot)
             
             m = re_BlockEndRBrace.match(line)
             if m is not None and inFunction == 1:
@@ -248,6 +312,11 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
         for param in funcISC.listParams:
             if param.isPointer:
                 currFuncListParamsToAnnot.append(param.name)
+                
+        if funcISC.functionName == "main":
+            annot_str = "cacheSimInit();"
+            annot = Annotation(annot_str, funcISC.fileName, funcISC.cfg.listBlocks[0].startLine-1, False)
+            addAnnotationToDict(dictAnnotLoadStore, funcISC.cfg.listBlocks[0].startLine-1, annot)
         
         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
         for blockObj in funcObj.cfg.listBlocks:
@@ -256,9 +325,37 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
 #             print blockLSInfo
             for blockISCInd in mappedBlocksISCInd:
                 blockISC = funcISC.cfg.listBlocks[blockISCInd]
+                
+                for i in range(len(blockLSInfo)):
+                    lsInfo = blockLSInfo.pop(0)
+                    if lsInfo.isLoad and lsInfo.isPCRelLoad:
+                        annot_str = "memAccessCycles += simICache(0x%x, 4);  // PC Relative Load" % (lsInfo.PCRelAdd)
+                        annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
+                        addAnnotationToDict(dictAnnotLoadStore, 
+                                            blockISC.startLine-1,
+                                            annot)
+                        continue
+                    elif lsInfo.isSpiltRegister:
+                        if lsInfo.isLoad:
+                            annot_str = "memAccessCycles += simDCache((SP + 0x%x), 1);  // Reading Spilt Register" % (lsInfo.spiltRegAdd)
+                            annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
+                            addAnnotationToDict(dictAnnotLoadStore, 
+                                                blockISC.startLine-1,
+                                                annot)
+                            continue
+                        else:
+                            annot_str = "memAccessCycles += simDCache((SP + 0x%x), 1);  // Spilling Register" % (lsInfo.spiltRegAdd)
+                            annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
+                            addAnnotationToDict(dictAnnotLoadStore, 
+                                                blockISC.startLine-1,
+                                                annot)
+                            continue
+                    else:
+                        blockLSInfo.append(lsInfo)
+                
                 for lineNumISC in range(blockISC.startLine, blockISC.endLine + 1):
                     lineISC = lc.getline(funcISC.fileName, lineNumISC)
-                    print "%s:%d: %s" % (funcISC.fileName, lineNumISC, lineISC),
+                    logging.debug("%s:%d: %s" % (funcISC.fileName, lineNumISC, lineISC))
                     lineAccesses = parse_statement(lineISC)
                     if lineAccesses == None:
                         continue
@@ -267,9 +364,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                         if access.varName in currFuncListParamsToAnnot:
                             if access.isIndexed:
                                 param = find(lambda p: p.name == access.varName, funcISC.listParams)
-                                annot_str = "simDCache(%s_addr + (sizeof(%s) * (%s)), %d);" % (access.varName, param.type, access.index, access.isRead)
+                                annot_str = "memAccessCycles += simDCache(%s_addr + (sizeof(%s) * (%s)), %d);" % (access.varName, param.type, access.index, access.isRead)
                             else:
-                                annot_str = "simDCache(%s_addr, %d);" % (access.varName, access.isRead)
+                                annot_str = "memAccessCycles += simDCache(%s_addr, %d);" % (access.varName, access.isRead)
                             annot = Annotation(annot_str, funcISC.fileName, lineNumISC, False)
                             annot.debug()
                             addAnnotationToDict(dictAnnotLoadStore, 
@@ -280,26 +377,74 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                             lenBlockLSInfo = len(blockLSInfo)
                             for i in range(lenBlockLSInfo):
                                 lsInfo = blockLSInfo.pop(0)
-                                if lsInfo.var != None and access.varName == lsInfo.var.name:
+                                if lsInfo.var != None and access.varName == lsInfo.var.name and access.isRead == lsInfo.isLoad:
                                     if access.isIndexed:
                                         var = find(lambda var: var.name == access.varName, listGlobalVariables + listLocalVariables)
-                                        annot_str = "simDCache(%s_addr + (%d * (%s)), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
+                                        if var.isLocal:
+                                            annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%d * (%s))), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
+                                        else:
+                                            annot_str = "memAccessCycles += simDCache(%s_addr + (%d * (%s)), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
                                     else:
-                                        annot_str = "simDCache(%s_addr, %d);" % (access.varName, access.isRead)
-                                    annot = Annotation(annot_str, funcISC.fileName, lineNumISC, False)
+                                        if var.isLocal:
+                                            annot_str = "memAccessCycles += simDCache((SP + %s_addr), %d);" % (access.varName, access.isRead)
+                                        else:
+                                            annot_str = "memAccessCycles += simDCache(%s_addr, %d);" % (access.varName, access.isRead)
+                                    annot = Annotation(annot_str, funcISC.fileName, lineNumISC-1, False)
                                     annot.debug()
                                     addAnnotationToDict(dictAnnotLoadStore, 
-                                                        lineNumISC,
+                                                        lineNumISC-1,
                                                         annot)
                                     break
                                 else:
                                     blockLSInfo.append(lsInfo)
             
-            print "******* LS Info could not be mapped in block %s" % blockObj.name
+            # Annotate Instruction Cache Access
+            re_instruction = re.compile('\s*(?P<address>[0-9a-f]*):\s*(?P<opcode>[0-9a-f]*)\s*(?P<instruction>.*)')
+            objBlockStartLine = lc.getline(funcObj.fileName, blockObj.startLine)
+            m = re_instruction.match(objBlockStartLine)
+            assert(m is not None and m.group("address") is not None)
+            blockStartAddress = int(m.group("address"), 16)
+            objBlockEndLine = lc.getline(funcObj.fileName, blockObj.endLine)
+            m = re_instruction.match(objBlockEndLine)
+            assert(m is not None and m.group("address") is not None)
+            blockEndAddress = int(m.group("address"), 16)
+            blockSizeBytes = (blockEndAddress + 4 - blockStartAddress)
+            blockSizeRounded = ((blockSizeBytes + 3) / 4) * 4
+            annot_str = "// Simulating I Cache for obj block %s" % (blockObj.name)
+            annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
+            addAnnotationToDict(dictAnnotLoadStore,
+                                blockISC.startLine-1,
+                                annot)
+            annot_str = "memAccessCycles += simICache(0x%x, %d);" % (blockStartAddress, blockSizeRounded)
+            annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
+            addAnnotationToDict(dictAnnotLoadStore,
+                                blockISC.startLine-1,
+                                annot)
+            
+            flag = 0
             for lsInfo in blockLSInfo:
-                lsInfo.debug()
-            print "*******"
-                                
+                if flag == 0:
+                    flag = 1
+                    logging.error(" Unmapped LS from %s:%s :" % (funcObj.fileName, blockObj.name))
+                logging.error(" \t%s" % lsInfo.debug_str())
+                annot_str = "// TODO: UnmappedLS: %s" % (lsInfo.debug_str())
+                annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine - 1, False) 
+                addAnnotationToDict(dictAnnotLoadStore, blockISC.startLine-1, annot)
+            
+        if funcISC.functionName == "main":
+            returnLineNumber = funcISC.endLine + 1
+            while True:
+                returnLineNumber = returnLineNumber - 1
+                line = lc.getline(funcISC.fileName, returnLineNumber)
+                m = re_returnStatement.match(line)
+                if m is not None:
+                    annot_str = 'printf("memAccessCycles = \%lu\\n", memAccessCycles);'
+                    annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
+                    addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
+                    break
+                else:
+                    continue
+                
     debugDictAnnot(dictAnnotLoadStore)
     return dictAnnotLoadStore
 
@@ -312,7 +457,7 @@ def generateOutputFileName(outputPath, inFileName):
     inFileExt = m.group("fileExt")
     if outputPath is None:
         outputPath = inFilePath
-    return outputPath + inFileNameWOExt + "_ins." + inFileExt
+    return outputPath + inFileNameWOExt + "." + inFileExt
 
 def generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, outputPath):
     for inFileName in listISCFileNames:
@@ -394,7 +539,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames,
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.ERROR)
     
     optparser = OptionParser()
     optparser.add_option("-i", "--isc", action="append", dest="listISCFileNames",
@@ -409,7 +554,7 @@ if __name__ == "__main__":
                          help="Binary Filename. For multiple files, use -b <filename> multiple times.",
                          metavar="FILE")
     optparser.add_option("-p", "--outpath", action="store",
-                         type="string", dest="outputPath", 
+                         type="string", dest="insOutputPath", 
                          help="Output Path to store the annotated source files.",
                          metavar="PATH")
     
@@ -421,6 +566,6 @@ if __name__ == "__main__":
     listISCFileNames =  options.listISCFileNames
     listObjdumpFileNames = options.listObjdumpFileNames
     listBinaryFileNames = options.listBinaryFileNames
-    outputPath = options.outputPath
+    insOutputPath = options.insOutputPath
     
-    instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames, outputPath)
+    instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames, insOutputPath)

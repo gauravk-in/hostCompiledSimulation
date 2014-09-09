@@ -63,10 +63,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 /* Intel ADPCM step variation table */
+extern unsigned long SP;
 static int indexTable[16] = {
     -1, -1, -1, -1, 2, 4, 6, 8,
     -1, -1, -1, -1, 2, 4, 6, 8,
 };
+unsigned long indexTable_addr = 0x9fc;
 
 static int stepsizeTable[89] = {
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
@@ -79,10 +81,11 @@ static int stepsizeTable[89] = {
     5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 };
-    
+unsigned long stepsizeTable_addr = 0x898;
 
-void adpcm_coder(short indata[], char outdata[],
-		int len, struct adpcm_state *state) {
+
+void adpcm_coder (short indata[], unsigned long indata_addr, char outdata[], unsigned long outdata_addr, int len, struct adpcm_state *state, unsigned long state_addr)
+		
   int valpred_41;
   int index_40;
   int index_38;
@@ -93,6 +96,7 @@ void adpcm_coder(short indata[], char outdata[],
   uintptr_t ivtmp_28;
   int bufferstep;
   int outputbuffer;
+  unsigned long outputbuffer_addr = 0x8;
   int index;
   int vpdiff;
   int valpred;
@@ -101,12 +105,22 @@ void adpcm_coder(short indata[], char outdata[],
   int delta;
   int sign;
   signed char * outp;
+  unsigned long outp_addr = 0x0;
 
 adpcm_coderbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
+simDCache((SP + 0x4), 1);  // Spilling Register
+simDCache((SP + 0xc), 1);  // Spilling Register
+simDCache((SP + 0xc), 1);  // Reading Spilt Register
+simICache(0x4a8, 1);  // PC Relative Load
+// TODO: UnmappedLS: Load GlobalVar coder_1_state at line 247
+// TODO: UnmappedLS: Load GlobalVar coder_1_state at line 249
   valpred = state->valprev;
+  simDCache(state_addr, 1);
   index = state->index;
+  simDCache(state_addr, 1);
   step = stepsizeTable[index];
+  simDCache(stepsizeTable_addr + (4 * (index)), 1);
   if (len > 0)
     goto adpcm_coderbb_3;
   else
@@ -115,14 +129,19 @@ adpcm_coderbb_2:
 
 adpcm_coderbb_3:
 //  # PRED: 2 [91.0%]  (true,exec)
+simICache(0x4a8, 1);  // PC Relative Load
   outp =  outdata;
+  simDCache(outdata_addr, 1);
+  simDCache(outp_addr, 0);
   ivtmp_28 = 0;
   bufferstep = 1;
 //  # SUCC: 4 [100.0%]  (fallthru,exec)
 
 adpcm_coderbb_4:
 //  # PRED: 18 [91.0%]  (true,exec) 3 [100.0%]  (fallthru,exec)
+simDCache((SP + 0x4), 1);  // Reading Spilt Register
   diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;
+  simDCache(indata_addr + (sizeof(short ) * (+ivtmp_28)), 1);
   if (diff < 0)
     goto adpcm_coderbb_5;
   else
@@ -219,9 +238,11 @@ adpcm_coderbb_15:
   valpred = (valpred_41<32767)?valpred_41:32767;
   delta_37 = delta | sign;
   index_38 = indexTable[delta_37] + index;
+  simDCache(indexTable_addr + (4 * (delta_37)), 1);
   index_40 = (index_38>0)?index_38:0;
   index = (index_40<88)?index_40:88;
   step = stepsizeTable[index];
+  simDCache(stepsizeTable_addr + (4 * (index)), 1);
   if (bufferstep != 0)
     goto adpcm_coderbb_16;
   else
@@ -231,17 +252,23 @@ adpcm_coderbb_15:
 adpcm_coderbb_16:
 //  # PRED: 15 [50.0%]  (true,exec)
   outputbuffer = delta_37 << 4 & 255;
+  simDCache(outputbuffer_addr, 0);
   goto adpcm_coderbb_18;
 //  # SUCC: 18 [100.0%]  (fallthru,exec)
 
 adpcm_coderbb_17:
 //  # PRED: 15 [50.0%]  (false,exec)
   *outp =  (signed char) delta_37 & 15 | (signed char) outputbuffer;
+  simDCache(outputbuffer_addr, 1);
+  simDCache(outp_addr, 0);
   outp = (uintptr_t)outp + 1;
 //  # SUCC: 18 [100.0%]  (fallthru,exec)
 
 adpcm_coderbb_18:
 //  # PRED: 16 [100.0%]  (fallthru,exec) 17 [100.0%]  (fallthru,exec)
+// TODO: UnmappedLS: Load GlobalVar pcmdata at line 263
+// TODO: UnmappedLS: Load LocalVar outp at line 305
+// TODO: UnmappedLS: Store GlobalVar pcmdata at line 306
   bufferstep = bufferstep == 0;
   len = len + -1;
   ivtmp_28 = ivtmp_28 + 2;
@@ -262,12 +289,20 @@ adpcm_coderbb_19:
 adpcm_coderbb_20:
 //  # PRED: 19 [67.0%]  (true,exec)
   *outp = (signed char) (signed char) outputbuffer;
+  simDCache(outputbuffer_addr, 1);
 //  # SUCC: 21 [100.0%]  (fallthru,exec)
 
 adpcm_coderbb_21:
 //  # PRED: 19 [33.0%]  (false,exec) 20 [100.0%]  (fallthru,exec) 2 [9.0%]  (false,exec)
+// TODO: UnmappedLS: Load LocalVar outp at line 314
+// TODO: UnmappedLS: Store GlobalVar stepsizeTable at line 315
+simDCache((SP + 0xc), 1);  // Reading Spilt Register
+// TODO: UnmappedLS: Store GlobalVar coder_1_state at line 317
+// TODO: UnmappedLS: Store GlobalVar coder_1_state at line 318
   state->valprev = (short int) (short int) valpred;
+  simDCache(state_addr, 0);
   state->index = (char) (char) index;
+  simDCache(state_addr, 0);
   return;
 //  # SUCC: EXIT [100.0%] 
 
