@@ -378,8 +378,8 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                             for i in range(lenBlockLSInfo):
                                 lsInfo = blockLSInfo.pop(0)
                                 if lsInfo.var != None and access.varName == lsInfo.var.name and access.isRead == lsInfo.isLoad:
+                                    var = find(lambda var: var.name == access.varName, listGlobalVariables + listLocalVariables)
                                     if access.isIndexed:
-                                        var = find(lambda var: var.name == access.varName, listGlobalVariables + listLocalVariables)
                                         if var.isLocal:
                                             annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%d * (%s))), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
                                         else:
@@ -448,20 +448,20 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
     debugDictAnnot(dictAnnotLoadStore)
     return dictAnnotLoadStore
 
-def generateOutputFileName(outputPath, inFileName):
+def generateOutputFileName(insOutputPath, inFileName):
     re_fileName = re.compile("(?P<path>/?(?:\w*/)*)(?P<fileName>\w*)\.(?P<fileExt>\w*)")
     m = re_fileName.match(inFileName)
     assert(m is not None)
     inFilePath = m.group("path")
     inFileNameWOExt = m.group("fileName")
     inFileExt = m.group("fileExt")
-    if outputPath is None:
-        outputPath = inFilePath
-    return outputPath + inFileNameWOExt + "." + inFileExt
+    if insOutputPath is None:
+        insOutputPath = inFilePath
+    return insOutputPath + inFileNameWOExt + "." + inFileExt
 
-def generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, outputPath):
+def generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, insOutputPath):
     for inFileName in listISCFileNames:
-        outFileName = generateOutputFileName(outputPath, inFileName)
+        outFileName = generateOutputFileName(insOutputPath, inFileName)
         inFile = open(inFileName, "r")
         outFile = open(outFileName, "w")
         lineNum = 0
@@ -514,7 +514,7 @@ def generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listI
         print ("Output to file : %s" % outFileName)
             
 
-def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames, outputPath):
+def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames, insOutputPath):
     
     (listISCFunctions, listObjdumpFunctions) = match_cfg(listISCFileNames, 
                                                          listObjdumpFileNames, 
@@ -535,7 +535,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames,
     
     dictAnnotLoadStore = annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGlobalVariables, listLocalVariables)
 
-    generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, outputPath)
+    generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, insOutputPath)
 
 if __name__ == "__main__":
 

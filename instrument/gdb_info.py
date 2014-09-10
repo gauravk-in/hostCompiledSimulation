@@ -216,8 +216,8 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
     re_SPLine = re.compile("\s*SP = (?P<valSP>[a-f0-9]*)")
     re_LocalVarLine = re.compile("\s*LocalVar: (?P<varName>\w*)")
     re_addressLine = re.compile("\s*address = 0x(?P<address>[a-f0-9]*)")
-    re_typeLine = re.compile("\s*type = (?P<varType>.*)")
-    re_sizeLine = re.compile("\s*size = (?P<varSize>[\d*])")
+    re_typeLine = re.compile("\s*type = (?P<varType>(?:\w*\s*)*\**(?:\[(?P<varLen>\d*)\])?)$")
+    re_sizeLine = re.compile("\s*size = (?P<varSize>\d*)")
     
     listLocalVariables = []
     
@@ -323,6 +323,10 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
             m = re_typeLine.match(line)
             if m is not None:
                 varType = m.group("varType")
+                if m.group("varLen"):
+                    varLen = int(m.group("varLen"))
+                else:
+                    varLen = 1
                 continue
             
             m = re_sizeLine.match(line)
@@ -331,7 +335,7 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
                 listLocalVariables.append(Variable(isLocal = True,
                                                    name = varName, 
                                                    type = varType, 
-                                                   length = -1, 
+                                                   length = varLen, 
                                                    scope = func.functionName, 
                                                    address = address, 
                                                    size = varSize))

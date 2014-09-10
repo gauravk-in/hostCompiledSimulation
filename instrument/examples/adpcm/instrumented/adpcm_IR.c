@@ -86,7 +86,7 @@ static int stepsizeTable[89] = {
 unsigned long stepsizeTable_addr = 0x898;
 
 
-void adpcm_coder (short indata[], unsigned long indata_addr, char outdata[], unsigned long outdata_addr, int len, struct adpcm_state *state, unsigned long state_addr) {
+void  adpcm_coder (short indata[], unsigned long indata_addr, char outdata[], unsigned long outdata_addr, int len, struct adpcm_state *state, unsigned long state_addr) {
 		
   int valpred_41;
   int index_40;
@@ -134,7 +134,7 @@ memAccessCycles += simICache(0x36c, 44);
 adpcm_coderbb_3:
 //  # PRED: 2 [91.0%]  (true,exec)
 memAccessCycles += simICache(0x4a8, 4);  // PC Relative Load
-memAccessCycles += simDCache(outp_addr, 0);
+memAccessCycles += simDCache((SP + outp_addr), 0);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x398, 32);
   outp =  outdata;
@@ -257,15 +257,15 @@ adpcm_coderbb_15:
 
 adpcm_coderbb_16:
 //  # PRED: 15 [50.0%]  (true,exec)
-memAccessCycles += simDCache(outputbuffer_addr, 0);
+memAccessCycles += simDCache((SP + outputbuffer_addr), 0);
   outputbuffer = delta_37 << 4 & 255;
   goto adpcm_coderbb_18;
 //  # SUCC: 18 [100.0%]  (fallthru,exec)
 
 adpcm_coderbb_17:
 //  # PRED: 15 [50.0%]  (false,exec)
-memAccessCycles += simDCache(outputbuffer_addr, 1);
-memAccessCycles += simDCache(outp_addr, 0);
+memAccessCycles += simDCache((SP + outputbuffer_addr), 1);
+memAccessCycles += simDCache((SP + outp_addr), 0);
   *outp =  (signed char) delta_37 & 15 | (signed char) outputbuffer;
   outp = (uintptr_t)outp + 1;
 //  # SUCC: 18 [100.0%]  (fallthru,exec)
@@ -296,7 +296,7 @@ adpcm_coderbb_19:
 
 adpcm_coderbb_20:
 //  # PRED: 19 [67.0%]  (true,exec)
-memAccessCycles += simDCache(outputbuffer_addr, 1);
+memAccessCycles += simDCache((SP + outputbuffer_addr), 1);
   *outp = (signed char) (signed char) outputbuffer;
 //  # SUCC: 21 [100.0%]  (fallthru,exec)
 

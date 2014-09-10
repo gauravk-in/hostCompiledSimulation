@@ -5,11 +5,11 @@ CFLAGS = -O2 -std=c99
 INCLUDE = -I$(CACHESIM_HEADERS)
 LIB = -L$(CACHESIM_LIB)
 
-APP_SOURCES = my_ctop_IR.c adpcm_IR.c
+APP_SOURCES = erat_sieve_no_print_IR.c
 
-all: my_ctop_IR.out
+all: sieve.out
 
-my_ctop_IR.out: $(APP_SOURCES)
+sieve.out: $(APP_SOURCES)
 	$(CC) $(CFLAGS) $(INCLUDE) $(LIB) -o $@ $^ -lcacheSim
 
 clean: 

@@ -15,4 +15,4 @@ struct adpcm_state {
 #define ARGS(x) ()
 #endif
 
-void adpcm_coder (short indata[], unsigned long indata_addr, char outdata[], unsigned long outdata_addr, int len, struct adpcm_state *state, unsigned long state_addr);
+void  adpcm_coder (short indata[], unsigned long indata_addr, char outdata[], unsigned long outdata_addr, int len, struct adpcm_state *state, unsigned long state_addr);

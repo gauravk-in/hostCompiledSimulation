@@ -65,7 +65,7 @@ cacheSimInit();
 memAccessCycles += simICache(0x354, 4);  // PC Relative Load
 memAccessCycles += simICache(0x358, 4);  // PC Relative Load
 memAccessCycles += simDCache(ARR_SIZE_addr, 1);
-memAccessCycles += simDCache(ARR_SIZE_0_addr, 0);
+memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 0);
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x200, 36);
   ARR_SIZE_0 = ARR_SIZE;
@@ -147,7 +147,7 @@ memAccessCycles += simICache(0x24c, 12);
 mainbb_7:
 //  # PRED: 6 [9.0%]  (false,exec) 2 [9.0%]  (false,exec)
 memAccessCycles += simICache(0x358, 4);  // PC Relative Load
-memAccessCycles += simDCache(ARR_SIZE_0_addr, 1);
+memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 1);
 // Simulating I Cache for obj block 6
 memAccessCycles += simICache(0x2b8, 32);
   if (ARR_SIZE_0 % 10240 != 0)

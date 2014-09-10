@@ -204,7 +204,7 @@ void readConfigFile()
 									/ L2Params.lineSizeBytes; // 512
 
 	L2Params.tagMask = 0;
-	for(int i=0; i < L2Params.tagLengthBits; i++)
+	for(i=0; i < L2Params.tagLengthBits; i++)
 	{
 		L2Params.tagMask = L2Params.tagMask << 1;
 		L2Params.tagMask = L2Params.tagMask | 0x00000001;
@@ -212,7 +212,7 @@ void readConfigFile()
 	L2Params.tagMask = L2Params.tagMask << (32 - L2Params.tagLengthBits);
 
 	L2Params.indexMask = 0;
-	for(int i=0; i < L2Params.indexLengthBits; i++)
+	for(i=0; i < L2Params.indexLengthBits; i++)
 	{
 		L2Params.indexMask = L2Params.indexMask << 1;
 		L2Params.indexMask = L2Params.indexMask | 0x00000001;
@@ -268,6 +268,7 @@ unsigned int generic_simL2ICache(unsigned long address,
 {
 	unsigned long index;
 	unsigned long tag;
+	int set;
 	int replaceSet = -1;
 
 	tag = getTagFromAddress(address, L2Params.tagLengthBits,
@@ -275,7 +276,7 @@ unsigned int generic_simL2ICache(unsigned long address,
 	index = getIndexFromAddress(address, L2Params.offsetLengthBits,
 			L2Params.indexMask);
 
-	for(int set = 0; set < L2Params.cacheSets; set++)
+	for(set = 0; set < L2Params.cacheSets; set++)
 	{
 		if(L2ICache[set][index].tag == tag &&
 				(IS_CACHELINE_VALID(L2ICache[set][index].flags))) // L2 HIT
@@ -361,6 +362,7 @@ unsigned int generic_simL1ICache(unsigned long address,
 {
 	unsigned long index;
 	unsigned long tag;
+	int set;
 	int replaceSet = -1;
 
 	tag = getTagFromAddress(address, L1Params.tagLengthBits,
@@ -368,7 +370,7 @@ unsigned int generic_simL1ICache(unsigned long address,
 	index = getIndexFromAddress(address, L1Params.offsetLengthBits,
 			L1Params.indexMask);
 
-	for(int set = 0; set < L1Params.cacheSets; set++)
+	for(set = 0; set < L1Params.cacheSets; set++)
 	{
 		if(L1ICache[set][index].tag == tag &&
 				(IS_CACHELINE_VALID(L1ICache[set][index].flags))) // L1 HIT
@@ -458,7 +460,8 @@ unsigned int generic_simL1ICache(unsigned long address,
  */
 unsigned int generic_simICache(unsigned long address, unsigned int nBytes)
 {
-	unsigned int nCycles;
+	unsigned int nCycles = 100;
+
 	return nCycles;
 }
 
@@ -467,6 +470,7 @@ unsigned int generic_simL2DCache(unsigned long address,
 {
 	unsigned long index;
 	unsigned long tag;
+	int set;
 	int replaceSet = -1;
 
 	tag = getTagFromAddress(address, L2Params.tagLengthBits,
@@ -474,7 +478,7 @@ unsigned int generic_simL2DCache(unsigned long address,
 	index = getIndexFromAddress(address, L2Params.offsetLengthBits,
 			L2Params.indexMask);
 
-	for(int set = 0; set < L2Params.cacheSets; set++)
+	for(set = 0; set < L2Params.cacheSets; set++)
 	{
 		if(L2DCache[set][index].tag == tag &&
 				(IS_CACHELINE_VALID(L2DCache[set][index].flags))) // L2 HIT
@@ -560,6 +564,7 @@ unsigned int generic_simL1DCache(unsigned long address,
 {
 	unsigned long index;
 	unsigned long tag;
+	int set;
 	int replaceSet = -1;
 
 	tag = getTagFromAddress(address, L1Params.tagLengthBits,
@@ -567,7 +572,7 @@ unsigned int generic_simL1DCache(unsigned long address,
 	index = getIndexFromAddress(address, L1Params.offsetLengthBits,
 			L1Params.indexMask);
 
-	for(int set = 0; set < L1Params.cacheSets; set++)
+	for(set = 0; set < L1Params.cacheSets; set++)
 	{
 		if(L1DCache[set][index].tag == tag &&
 				(IS_CACHELINE_VALID(L1DCache[set][index].flags))) // L1 HIT
@@ -656,7 +661,7 @@ unsigned int generic_simL1DCache(unsigned long address,
  */
 unsigned int generic_simDCache(unsigned long address, unsigned int isReadAccess)
 {
-	unsigned int nCycles;
+	unsigned int nCycles = 100;
 	unsigned int ret;
 
 	ret = generic_simL1DCache(address, isReadAccess);
