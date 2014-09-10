@@ -23,7 +23,7 @@ struct cacheSimHwMod_t
 	 *
 	 * @return number of clock cycles spent
 	 */
-	unsigned int (*simICache) (unsigned long address, unsigned int nBytes);
+	unsigned long (*simICache) (unsigned long address, unsigned int nBytes);
 
 	/**
 	 * Simulates Data Cache access by benchmark
@@ -33,7 +33,7 @@ struct cacheSimHwMod_t
 	 *
 	 * @return number of clock cycles spent
 	 */
-	unsigned int (*simDCache) (unsigned long address, unsigned int isReadAccess);
+	unsigned long (*simDCache) (unsigned long address, unsigned int isReadAccess);
 
 	/**
 	 * Initialize the cache data structures

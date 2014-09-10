@@ -96,6 +96,7 @@ struct cacheLine_t
 
 struct cacheParam_t L1Params;
 struct cacheParam_t L2Params;
+
 struct cacheLine_t **L1DCache;
 struct cacheLine_t **L1ICache;
 struct cacheLine_t **L2DCache;
@@ -458,7 +459,7 @@ unsigned int generic_simL1ICache(unsigned long address,
  *
  * @return number of clock cycles spent
  */
-unsigned int generic_simICache(unsigned long address, unsigned int nBytes)
+unsigned long generic_simICache(unsigned long address, unsigned int nBytes)
 {
 	unsigned int nCycles = 100;
 
@@ -659,7 +660,7 @@ unsigned int generic_simL1DCache(unsigned long address,
  *
  * @return number of clock cycles spent
  */
-unsigned int generic_simDCache(unsigned long address, unsigned int isReadAccess)
+unsigned long generic_simDCache(unsigned long address, unsigned int isReadAccess)
 {
 	unsigned int nCycles = 100;
 	unsigned int ret;

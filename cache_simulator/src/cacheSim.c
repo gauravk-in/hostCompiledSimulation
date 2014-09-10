@@ -47,7 +47,7 @@
  *
  * @return number of clock cycles spent
  */
-unsigned int simICache(unsigned long address, unsigned int nBytes)
+unsigned long simICache(unsigned long address, unsigned int nBytes)
 {
 	unsigned int nCycles;
 	cacheSimStat.access_type = ACCESS_TYPE_INVALID;
@@ -70,7 +70,7 @@ unsigned int simICache(unsigned long address, unsigned int nBytes)
  *
  * @return number of clock cycles spent
  */
-unsigned int simDCache(unsigned long address, unsigned int isReadAccess)
+unsigned long simDCache(unsigned long address, unsigned int isReadAccess)
 {
 	unsigned int nCycles;
 	cacheSimStat.access_type = ACCESS_TYPE_INVALID;

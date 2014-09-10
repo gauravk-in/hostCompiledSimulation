@@ -17,7 +17,7 @@
  *
  * @return number of clock cycles spent
  */
-extern unsigned int simICache(unsigned long address, unsigned int nBytes);
+extern unsigned long simICache(unsigned long address, unsigned int nBytes);
 
 /**
  * Simulates Data Cache access by benchmark
@@ -27,7 +27,7 @@ extern unsigned int simICache(unsigned long address, unsigned int nBytes);
  *
  * @return number of clock cycles spent
  */
-extern unsigned int simDCache(unsigned long address, unsigned int isReadAccess);
+extern unsigned long simDCache(unsigned long address, unsigned int isReadAccess);
 
 /**
  * Initialize the cache data structures
