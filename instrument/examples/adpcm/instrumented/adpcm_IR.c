@@ -111,6 +111,7 @@ void  adpcm_coder (short indata[], unsigned long indata_addr, char outdata[], un
 
 adpcm_coderbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
+SP = SP + 0x30;
 memAccessCycles += simDCache((SP + 0x4), 1);  // Spilling Register
 memAccessCycles += simDCache((SP + 0xc), 1);  // Spilling Register
 memAccessCycles += simDCache((SP + 0xc), 1);  // Reading Spilt Register

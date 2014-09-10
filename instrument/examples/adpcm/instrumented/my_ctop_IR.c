@@ -62,6 +62,7 @@ int main() {
 mainbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
 cacheSimInit();
+SP = SP + 0x30;
 memAccessCycles += simICache(0x354, 4);  // PC Relative Load
 memAccessCycles += simICache(0x358, 4);  // PC Relative Load
 memAccessCycles += simDCache(ARR_SIZE_addr, 1);

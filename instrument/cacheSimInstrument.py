@@ -317,8 +317,12 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
             annot_str = "cacheSimInit();"
             annot = Annotation(annot_str, funcISC.fileName, funcISC.cfg.listBlocks[0].startLine-1, False)
             addAnnotationToDict(dictAnnotLoadStore, funcISC.cfg.listBlocks[0].startLine-1, annot)
-        
+            
         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
+        annot_str = "SP = SP + 0x%x;" % (funcObj.stackSize)
+        annot = Annotation(annot_str, funcISC.fileName, funcISC.cfg.listBlocks[0].startLine-1, False)
+        addAnnotationToDict(dictAnnotLoadStore, funcISC.cfg.listBlocks[0].startLine-1, annot)
+        
         for blockObj in funcObj.cfg.listBlocks:
             mappedBlocksISCInd = blockObj.mapsTo
             blockLSInfo = findLoadStoreBetweenLines(listLSInfo, blockObj.startLine, blockObj.endLine)
