@@ -64,11 +64,11 @@ struct cacheParam_t
 	unsigned int isWriteThrough;
 
 	// Latencies
-	unsigned int latHitRead;
-	unsigned int latHitWriteThrough;
-	unsigned int latHitWriteBack;
-	unsigned int latMiss;
-	unsigned int latMissFlush;
+	unsigned int cyclesHitRead;
+	unsigned int cyclesHitWriteThrough;
+	unsigned int cyclesHitWriteBack;
+	unsigned int cyclesMiss;
+	unsigned int cyclesMissFlush;
 };
 
 #define CACHELINE_VALID_BIT (1 << 0)
@@ -96,6 +96,7 @@ struct cacheLine_t
 
 struct cacheParam_t L1Params;
 struct cacheParam_t L2Params;
+unsigned long cyclesMemAccess;
 
 struct cacheLine_t **L1DCache;
 struct cacheLine_t **L1ICache;
@@ -114,9 +115,6 @@ unsigned int *L2ICacheReplace;
  * LOCAL FUNCTION DECLARATIONS
  ******************************************************************************/
 
-unsigned int generic_simL1DCache(unsigned long address,
-		 unsigned int isReadAcccess);
-
 void readConfigFile();
 
 void** alloc2D(unsigned int rows, unsigned int cols, size_t size);
@@ -125,6 +123,13 @@ void** alloc2D(unsigned int rows, unsigned int cols, size_t size);
 /******************************************************************************
  * LOCAL FUNCTIONS
  ******************************************************************************/
+
+int log_base2(int val)
+{
+	int ret = 0;
+	while (val >>= 1) ++ret;
+	return ret;
+}
 
 /**
  * Reads config file and initializes data structures
@@ -140,18 +145,19 @@ void readConfigFile()
 	// L1 Cache Parameters - same for separate Instruction and Data Cache
 	// L1 Size Params
 	L1Params.cacheSets 			= 4;
-	L1Params.cacheSizeBytes 	= 16 * 1024; // 16 KB
+	L1Params.cacheSizeBytes 	= 256;
 	L1Params.lineSizeBytes 		= 16;
-	L1Params.tagLengthBits 		= 20;
-	L1Params.indexLengthBits 	= 8; // 256 lines
-	L1Params.offsetLengthBits 	= 4; // 16B cache lines
+	L1Params.indexLengthBits 	= log_base2(L1Params.cacheSizeBytes / (L1Params.cacheSets * L1Params.lineSizeBytes));
+	L1Params.offsetLengthBits 	= log_base2(L1Params.lineSizeBytes);
+	L1Params.tagLengthBits 		= 32 - L1Params.indexLengthBits - L1Params.offsetLengthBits;
+
 
 	// L1 Latencies
-	L1Params.latHitRead 		= 2;
-	L1Params.latHitWriteThrough = 100;
-	L1Params.latHitWriteBack	= 4;
-	L1Params.latMiss 			= 2;
-	L1Params.latMissFlush		= 105;
+	L1Params.cyclesHitRead 			= 2;
+	L1Params.cyclesHitWriteThrough 	= 100;
+	L1Params.cyclesHitWriteBack		= 4;
+	L1Params.cyclesMiss 			= 2;
+	L1Params.cyclesMissFlush		= 105;
 
 	// L1 Features
 	L1Params.isWriteThrough 	= 1;
@@ -183,18 +189,18 @@ void readConfigFile()
 	// L2 Cache Parameters - unified cache for data and instruction
 	// L2 Size Params
 	L2Params.cacheSets 			= 8;
-	L2Params.cacheSizeBytes 	= 256 * 1024;
+	L2Params.cacheSizeBytes 	= 2 * 1024;
 	L2Params.lineSizeBytes 		= 64;
-	L2Params.tagLengthBits 		= 17;
-	L2Params.indexLengthBits 	= 9; // 512 lines
-	L2Params.offsetLengthBits 	= 6; // 64B cache lines
+	L2Params.indexLengthBits 	= log_base2(L2Params.cacheSizeBytes / (L2Params.cacheSets * L2Params.lineSizeBytes));
+	L2Params.offsetLengthBits 	= log_base2(L2Params.lineSizeBytes);
+	L2Params.tagLengthBits 		= 32 - L2Params.indexLengthBits - L2Params.offsetLengthBits;
 
 	// L2 Latencies
-	L2Params.latHitRead 		= 20;
-	L2Params.latHitWriteThrough = 100;
-	L2Params.latHitWriteBack	= 25;
-	L2Params.latMiss 			= 20;
-	L2Params.latMissFlush		= 120;
+	L2Params.cyclesHitRead 			= 20;
+	L2Params.cyclesHitWriteThrough 	= 100;
+	L2Params.cyclesHitWriteBack		= 25;
+	L2Params.cyclesMiss 			= 20;
+	L2Params.cyclesMissFlush		= 120;
 
 	// L2 Features
 	L2Params.isWriteThrough 	= 1;
@@ -265,85 +271,46 @@ inline unsigned long getIndexFromAddress(unsigned long address,
 }
 
 unsigned int generic_simL2ICache(unsigned long address,
-		 unsigned int isReadAcccess)
+		 unsigned int nBytes,
+		 unsigned long long *nCycles)
 {
 	unsigned long index;
 	unsigned long tag;
 	int set;
 	int replaceSet = -1;
+	int _address;
 
-	tag = getTagFromAddress(address, L2Params.tagLengthBits,
-			L2Params.tagMask);
-	index = getIndexFromAddress(address, L2Params.offsetLengthBits,
-			L2Params.indexMask);
-
-	for(set = 0; set < L2Params.cacheSets; set++)
+	for (_address = address; _address < address + nBytes; _address += 4)
 	{
-		if(L2ICache[set][index].tag == tag &&
-				(IS_CACHELINE_VALID(L2ICache[set][index].flags))) // L2 HIT
+		tag = getTagFromAddress(_address, L2Params.tagLengthBits,
+				L2Params.tagMask);
+		index = getIndexFromAddress(_address, L2Params.offsetLengthBits,
+				L2Params.indexMask);
+
+		for(set = 0; set < L2Params.cacheSets; set++)
 		{
-			if(!isReadAcccess) // Write Access
-			{
-				if(L2Params.isWriteThrough) // Write Through
-				{
-					// Data in L2 will be updated, and will remain VALID -
-					//    nothing to do
-
-					// Some cycles wasted for data flush
-					cacheSimStat.access_type = L2_HIT_WRITETHROUGH;
-					cacheSimStat.nCycles += L2Params.latHitWriteThrough;
-					return CACHE_HIT_WRITETHROUGH;
-				}
-				else // Write Back
-				{
-					// Data in L2 will be updated, and will remain VALID. Line
-					//   will be marked for flush - nothing to do
-
-					// No extra cycles wasted now for flush
-					cacheSimStat.access_type = L2_HIT_WRITEBACK;
-					cacheSimStat.nCycles += L2Params.latHitWriteBack;
-					return CACHE_HIT_WRITEBACK;
-				}
-			}
-			else // Read Access
+			if(L2ICache[set][index].tag == tag &&
+					(IS_CACHELINE_VALID(L2ICache[set][index].flags))) // L2 HIT
 			{
 				// Nothing to do, no cycles spent
 
 				cacheSimStat.access_type = L2_HIT_READ;
-				cacheSimStat.nCycles += L2Params.latHitRead;
+				cacheSimStat.nCycles += L2Params.cyclesHitRead;
+				*nCycles += L2Params.cyclesHitRead;
 				return CACHE_HIT;
 			}
+			if (replaceSet == -1 && !(IS_CACHELINE_VALID (L2ICache[set][index].flags)))
+				replaceSet = set;
 		}
-		if (replaceSet == -1 && !(IS_CACHELINE_VALID (L2ICache[set][index].flags)))
-			replaceSet = set;
-	}
 
-	// Cache Miss Occurred
+		// Cache Miss Occurred
 
-	if (replaceSet == -1)
-	{
-		replaceSet = L2ICacheReplace[index];
-		L2ICacheReplace[index] = (L2ICacheReplace[index] == 7) ? 0 : L2ICacheReplace[index]+1;
-	}
+		if (replaceSet == -1)
+		{
+			replaceSet = L2ICacheReplace[index];
+			L2ICacheReplace[index] = (L2ICacheReplace[index] == 7) ? 0 : L2ICacheReplace[index]+1;
+		}
 
-	if(IS_CACHELINE_DIRTY (L2ICache[replaceSet][index].flags))
-	{
-		// !! Should never occur, since we are using Write Through Cache.
-
-		// Flush the cache line - nothing to do specifically, just add the
-		//   extra nCycles wasted in this case.
-
-		// Already, load new data assuming it will be fetched from L2 or Mem
-		L2ICache[replaceSet][index].tag = tag;
-		SET_CACHELINE_VALID (L2ICache[replaceSet][index].flags);
-		SET_CACHELINE_CLEAN (L2ICache[replaceSet][index].flags);
-
-		cacheSimStat.access_type = L2_MISS_FLUSH;
-		cacheSimStat.nCycles += L2Params.latMissFlush;
-		return CACHE_MISS_FLUSH;
-	}
-	else
-	{
 		// Evict cache line - nothing to do. No cycles wasted.
 
 		// Already, load new data assuming it will be fetched from L2 or Mem
@@ -352,92 +319,54 @@ unsigned int generic_simL2ICache(unsigned long address,
 		SET_CACHELINE_CLEAN (L2ICache[replaceSet][index].flags);
 
 		cacheSimStat.access_type = L2_MISS;
-		cacheSimStat.nCycles += L2Params.latMiss;
-		return CACHE_MISS;
+		cacheSimStat.nCycles += L2Params.cyclesMiss;
+		*nCycles += L2Params.cyclesMiss;
 	}
+	return CACHE_MISS;
 }
 
 
 unsigned int generic_simL1ICache(unsigned long address,
-		 unsigned int isReadAcccess)
+		unsigned int nBytes,
+		unsigned long long *nCycles)
 {
 	unsigned long index;
 	unsigned long tag;
 	int set;
 	int replaceSet = -1;
+	int _address;
 
-	tag = getTagFromAddress(address, L1Params.tagLengthBits,
-			L1Params.tagMask);
-	index = getIndexFromAddress(address, L1Params.offsetLengthBits,
-			L1Params.indexMask);
-
-	for(set = 0; set < L1Params.cacheSets; set++)
+	for (_address = address; _address < address + nBytes; _address += 4)
 	{
-		if(L1ICache[set][index].tag == tag &&
-				(IS_CACHELINE_VALID(L1ICache[set][index].flags))) // L1 HIT
+		tag = getTagFromAddress(_address, L1Params.tagLengthBits,
+				L1Params.tagMask);
+		index = getIndexFromAddress(_address, L1Params.offsetLengthBits,
+				L1Params.indexMask);
+
+		for(set = 0; set < L1Params.cacheSets; set++)
 		{
-			if(!isReadAcccess) // Write Access
+			if(L1ICache[set][index].tag == tag &&
+					(IS_CACHELINE_VALID(L1ICache[set][index].flags))) // L1 HIT
 			{
-				if(L1Params.isWriteThrough) // Write Through
-				{
-					// Data in L1 will be updated, and will remain VALID -
-					//    nothing to do
+					// Nothing to do, no cycles spent
 
-					// Some cycles wasted for data flush
-					cacheSimStat.access_type = L1_HIT_WRITETHROUGH;
-					cacheSimStat.nCycles += L1Params.latHitWriteThrough;
-					return CACHE_HIT_WRITETHROUGH;
-				}
-				else // Write Back
-				{
-					// Data in L1 will be updated, and will remain VALID. Line
-					//   will be marked for flush - nothing to do
-
-					// No extra cycles wasted now for flush
-					cacheSimStat.access_type = L1_HIT_WRITEBACK;
-					cacheSimStat.nCycles += L1Params.latHitWriteBack;
-					return CACHE_HIT_WRITEBACK;
-				}
+					cacheSimStat.access_type = L1_HIT_READ;
+					cacheSimStat.nCycles += L1Params.cyclesHitRead;
+					*nCycles += L1Params.cyclesHitRead;
+					return CACHE_HIT;
 			}
-			else // Read Access
-			{
-				// Nothing to do, no cycles spent
-
-				cacheSimStat.access_type = L1_HIT_READ;
-				cacheSimStat.nCycles += L1Params.latHitRead;
-				return CACHE_HIT;
-			}
+			if (replaceSet == -1 && !(IS_CACHELINE_VALID (L1ICache[set][index].flags)))
+				replaceSet = set;
 		}
-		if (replaceSet == -1 && !(IS_CACHELINE_VALID (L1ICache[set][index].flags)))
-			replaceSet = set;
-	}
 
-	// Cache Miss Occurred
+		// Cache Miss Occurred
 
-	if (replaceSet == -1)
-	{
-		replaceSet = L1ICacheReplace[index];
-		L1ICacheReplace[index] = (L1ICacheReplace[index] == 3) ? 0 : L1ICacheReplace[index]+1;
-	}
+		if (replaceSet == -1)
+		{
+			replaceSet = L1ICacheReplace[index];
+			L1ICacheReplace[index] = (L1ICacheReplace[index] == 3) ? 0 : L1ICacheReplace[index]+1;
+		}
 
-	if(IS_CACHELINE_DIRTY (L1ICache[replaceSet][index].flags))
-	{
-		// !! Should never occur, since we are using Write Through Cache.
-
-		// Flush the cache line - nothing to do specifically, just add the
-		//   extra nCycles wasted in this case.
-
-		// Already, load new data assuming it will be fetched from L2 or Mem
-		L1ICache[replaceSet][index].tag = tag;
-		SET_CACHELINE_VALID (L1ICache[replaceSet][index].flags);
-		SET_CACHELINE_CLEAN (L1ICache[replaceSet][index].flags);
-
-		cacheSimStat.access_type = L1_MISS_FLUSH;
-		cacheSimStat.nCycles += L1Params.latMissFlush;
-		return CACHE_MISS_FLUSH;
-	}
-	else
-	{
 		// Evict cache line - nothing to do. No cycles wasted.
 
 		// Already, load new data assuming it will be fetched from L2 or Mem
@@ -446,28 +375,15 @@ unsigned int generic_simL1ICache(unsigned long address,
 		SET_CACHELINE_CLEAN (L1ICache[replaceSet][index].flags);
 
 		cacheSimStat.access_type = L1_MISS;
-		cacheSimStat.nCycles += L1Params.latMiss;
-		return CACHE_MISS;
+		cacheSimStat.nCycles += L1Params.cyclesMiss;
+		*nCycles += L1Params.cyclesMiss;
 	}
-}
-
-/**
- * Simulates Instruction Cache access by benchmark
- *
- * @param address Starting address of instructions in the basic block
- * @param nBytes Number of bytes of instructions accessed in the basic block
- *
- * @return number of clock cycles spent
- */
-unsigned long generic_simICache(unsigned long address, unsigned int nBytes)
-{
-	unsigned int nCycles = 100;
-
-	return nCycles;
+	return CACHE_MISS;
 }
 
 unsigned int generic_simL2DCache(unsigned long address,
-		 unsigned int isReadAcccess)
+		 unsigned int isReadAcccess,
+		 unsigned long long *nCycles)
 {
 	unsigned long index;
 	unsigned long tag;
@@ -493,7 +409,8 @@ unsigned int generic_simL2DCache(unsigned long address,
 
 					// Some cycles wasted for data flush
 					cacheSimStat.access_type = L2_HIT_WRITETHROUGH;
-					cacheSimStat.nCycles += L2Params.latHitWriteThrough;
+					cacheSimStat.nCycles += L2Params.cyclesHitWriteThrough;
+					*nCycles += L2Params.cyclesHitWriteThrough;
 					return CACHE_HIT_WRITETHROUGH;
 				}
 				else // Write Back
@@ -503,7 +420,8 @@ unsigned int generic_simL2DCache(unsigned long address,
 
 					// No extra cycles wasted now for flush
 					cacheSimStat.access_type = L2_HIT_WRITEBACK;
-					cacheSimStat.nCycles += L2Params.latHitWriteBack;
+					cacheSimStat.nCycles += L2Params.cyclesHitWriteBack;
+					*nCycles += L2Params.cyclesHitWriteBack;
 					return CACHE_HIT_WRITEBACK;
 				}
 			}
@@ -512,7 +430,8 @@ unsigned int generic_simL2DCache(unsigned long address,
 				// Nothing to do, no cycles spent
 
 				cacheSimStat.access_type = L2_HIT_READ;
-				cacheSimStat.nCycles += L2Params.latHitRead;
+				cacheSimStat.nCycles += L2Params.cyclesHitRead;
+				*nCycles += L2Params.cyclesHitRead;
 				return CACHE_HIT;
 			}
 		}
@@ -541,7 +460,8 @@ unsigned int generic_simL2DCache(unsigned long address,
 		SET_CACHELINE_CLEAN (L2DCache[replaceSet][index].flags);
 
 		cacheSimStat.access_type = L2_MISS_FLUSH;
-		cacheSimStat.nCycles += L2Params.latMissFlush;
+		cacheSimStat.nCycles += L2Params.cyclesMissFlush;
+		*nCycles += L2Params.cyclesMissFlush;
 		return CACHE_MISS_FLUSH;
 	}
 	else
@@ -554,14 +474,16 @@ unsigned int generic_simL2DCache(unsigned long address,
 		SET_CACHELINE_CLEAN (L2DCache[replaceSet][index].flags);
 
 		cacheSimStat.access_type = L2_MISS;
-		cacheSimStat.nCycles += L2Params.latMiss;
+		cacheSimStat.nCycles += L2Params.cyclesMiss;
+		*nCycles += L2Params.cyclesMiss;
 		return CACHE_MISS;
 	}
 }
 
 
 unsigned int generic_simL1DCache(unsigned long address,
-		 unsigned int isReadAcccess)
+		 unsigned int isReadAcccess,
+		 unsigned long long *nCycles)
 {
 	unsigned long index;
 	unsigned long tag;
@@ -587,7 +509,8 @@ unsigned int generic_simL1DCache(unsigned long address,
 
 					// Some cycles wasted for data flush
 					cacheSimStat.access_type = L1_HIT_WRITETHROUGH;
-					cacheSimStat.nCycles += L1Params.latHitWriteThrough;
+					cacheSimStat.nCycles += L1Params.cyclesHitWriteThrough;
+					*nCycles += L1Params.cyclesHitWriteThrough;
 					return CACHE_HIT_WRITETHROUGH;
 				}
 				else // Write Back
@@ -597,7 +520,8 @@ unsigned int generic_simL1DCache(unsigned long address,
 
 					// No extra cycles wasted now for flush
 					cacheSimStat.access_type = L1_HIT_WRITEBACK;
-					cacheSimStat.nCycles += L1Params.latHitWriteBack;
+					cacheSimStat.nCycles += L1Params.cyclesHitWriteBack;
+					*nCycles += L1Params.cyclesHitWriteBack;
 					return CACHE_HIT_WRITEBACK;
 				}
 			}
@@ -606,7 +530,8 @@ unsigned int generic_simL1DCache(unsigned long address,
 				// Nothing to do, no cycles spent
 
 				cacheSimStat.access_type = L1_HIT_READ;
-				cacheSimStat.nCycles += L1Params.latHitRead;
+				cacheSimStat.nCycles += L1Params.cyclesHitRead;
+				*nCycles += L1Params.cyclesHitRead;
 				return CACHE_HIT;
 			}
 		}
@@ -635,7 +560,8 @@ unsigned int generic_simL1DCache(unsigned long address,
 		SET_CACHELINE_CLEAN (L1DCache[replaceSet][index].flags);
 
 		cacheSimStat.access_type = L1_MISS_FLUSH;
-		cacheSimStat.nCycles += L1Params.latMissFlush;
+		cacheSimStat.nCycles += L1Params.cyclesMissFlush;
+		*nCycles += L1Params.cyclesMissFlush;
 		return CACHE_MISS_FLUSH;
 	}
 	else
@@ -648,9 +574,38 @@ unsigned int generic_simL1DCache(unsigned long address,
 		SET_CACHELINE_CLEAN (L1DCache[replaceSet][index].flags);
 
 		cacheSimStat.access_type = L1_MISS;
-		cacheSimStat.nCycles += L1Params.latMiss;
+		cacheSimStat.nCycles += L1Params.cyclesMiss;
+		*nCycles += L1Params.cyclesMiss;
 		return CACHE_MISS;
 	}
+}
+
+/**
+ * Simulates Instruction Cache access by benchmark
+ *
+ * @param address Starting address of instructions in the basic block
+ * @param nBytes Number of bytes of instructions accessed in the basic block
+ *
+ * @return number of clock cycles spent
+ */
+unsigned long long generic_simICache(unsigned long address, unsigned int nBytes)
+{
+	unsigned long long nCycles = 0;
+	unsigned int ret;
+
+	ret = generic_simL1ICache(address, nBytes, &nCycles);
+
+	if(CACHE_MISS == ret || CACHE_MISS_FLUSH == ret)
+	{
+		// L1 Data Cache Miss has occured, simulate L2 Access.
+		ret = generic_simL2ICache(address, nBytes, &nCycles);
+		if(CACHE_MISS == ret || CACHE_MISS_FLUSH == ret)
+		{
+			nCycles += cyclesMemAccess;
+		}
+	}
+
+	return nCycles;
 }
 
 /**
@@ -660,22 +615,21 @@ unsigned int generic_simL1DCache(unsigned long address,
  *
  * @return number of clock cycles spent
  */
-unsigned long generic_simDCache(unsigned long address, unsigned int isReadAccess)
+unsigned long long generic_simDCache(unsigned long address, unsigned int isReadAccess)
 {
-	unsigned int nCycles = 100;
+	unsigned long long nCycles = 0;
 	unsigned int ret;
 
-	ret = generic_simL1DCache(address, isReadAccess);
+	ret = generic_simL1DCache(address, isReadAccess, &nCycles);
 
 	if(CACHE_MISS == ret || CACHE_MISS_FLUSH == ret)
 	{
 		// L1 Data Cache Miss has occured, simulate L2 Access.
-		ret = generic_simL2DCache(address, isReadAccess);
+		ret = generic_simL2DCache(address, isReadAccess, &nCycles);
 		if(CACHE_MISS == ret || CACHE_MISS_FLUSH == ret)
 		{
-			cacheSimStat.nCycles += 100;
+			nCycles += cyclesMemAccess;
 		}
-
 	}
 
 	return nCycles;

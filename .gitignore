@@ -10,3 +10,4 @@ examples/crc32/app_dir/in_large.h
 *.pyc
 *.gdbo
 *.gdbx
+*.gch

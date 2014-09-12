@@ -12,8 +12,9 @@ all: my_ctop_IR.out
 my_ctop_IR.out: $(APP_SOURCES)
 	$(CC) $(CFLAGS) $(INCLUDE) $(LIB) -o $@ $^ -lcacheSim
 
+check: my_ctop_IR.out
+	export LD_LIBRARY_PATH=$(CACHESIM_LIB)
+	./my_ctop_IR.out
+
 clean: 
-	rm -rf *.o cacheSimTest 
-	for f in $(SOURCES); do \
-		rm -rf $$f; \
-	done
+	rm -rf *.o my_ctop_IR.out 

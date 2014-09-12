@@ -10,7 +10,7 @@
 #include "ir2c.h"
 #include "cacheSim.h"
 extern unsigned long SP;
-extern unsigned long memAccessCycles;
+extern unsigned long long memAccessCycles;
 
 /***********************************************************
 Copyright 1992 by Stichting Mathematisch Centrum, Amsterdam, The

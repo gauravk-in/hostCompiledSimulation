@@ -1,7 +1,7 @@
 # Makefile for cache simulator
 include Makefile.macros
 
-SRC = src
+SRC = $(CACHESIM_SRC)
 LIB = $(CACHESIM_LIB)
 
 INSTALL = cp

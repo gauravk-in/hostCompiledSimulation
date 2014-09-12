@@ -23,7 +23,7 @@ struct test {
   unsigned int v;
   unsigned int k;
 } m = { 1, 1 };
-
+unsigned long m_addr;
 
 void sieve_func() {
   int j_76;

@@ -1,10 +1,17 @@
 # Configuration for cache simulator
 
+# Stupid Makefile Issue: Make sure no white space at the end of the variable declarations
+
+# http://stackoverflow.com/questions/18136918/how-to-get-current-directory-of-your-makefile
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
+
 # Path to Cache Simulator
-CSIM_DIR = /home/gaurav/workspace/hostCompiledSimulation/cache_simulator
+CSIM_DIR = $(current_dir)
 
 # Hardware Model to use
 CACHESIM_HWMOD = generic
 
+CACHESIM_SRC = $(CSIM_DIR)/src
 CACHESIM_HEADERS = $(CSIM_DIR)/headers/
 CACHESIM_LIB = $(CSIM_DIR)/lib/

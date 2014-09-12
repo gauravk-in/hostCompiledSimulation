@@ -213,7 +213,7 @@ mainbb_12:
 //  # PRED: 7 [39.0%]  (false,exec) 11 [100.0%]  (fallthru,exec)
 // Simulating I Cache for obj block 11
 memAccessCycles += simICache(0x344, 16);
-printf("memAccessCycles = \%lu\n", memAccessCycles);
+printf("memAccessCycles = \%llu\n", memAccessCycles);
   return 0;
 //  # SUCC: EXIT [100.0%] 
 

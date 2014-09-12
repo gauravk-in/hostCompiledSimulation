@@ -97,7 +97,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                         addAnnotationToDict(dictAnnotVarFuncDecl,
                                             lineNum,
                                             annot)
-                        annot_str = "extern unsigned long memAccessCycles;"
+                        annot_str = "extern unsigned long long memAccessCycles;"
                         annot = Annotation(annot_str, ISCFileName, lineNum, False)
                         addAnnotationToDict(dictAnnotVarFuncDecl,
                                             lineNum,
@@ -442,7 +442,7 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                 line = lc.getline(funcISC.fileName, returnLineNumber)
                 m = re_returnStatement.match(line)
                 if m is not None:
-                    annot_str = 'printf("memAccessCycles = \%lu\\n", memAccessCycles);'
+                    annot_str = 'printf("memAccessCycles = \%llu\\n", memAccessCycles);'
                     annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
                     addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
                     break
