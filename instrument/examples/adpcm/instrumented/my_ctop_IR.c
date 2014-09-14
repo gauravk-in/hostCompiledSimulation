@@ -10,7 +10,7 @@
 #include "ir2c.h"
 #include "cacheSim.h"
 unsigned long SP = 0x1234;
-unsigned long memAccessCycles = 0;
+unsigned long long memAccessCycles = 0;
 
 /*
 ** Timing - Test timing on adpcm coder and decoder.
@@ -63,8 +63,8 @@ mainbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
 cacheSimInit();
 SP = SP + 0x30;
-memAccessCycles += simICache(0x354, 4);  // PC Relative Load
-memAccessCycles += simICache(0x358, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x354, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x358, 1);  // PC Relative Load
 memAccessCycles += simDCache(ARR_SIZE_addr, 1);
 memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 0);
 // Simulating I Cache for obj block 0
@@ -79,11 +79,11 @@ memAccessCycles += simICache(0x200, 36);
 
 mainbb_14:
 //  # PRED: 2 [91.0%]  (true,exec)
-memAccessCycles += simICache(0x35c, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x35c, 1);  // PC Relative Load
 memAccessCycles += simDCache((SP + 0x4), 1);  // Spilling Register
-memAccessCycles += simICache(0x360, 4);  // PC Relative Load
-memAccessCycles += simICache(0x364, 4);  // PC Relative Load
-memAccessCycles += simICache(0x368, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x360, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x364, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x368, 1);  // PC Relative Load
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x224, 40);
   end_43 = 0;
@@ -147,7 +147,7 @@ memAccessCycles += simICache(0x24c, 12);
 
 mainbb_7:
 //  # PRED: 6 [9.0%]  (false,exec) 2 [9.0%]  (false,exec)
-memAccessCycles += simICache(0x358, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x358, 1);  // PC Relative Load
 memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 1);
 // Simulating I Cache for obj block 6
 memAccessCycles += simICache(0x2b8, 32);
@@ -159,7 +159,7 @@ memAccessCycles += simICache(0x2b8, 32);
 
 mainbb_8:
 //  # PRED: 7 [61.0%]  (true,exec)
-memAccessCycles += simICache(0x354, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x354, 1);  // PC Relative Load
 // Simulating I Cache for obj block 7
 memAccessCycles += simICache(0x2d8, 24);
   start_40 = j * 10240;
@@ -173,8 +173,8 @@ memAccessCycles += simICache(0x2d8, 24);
 
 mainbb_9:
 //  # PRED: 8 [99.0%]  (true,exec)
-memAccessCycles += simICache(0x35c, 4);  // PC Relative Load
-memAccessCycles += simICache(0x360, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x35c, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x360, 1);  // PC Relative Load
 // Simulating I Cache for obj block 8
 memAccessCycles += simICache(0x2f0, 28);
   i = (int) start_40;
@@ -201,9 +201,9 @@ memAccessCycles += simICache(0x30c, 36);
 
 mainbb_11:
 //  # PRED: 10 [1.0%]  (false,exec) 8 [1.0%]  (false,exec)
-memAccessCycles += simICache(0x360, 4);  // PC Relative Load
-memAccessCycles += simICache(0x364, 4);  // PC Relative Load
-memAccessCycles += simICache(0x368, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x360, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x364, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x368, 1);  // PC Relative Load
 // Simulating I Cache for obj block 10
 memAccessCycles += simICache(0x330, 20);
   adpcm_coder (&pcmdata, pcmdata_addr,  &adpcmdata, adpcmdata_addr,  (int) (end - start_40),  &coder_1_state, coder_1_state_addr);
@@ -214,6 +214,7 @@ mainbb_12:
 // Simulating I Cache for obj block 11
 memAccessCycles += simICache(0x344, 16);
 printf("memAccessCycles = \%llu\n", memAccessCycles);
+cacheSimFini();
   return 0;
 //  # SUCC: EXIT [100.0%] 
 

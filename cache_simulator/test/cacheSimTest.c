@@ -24,6 +24,7 @@ int main(int argc, char **argv)
 		{
 			simDCache(address + i, 1);
 		}
+
 	cacheSimFini();
 
 	return 0;

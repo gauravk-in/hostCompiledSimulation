@@ -115,7 +115,7 @@ SP = SP + 0x30;
 memAccessCycles += simDCache((SP + 0x4), 1);  // Spilling Register
 memAccessCycles += simDCache((SP + 0xc), 1);  // Spilling Register
 memAccessCycles += simDCache((SP + 0xc), 1);  // Reading Spilt Register
-memAccessCycles += simICache(0x4a8, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x4a8, 1);  // PC Relative Load
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x36c, 44);
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 247
@@ -134,7 +134,7 @@ memAccessCycles += simICache(0x36c, 44);
 
 adpcm_coderbb_3:
 //  # PRED: 2 [91.0%]  (true,exec)
-memAccessCycles += simICache(0x4a8, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x4a8, 1);  // PC Relative Load
 memAccessCycles += simDCache((SP + outp_addr), 0);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x398, 32);

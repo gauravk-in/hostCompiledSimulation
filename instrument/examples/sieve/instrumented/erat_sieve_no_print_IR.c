@@ -10,7 +10,7 @@
 #include "ir2c.h"
 #include "cacheSim.h"
 unsigned long SP = 0x1234;
-unsigned long memAccessCycles = 0;
+unsigned long long memAccessCycles = 0;
 
 #include <stdio.h>
 
@@ -23,7 +23,7 @@ struct test {
   unsigned int v;
   unsigned int k;
 } m = { 1, 1 };
-unsigned long m_addr;
+unsigned long m_addr = 0x7c8; 
 
 void sieve_func() {
   int j_76;
@@ -44,7 +44,8 @@ void sieve_func() {
 
 sieve_funcbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
-memAccessCycles += simICache(0x35c, 4);  // PC Relative Load
+SP = SP + 0x1e84a0;
+memAccessCycles += simDCache(0x35c, 4);  // PC Relative Load
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x200, 40);
   ivtmp_68 = 0;
@@ -134,7 +135,7 @@ memAccessCycles += simICache(0x2c0, 24);
 
 sieve_funcbb_8:
 //  # PRED: 7 [1.0%]  (false,exec)
-memAccessCycles += simICache(0x35c, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x35c, 4);  // PC Relative Load
 // Simulating I Cache for obj block 8
 memAccessCycles += simICache(0x2d8, 24);
   j = 2;
@@ -171,7 +172,7 @@ memAccessCycles += simICache(0x2f0, 28);
 
 sieve_funcbb_12:
 //  # PRED: 11 [1.0%]  (false,exec)
-memAccessCycles += simICache(0x35c, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x35c, 4);  // PC Relative Load
 memAccessCycles += simDCache(results_addr + (4 * (0)), 1);
 // Simulating I Cache for obj block 10
 memAccessCycles += simICache(0x30c, 16);
@@ -194,6 +195,7 @@ sieve_funcbb_14:
 // Simulating I Cache for obj block 12
 memAccessCycles += simICache(0x328, 12);
 // TODO: UnmappedLS: Load GlobalVar results at line 224
+memAccessCycles += simDCache(results_addr + ivtmp_36 - (D_2230 - 1999996), 1);
   if (*(unsigned int*)((uintptr_t)ivtmp_36 + 4) == 0)
     goto sieve_funcbb_16;
   else
@@ -213,7 +215,7 @@ memAccessCycles += simICache(0x334, 12);
 
 sieve_funcbb_16:
 //  # PRED: 14 [4.5%]  (true,exec) 15 [1.1%]  (false,exec) 12 [4.5%]  (true,exec)
-memAccessCycles += simICache(0x360, 4);  // PC Relative Load
+memAccessCycles += simDCache(0x360, 4);  // PC Relative Load
 memAccessCycles += simDCache(m_addr, 0);
 // Simulating I Cache for obj block 14
 memAccessCycles += simICache(0x340, 28);
@@ -229,10 +231,12 @@ int  main (void) {
 mainbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
 cacheSimInit();
+SP = SP + 0x8;
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x364, 20);
   sieve_func ();
-  printf("memAccessCycles = \%lu\n", memAccessCycles);
+  printf("memAccessCycles = \%llu\n", memAccessCycles);
+  cacheSimFini();
   return 0;
 //  # SUCC: EXIT [100.0%] 
 

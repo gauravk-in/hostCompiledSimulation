@@ -86,7 +86,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                         addAnnotationToDict(dictAnnotVarFuncDecl,
                                             lineNum,
                                             annot)
-                        annot_str = "unsigned long memAccessCycles = 0;"
+                        annot_str = "unsigned long long memAccessCycles = 0;"
                         annot = Annotation(annot_str, ISCFileName, lineNum, False)
                         addAnnotationToDict(dictAnnotVarFuncDecl,
                                             lineNum,
@@ -333,7 +333,7 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                 for i in range(len(blockLSInfo)):
                     lsInfo = blockLSInfo.pop(0)
                     if lsInfo.isLoad and lsInfo.isPCRelLoad:
-                        annot_str = "memAccessCycles += simICache(0x%x, 4);  // PC Relative Load" % (lsInfo.PCRelAdd)
+                        annot_str = "memAccessCycles += simDCache(0x%x, 1);  // PC Relative Load" % (lsInfo.PCRelAdd)
                         annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
                         addAnnotationToDict(dictAnnotLoadStore, 
                                             blockISC.startLine-1,
@@ -443,6 +443,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                 m = re_returnStatement.match(line)
                 if m is not None:
                     annot_str = 'printf("memAccessCycles = \%llu\\n", memAccessCycles);'
+                    annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
+                    addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
+                    annot_str = 'cacheSimFini();'
                     annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
                     addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
                     break
