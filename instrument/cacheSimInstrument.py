@@ -53,7 +53,7 @@ def addAnnotationToDict(dict, lineNum, annot):
         dict[lineNum].append(annot)
 
 def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables, listLocalVariables):
-    dictAnnotVarFuncDecl = OrderedDict({})
+    dictAnnotVarFuncDecl = {}
     
     SPInitAddress = 0x1234
     
@@ -304,7 +304,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
     return dictAnnotVarFuncDecl
     
 def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGlobalVariables, listLocalVariables):
-    dictAnnotLoadStore = OrderedDict({})
+    dictAnnotLoadStore = {}
     
     for funcISC in listISCFunctions:
         lineNumISC = funcISC.startLine
@@ -466,7 +466,30 @@ def generateOutputFileName(insOutputPath, inFileName):
         insOutputPath = inFilePath
     return insOutputPath + inFileNameWOExt + "." + inFileExt
 
-def generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, insOutputPath):
+
+
+def unionDict(dict1, dict2):
+    '''
+    Both Dictionaries have lists as values!!!
+    '''
+    dict = {}
+    for key in list(set(dict1.keys() + dict2.keys())):
+        if key in dict1 and key in dict2:
+            dict[key] = dict1[key] + dict2[key]
+            continue
+        
+        if key in dict1 and key not in dict2:
+            dict[key] = dict1[key]
+            continue
+        
+        if key in dict2 and key not in dict1:
+            dict[key] = dict2[key]
+            continue
+            
+    return dict
+            
+
+def generateAnnotatedSourceFiles(dictAnnot, listISCFileNames, insOutputPath):
     for inFileName in listISCFileNames:
         outFileName = generateOutputFileName(insOutputPath, inFileName)
         inFile = open(inFileName, "r")
@@ -484,37 +507,25 @@ def generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listI
             assert(m is not None)
             indent = m.group("indent")
             
-            assert dictAnnotLoadStore
-            assert dictAnnotVarFuncDecl
+            assert dictAnnot
             
-            if lineNum not in dictAnnotVarFuncDecl and lineNum not in dictAnnotLoadStore:
+            if lineNum not in dictAnnot:
                 outFile.write(line)
                 continue
             
             replaceLine = False
             
-            if lineNum in dictAnnotVarFuncDecl:
-                for annot in dictAnnotVarFuncDecl[lineNum]:
+            if lineNum in dictAnnot:
+                for annot in dictAnnot[lineNum]:
                     if annot.fileName == inFileName and annot.replace == True:
                         replaceLine = True
                         
-            if lineNum in dictAnnotLoadStore:
-                for annot in dictAnnotLoadStore[lineNum]:
-                    if annot.fileName == inFileName and annot.replace == True:
-                        replaceLine = True
-            
             if replaceLine == False:
                 outFile.write(line)
                 
-            if lineNum in dictAnnotVarFuncDecl:
-                for annot in dictAnnotVarFuncDecl[lineNum]:
-                    if annot.fileName == inFileName:
-                        outFile.write(indent + annot.annotation + "\n")
-                        
-            if lineNum in dictAnnotLoadStore:
-                for annot in dictAnnotLoadStore[lineNum]:
-                    if annot.fileName == inFileName:
-                        outFile.write(indent + annot.annotation + "\n")
+            for annot in dictAnnot[lineNum]:
+                if annot.fileName == inFileName:
+                    outFile.write(indent + annot.annotation + "\n")
                     
         inFile.close()
         outFile.close()
@@ -542,7 +553,9 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames,
     
     dictAnnotLoadStore = annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGlobalVariables, listLocalVariables)
 
-    generateAnnotatedSourceFiles(dictAnnotVarFuncDecl, dictAnnotLoadStore, listISCFileNames, insOutputPath)
+    dictAnnot = unionDict(dictAnnotVarFuncDecl, dictAnnotLoadStore)
+
+    generateAnnotatedSourceFiles(dictAnnot, listISCFileNames, insOutputPath)
 
 if __name__ == "__main__":
 
