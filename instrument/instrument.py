@@ -2,13 +2,15 @@ import logging
 from optparse import OptionParser
 from subprocess import call
 import linecache as lc
+from collections import OrderedDict
 
 from load_store_info import *
 from match_cfg import match_cfg
 from gdb_info import *
 from cGrammar import parse_statement
 from irc_regex import *
-from collections import OrderedDict
+from pipeline_sim import *
+from annotation import *
 
 import re
 
@@ -21,16 +23,6 @@ def find(f, seq):
             return item
     return None
     
-class Annotation:
-    def __init__(self, annotation, fileName, lineNum, replace = False):
-        self.fileName = fileName
-        self.lineNum = lineNum
-        self.annotation = annotation
-        self.replace = replace
-        
-    def debug(self):
-        logging.debug("%s:%d: %s" % (self.fileName, self.lineNum, self.annotation))
-    
 def getListLocalVarInFunc(listLocalVariables, functionName):
     listLocalVarInFunc = []
     for localVar in listLocalVariables:
@@ -38,19 +30,8 @@ def getListLocalVarInFunc(listLocalVariables, functionName):
             listLocalVarInFunc.append(localVar)
     return listLocalVarInFunc
 
-def debugDictAnnot(dictAnnot):
-    for lineNum in dictAnnot.iterkeys():
-        for annot in dictAnnot[lineNum]:
-            annot.debug()
-
-def addAnnotationToDict(dict, lineNum, annot):
-    if lineNum not in dict:
-        dict[lineNum] = [annot]
-    else:
-        for a in dict[lineNum]:
-            if a.annotation == annot.annotation and a.fileName == annot.fileName:
-                return
-        dict[lineNum].append(annot)
+# TODO : Make a new function to instrument the additional global vars needed! 
+# def annotateGlobalVar(listISCFileNames):
 
 def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables, listLocalVariables):
     dictAnnotVarFuncDecl = {}
@@ -91,6 +72,11 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                         addAnnotationToDict(dictAnnotVarFuncDecl,
                                             lineNum,
                                             annot)
+                        annot_str = "unsigned long long pipelineCycles = 0;"
+                        annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                        addAnnotationToDict(dictAnnotVarFuncDecl,
+                                            lineNum,
+                                            annot)
                     else:
                         annot_str = "extern unsigned long SP;"
                         annot = Annotation(annot_str, ISCFileName, lineNum, False)
@@ -98,6 +84,11 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                                             lineNum,
                                             annot)
                         annot_str = "extern unsigned long long memAccessCycles;"
+                        annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                        addAnnotationToDict(dictAnnotVarFuncDecl,
+                                            lineNum,
+                                            annot)
+                        annot_str = "extern unsigned long long pipelineCycles;"
                         annot = Annotation(annot_str, ISCFileName, lineNum, False)
                         addAnnotationToDict(dictAnnotVarFuncDecl,
                                             lineNum,
@@ -303,6 +294,8 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
     debugDictAnnot(dictAnnotVarFuncDecl)
     return dictAnnotVarFuncDecl
     
+    # TODO : Annotate Push Pop Operations for DCache Access to Stack!
+    
 def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGlobalVariables, listLocalVariables):
     dictAnnotLoadStore = {}
     
@@ -445,6 +438,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                     annot_str = 'printf("memAccessCycles = \%llu\\n", memAccessCycles);'
                     annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
                     addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
+                    annot_str = 'printf("pipelineCycles = \%llu\\n", pipelineCycles);'
+                    annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
+                    addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
                     annot_str = 'cacheSimFini();'
                     annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
                     addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
@@ -553,7 +549,11 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames,
     
     dictAnnotLoadStore = annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGlobalVariables, listLocalVariables)
 
+    dictAnnotPipeline = annot_pipeline_sim(listISCFunctions, listObjdumpFunctions)
+    debugDictAnnot(dictAnnotPipeline)
+
     dictAnnot = unionDict(dictAnnotVarFuncDecl, dictAnnotLoadStore)
+    dictAnnot = unionDict(dictAnnot, dictAnnotPipeline)
 
     generateAnnotatedSourceFiles(dictAnnot, listISCFileNames, insOutputPath)
 

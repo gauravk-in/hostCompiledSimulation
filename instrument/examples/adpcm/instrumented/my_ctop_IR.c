@@ -11,6 +11,7 @@
 #include "cacheSim.h"
 unsigned long SP = 0x1234;
 unsigned long long memAccessCycles = 0;
+unsigned long long pipelineCycles = 0;
 
 /*
 ** Timing - Test timing on adpcm coder and decoder.
@@ -69,6 +70,7 @@ memAccessCycles += simDCache(ARR_SIZE_addr, 1);
 memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 0);
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x200, 36);
+pipelineCycles += 27;
   ARR_SIZE_0 = ARR_SIZE;
   j = ARR_SIZE_0 / 10240;
   if (j != 0)
@@ -86,12 +88,14 @@ memAccessCycles += simDCache(0x364, 1);  // PC Relative Load
 memAccessCycles += simDCache(0x368, 1);  // PC Relative Load
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x224, 40);
+pipelineCycles += 21;
   end_43 = 0;
   count = 0;
 //  # SUCC: 3 [100.0%]  (fallthru)
 
 mainbb_3:
 //  # PRED: 13 [100.0%]  (fallthru) 14 [100.0%]  (fallthru)
+pipelineCycles += 9;
   end_46 = end_43 + 10240;
   if (end_43 < end_46)
     goto mainbb_4;
@@ -104,6 +108,7 @@ mainbb_4:
 memAccessCycles += simDCache((SP + 0x4), 1);  // Reading Spilt Register
 // Simulating I Cache for obj block 3
 memAccessCycles += simICache(0x258, 20);
+pipelineCycles += 13;
   i_45 = (int) end_43;
   ivtmp_34 = (uintptr_t)&in_Data[i_45];
   end_44 = end_43;
@@ -115,6 +120,7 @@ memAccessCycles += simDCache(pcmdata_addr + (2 * (end_44-end_43)), 0);
 // Simulating I Cache for obj block 4
 memAccessCycles += simICache(0x26c, 36);
 // TODO: UnmappedLS: Load GlobalVar in_Data at line 179
+pipelineCycles += 16;
   pcmdata[end_44 - end_43] = *(short int*)((uintptr_t)ivtmp_34);
   i_45 = i_45 + 1;
   end_44 = (long unsigned int) i_45;
@@ -129,6 +135,7 @@ mainbb_6:
 //  # PRED: 5 [1.0%]  (false,exec) 3 [1.0%]  (false,exec)
 // Simulating I Cache for obj block 5
 memAccessCycles += simICache(0x290, 40);
+pipelineCycles += 14;
   adpcm_coder (&pcmdata, pcmdata_addr,  &adpcmdata, adpcmdata_addr,  10240,  &coder_1_state, coder_1_state_addr);
   count = count + 1;
   if (j > count)
@@ -151,6 +158,7 @@ memAccessCycles += simDCache(0x358, 1);  // PC Relative Load
 memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 1);
 // Simulating I Cache for obj block 6
 memAccessCycles += simICache(0x2b8, 32);
+pipelineCycles += 19;
   if (ARR_SIZE_0 % 10240 != 0)
     goto mainbb_8;
   else
@@ -162,6 +170,7 @@ mainbb_8:
 memAccessCycles += simDCache(0x354, 1);  // PC Relative Load
 // Simulating I Cache for obj block 7
 memAccessCycles += simICache(0x2d8, 24);
+pipelineCycles += 14;
   start_40 = j * 10240;
   memAccessCycles += simDCache(ARR_SIZE_addr, 1);
   end = ARR_SIZE;
@@ -177,6 +186,7 @@ memAccessCycles += simDCache(0x35c, 1);  // PC Relative Load
 memAccessCycles += simDCache(0x360, 1);  // PC Relative Load
 // Simulating I Cache for obj block 8
 memAccessCycles += simICache(0x2f0, 28);
+pipelineCycles += 13;
   i = (int) start_40;
   ivtmp_28 = (uintptr_t)&in_Data[i];
   D_2229 = (int) end;
@@ -189,6 +199,7 @@ memAccessCycles += simDCache(pcmdata_addr + (2 * (start-start_40)), 0);
 // Simulating I Cache for obj block 9
 memAccessCycles += simICache(0x30c, 36);
 // TODO: UnmappedLS: Inaccurately Matched Load at line 219
+pipelineCycles += 16;
   pcmdata[start - start_40] = *(short int*)((uintptr_t)ivtmp_28);
   i = i + 1;
   start = (long unsigned int) i;
@@ -206,6 +217,7 @@ memAccessCycles += simDCache(0x364, 1);  // PC Relative Load
 memAccessCycles += simDCache(0x368, 1);  // PC Relative Load
 // Simulating I Cache for obj block 10
 memAccessCycles += simICache(0x330, 20);
+pipelineCycles += 11;
   adpcm_coder (&pcmdata, pcmdata_addr,  &adpcmdata, adpcmdata_addr,  (int) (end - start_40),  &coder_1_state, coder_1_state_addr);
 //  # SUCC: 12 [100.0%]  (fallthru,exec)
 
@@ -214,7 +226,9 @@ mainbb_12:
 // Simulating I Cache for obj block 11
 memAccessCycles += simICache(0x344, 16);
 printf("memAccessCycles = \%llu\n", memAccessCycles);
+printf("pipelineCycles = \%llu\n", pipelineCycles);
 cacheSimFini();
+pipelineCycles += 18;
   return 0;
 //  # SUCC: EXIT [100.0%] 
 

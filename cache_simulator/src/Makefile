@@ -15,6 +15,11 @@ ifeq ($(CACHESIM_HWMOD),generic)
     OBJECTS += genericHwMod.o
 endif
 
+ifeq ($(CACHESIM_HWMOD),cortexA5)
+    SOURCES += cortexA5HwMod.c
+    OBJECTS += cortexA5HwMod.o
+endif
+
 all: cacheSim
 
 cacheSim: $(SOURCES)

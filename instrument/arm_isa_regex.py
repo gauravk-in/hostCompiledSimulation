@@ -14,7 +14,7 @@ re_mvnInst = re.compile("\s*(?:mvn)s?(?:%s)?\s*(?P<destReg>%s),\s*(?:%s)(?:%s)" 
                         (Cond, Reg, Operand2, EndLine))
 
 ArithOpcode = "(?P<arithOpcode>add|adc|sub|sbc|rsb|rsc|mul|mla)s?" # There are more that I have ignored for now
-re_arithInst = re.compile("\s*(?:%s)(?:%s)?\s*(?P<destReg>%s),\s*(?P<op1Reg>%s),\s*(?:%s)(?:%s)" % 
+re_arithInst = re.compile("\s*(?:%s)(?:%s)?\s*(?P<destReg>%s),\s*(?P<op1Reg>%s),\s*(?P<op2>%s)(?:%s)" % 
                           (ArithOpcode, Cond, Reg, Reg, Operand2, EndLine))
 
 ArithLongOpcode = "(?P<arithLongOpcode>umull|umlal|smull|smlal)"
@@ -25,7 +25,7 @@ LogicOpcode = "(?P<logicOpcode>and|eor|orr|bic)s?"
 re_logicInst = re.compile("\s*(?:%s)(?:%s)?\s*(?P<destReg>%s),\s*(?P<op1Reg>%s),\s*(?:%s)(?:%s)" % 
                           (LogicOpcode, Cond, Reg, Reg, Operand2, EndLine))
 
-re_shiftInst = re.compile("\s*(?:%s)(?:%s)?\s*(?P<destReg>%s),\s*(?P<op1Reg>%s),\s*#(?P<op2ImedVal>\d*)(?:%s)" %
+re_shiftInst = re.compile("\s*(?P<shiftOpcode>%s)(?:%s)?\s*(?P<destReg>%s),\s*(?P<op1Reg>%s),\s*#(?P<op2ImedVal>\d*)(?:%s)" %
                           (ShiftOpcode, Cond, Reg, Reg, EndLine))
 
 BranchOpcode = "(?P<branchOpcode>b|bl|bx|blx|bxj)"
@@ -41,8 +41,8 @@ AMode2_2 = "\[(?P<am2_2BaseReg>%s),\s*#(?P<am2_2ImedOff>-?\d*)\]" % (Reg)
 AMode2_3 = "\[(?P<am2_3BaseReg>%s),\s*(?P<am2_3OffsetReg>-?%s)\]" % (Reg, Reg)
 AMode2_4 = "\[(?P<am2_4BaseReg>%s),\s*(?P<am2_4OffsetReg>%s),\s*(?:%s)\s*#\d*\]" % (Reg, Reg, ShiftOpcode)
 AMode2_5 = "\[(?P<am2_5BaseReg>%s)\],\s*#(?P<am2_5ImedOff>-?\d*)" % (Reg)
-AMode2_6 = "\[(?P<am2_6BaseReg>%s)\],\s*-?(?:%s)" % (Reg, Reg)
-AMode2_7 = "\[(?P<am2_7BaseReg>%s)\],\s*(?:%s),\s*(?:%s)\s*#\d*" % (Reg, Reg, ShiftOpcode)
+AMode2_6 = "\[(?P<am2_6BaseReg>%s)\],\s*-?(?P<am2_6OffsetReg>%s)" % (Reg, Reg)
+AMode2_7 = "\[(?P<am2_7BaseReg>%s)\],\s*(?P<am2_7OffsetReg>%s),\s*(?:%s)\s*#\d*" % (Reg, Reg, ShiftOpcode)
 
 AMode2 = ("(?:%s)|(?:%s)|(?:%s)|(?:%s)|(?:%s)|(?:%s)|(?:%s)" % (AMode2_1, 
                                                                 AMode2_2, 
@@ -59,7 +59,7 @@ re_loadInst = re.compile("\s*ldrs?(?:%s)?(?:%s)?\s*(?P<destReg>%s),\s*(?:%s)(?:%
 re_storeInst = re.compile("\s*strs?(?:%s)?(?:%s)?\s*(?P<destReg>%s),\s*(?:%s)(?:%s)" % 
                          (LoadStoreType, Cond, Reg, AMode2, EndLine))
 
-re_cmpInst = re.compile("\s*(?:cmp|cmn)\s*(?:%s),\s*(?:%s)(?:%s)" % 
+re_cmpInst = re.compile("\s*(?:cmp|cmn)\s*(?P<op1Reg>%s),\s*(?:%s)(?:%s)" % 
                         (Reg, Operand2, EndLine))
 
 re_pushInst = re.compile("\s*push\s*\{(?P<pushRegs>(?:%s)(?:,\s*(?:%s))*)\}(?:%s)" % 

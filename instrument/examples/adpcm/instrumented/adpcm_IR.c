@@ -11,6 +11,7 @@
 #include "cacheSim.h"
 extern unsigned long SP;
 extern unsigned long long memAccessCycles;
+extern unsigned long long pipelineCycles;
 
 /***********************************************************
 Copyright 1992 by Stichting Mathematisch Centrum, Amsterdam, The
@@ -120,6 +121,7 @@ memAccessCycles += simDCache(0x4a8, 1);  // PC Relative Load
 memAccessCycles += simICache(0x36c, 44);
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 247
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 249
+pipelineCycles += 23;
   valpred = state->valprev;
   memAccessCycles += simDCache(state_addr, 1);
   index = state->index;
@@ -138,6 +140,7 @@ memAccessCycles += simDCache(0x4a8, 1);  // PC Relative Load
 memAccessCycles += simDCache((SP + outp_addr), 0);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x398, 32);
+pipelineCycles += 15;
   outp =  outdata;
   memAccessCycles += simDCache(outdata_addr, 1);
   ivtmp_28 = 0;
@@ -147,6 +150,7 @@ memAccessCycles += simICache(0x398, 32);
 adpcm_coderbb_4:
 //  # PRED: 18 [91.0%]  (true,exec) 3 [100.0%]  (fallthru,exec)
 memAccessCycles += simDCache((SP + 0x4), 1);  // Reading Spilt Register
+pipelineCycles += 48;
   diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;
   memAccessCycles += simDCache(indata_addr + (sizeof(short ) * (+ivtmp_28)), 1);
   if (diff < 0)
@@ -289,6 +293,7 @@ memAccessCycles += simICache(0x3b8, 200);
 
 adpcm_coderbb_19:
 //  # PRED: 18 [9.0%]  (false,exec)
+pipelineCycles += 10;
   if (bufferstep == 0)
     goto adpcm_coderbb_20;
   else
@@ -312,6 +317,7 @@ memAccessCycles += simDCache((SP + 0xc), 1);  // Reading Spilt Register
 memAccessCycles += simICache(0x490, 24);
 // TODO: UnmappedLS: Store GlobalVar coder_1_state at line 317
 // TODO: UnmappedLS: Store GlobalVar coder_1_state at line 318
+pipelineCycles += 19;
   state->valprev = (short int) (short int) valpred;
   memAccessCycles += simDCache(state_addr, 0);
   state->index = (char) (char) index;
