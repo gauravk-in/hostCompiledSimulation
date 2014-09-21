@@ -8,10 +8,10 @@
 
 #define HERE printf("%s: %s: %d\n", __FILE__, __func__, __LINE__)
 
-#define MAX_REPEATS 2
-#define MAX_ACCESSES 524288
+#define MAX_REPEATS 1
+#define MAX_ACCESSES 128
 
-#define START_ADD 0x12345678
+#define START_ADD 0x0
 
 int main(int argc, char **argv)
 {
@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 	cacheSimInit();
 
 	for(unsigned long j = 0; j < MAX_REPEATS; j++)
-		for(unsigned long i = 0; i < MAX_ACCESSES; i++)
+		for(unsigned long i = 0; i < MAX_ACCESSES; i+=4)
 		{
 			simDCache(address + i, 1);
 		}

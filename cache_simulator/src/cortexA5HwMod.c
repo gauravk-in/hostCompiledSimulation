@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "cacheSimHwMod.h"
 
@@ -31,6 +32,7 @@ struct cacheConfig
 	unsigned int tagLenBits;
 	unsigned long indexMask;
 	unsigned int indexLenBits;
+	unsigned int subIndexLenBits;
 
 	// Features
 	unsigned int isWriteThrough;
@@ -91,7 +93,6 @@ int log_base2(int val)
 
 void initCacheParams ()
 {
-	int subIndexLen = 0;
 	int i;
 
 	/*** L1 DCache *****************/
@@ -103,7 +104,7 @@ void initCacheParams ()
 	L1DCacheConf.numLines  			= L1DCacheConf.cacheSizeBytes /
 			(L1DCacheConf.lineLenBytes * L1DCacheConf.numSets);
 
-	subIndexLen = log_base2(L1DCacheConf.lineLenBytes);
+	L1DCacheConf.subIndexLenBits = log_base2(L1DCacheConf.lineLenBytes);
 	L1DCacheConf.indexLenBits = log_base2(L1DCacheConf.numLines);
 	L1DCacheConf.indexMask = 0;
 	for (i = 0; i < L1DCacheConf.indexLenBits; i++)
@@ -111,16 +112,16 @@ void initCacheParams ()
 		L1DCacheConf.indexMask = L1DCacheConf.indexMask << 1;
 		L1DCacheConf.indexMask |= 0x00000001;
 	}
-	L1DCacheConf.indexMask = L1DCacheConf.indexMask << subIndexLen;
+	L1DCacheConf.indexMask = L1DCacheConf.indexMask << L1DCacheConf.subIndexLenBits;
 
-	L1DCacheConf.tagLenBits = ADDRESS_LEN_BITS - L1DCacheConf.indexMask - subIndexLen;
+	L1DCacheConf.tagLenBits = ADDRESS_LEN_BITS - L1DCacheConf.indexLenBits - L1DCacheConf.subIndexLenBits;
 	L1DCacheConf.tagMask = 0;
 	for (i = 0; i < L1DCacheConf.tagLenBits; i++)
 	{
 		L1DCacheConf.tagMask = L1DCacheConf.tagMask << 1;
 		L1DCacheConf.tagMask |= 0x00000001;
 	}
-	L1DCacheConf.tagMask = L1DCacheConf.tagMask << (L1DCacheConf.indexLenBits + subIndexLen);
+	L1DCacheConf.tagMask = L1DCacheConf.tagMask << (L1DCacheConf.indexLenBits + L1DCacheConf.subIndexLenBits);
 
 	L1DCacheConf.isWriteThrough = 0;
 
@@ -137,7 +138,7 @@ void initCacheParams ()
 	L1ICacheConf.numLines  			= L1ICacheConf.cacheSizeBytes /
 			(L1ICacheConf.lineLenBytes * L1ICacheConf.numSets);
 
-	subIndexLen = log_base2(L1ICacheConf.lineLenBytes);
+	L1ICacheConf.subIndexLenBits = log_base2(L1ICacheConf.lineLenBytes);
 	L1ICacheConf.indexLenBits = log_base2(L1ICacheConf.numLines);
 	L1ICacheConf.indexMask = 0;
 	for (i = 0; i < L1ICacheConf.indexLenBits; i++)
@@ -145,16 +146,16 @@ void initCacheParams ()
 		L1ICacheConf.indexMask = L1ICacheConf.indexMask << 1;
 		L1ICacheConf.indexMask |= 0x00000001;
 	}
-	L1ICacheConf.indexMask = L1ICacheConf.indexMask << subIndexLen;
+	L1ICacheConf.indexMask = L1ICacheConf.indexMask << L1ICacheConf.subIndexLenBits;
 
-	L1ICacheConf.tagLenBits = ADDRESS_LEN_BITS - L1ICacheConf.indexMask - subIndexLen;
+	L1ICacheConf.tagLenBits = ADDRESS_LEN_BITS - L1ICacheConf.indexLenBits - L1ICacheConf.subIndexLenBits;
 	L1ICacheConf.tagMask = 0;
 	for (i = 0; i < L1ICacheConf.tagLenBits; i++)
 	{
 		L1ICacheConf.tagMask = L1ICacheConf.tagMask << 1;
 		L1ICacheConf.tagMask |= 0x00000001;
 	}
-	L1ICacheConf.tagMask = L1ICacheConf.tagMask << (L1ICacheConf.indexLenBits + subIndexLen);
+	L1ICacheConf.tagMask = L1ICacheConf.tagMask << (L1ICacheConf.indexLenBits + L1ICacheConf.subIndexLenBits);
 
 	L1ICacheConf.isWriteThrough = 0;
 
@@ -166,12 +167,13 @@ void initCacheParams ()
 
 	L2CacheConf.lineLenBytes 		= 32;
 	L2CacheConf.cacheSizeBytes 		= 32 * 1024; // 32 KB
-	L2CacheConf.numSets 			= 2;
+	L2CacheConf.numSets 			= 4;
 
 	L2CacheConf.numLines  			= L2CacheConf.cacheSizeBytes /
 			(L2CacheConf.lineLenBytes * L2CacheConf.numSets);
 
-	subIndexLen = log_base2(L2CacheConf.lineLenBytes);
+	L2CacheConf.subIndexLenBits = log_base2(L2CacheConf.lineLenBytes);
+//	assert(5 == subIndexLen);
 	L2CacheConf.indexLenBits = log_base2(L2CacheConf.numLines);
 	L2CacheConf.indexMask = 0;
 	for (i = 0; i < L2CacheConf.indexLenBits; i++)
@@ -179,16 +181,16 @@ void initCacheParams ()
 		L2CacheConf.indexMask = L2CacheConf.indexMask << 1;
 		L2CacheConf.indexMask |= 0x00000001;
 	}
-	L2CacheConf.indexMask = L2CacheConf.indexMask << subIndexLen;
+	L2CacheConf.indexMask = L2CacheConf.indexMask << L2CacheConf.subIndexLenBits;
 
-	L2CacheConf.tagLenBits = ADDRESS_LEN_BITS - L2CacheConf.indexMask - subIndexLen;
+	L2CacheConf.tagLenBits = ADDRESS_LEN_BITS - L2CacheConf.indexLenBits - L2CacheConf.subIndexLenBits;
 	L2CacheConf.tagMask = 0;
 	for (i = 0; i < L2CacheConf.tagLenBits; i++)
 	{
 		L2CacheConf.tagMask = L2CacheConf.tagMask << 1;
 		L2CacheConf.tagMask |= 0x00000001;
 	}
-	L2CacheConf.tagMask = L2CacheConf.tagMask << (L2CacheConf.indexLenBits + subIndexLen);
+	L2CacheConf.tagMask = L2CacheConf.tagMask << (L2CacheConf.indexLenBits + L2CacheConf.subIndexLenBits);
 
 	L2CacheConf.isWriteThrough = 0;
 
@@ -247,43 +249,75 @@ unsigned long long cortexA5_simICache(unsigned long address,
 	unsigned int latency = 0;
 	unsigned long tag;
 	unsigned long index;
+	unsigned long _address;
 	int setIndex = 0;
+	int replaceIndex;
 
-	tag = getTagFromAddress(address, L1ICacheConf.tagLenBits, L1ICacheConf.tagMask);
-	index = getIndexFromAddress(address, L1ICacheConf.indexLenBits, L1ICacheConf.indexMask);
-
-	for (setIndex = 0; setIndex < L1ICacheConf.numSets; setIndex++)
+	for (_address = address; _address <= address + nBytes; _address += 4)
 	{
-		if (L1ICache[setIndex][index].tag == tag &&
-				IS_CACHELINE_VALID(L1ICache[setIndex][index].flags))
+		tag = getTagFromAddress(_address, L1ICacheConf.tagLenBits, L1ICacheConf.tagMask);
+		index = getIndexFromAddress(_address, L1ICacheConf.subIndexLenBits, L1ICacheConf.indexMask);
+
+		replaceIndex = -1;
+		for (setIndex = 0; setIndex < L1ICacheConf.numSets; setIndex++)
 		{
-			latency += L1ICacheConf.hitLatency;
-			L1I_Hit_Read++;
-			return latency;
+			if (IS_CACHELINE_VALID(L1ICache[setIndex][index].flags))
+			{
+				if (L1ICache[setIndex][index].tag == tag)
+				{
+					latency += L1ICacheConf.hitLatency;
+					L1I_Hit_Read++;
+					return latency;
+				}
+			}
+			else
+			{
+				replaceIndex = setIndex;
+			}
 		}
-	}
-	// L1 Miss has occured!
-	L1I_Miss++;
-	latency += L1ICacheConf.missLatency;
+		// L1 Miss has occured!
+		L1I_Miss++;
+		latency += L1ICacheConf.missLatency;
 
-	tag = getTagFromAddress(address, L2CacheConf.tagLenBits, L2CacheConf.tagMask);
-	index = getIndexFromAddress(address, L2CacheConf.indexLenBits, L2CacheConf.indexMask);
+		// Data will be present for next access!
+		if (replaceIndex == -1)
+			replaceIndex = random() % L1ICacheConf.numSets;
+		L1ICache[replaceIndex][index].tag = tag;
+		SET_CACHELINE_VALID(L1ICache[replaceIndex][index].flags);
 
-	for (setIndex = 0; setIndex < L2CacheConf.numSets; setIndex++)
-	{
-		if (L2Cache[setIndex][index].tag == tag &&
-				IS_CACHELINE_VALID(L2Cache[setIndex][index].flags))
+		tag = getTagFromAddress(_address, L2CacheConf.tagLenBits, L2CacheConf.tagMask);
+		index = getIndexFromAddress(_address, L2CacheConf.subIndexLenBits, L2CacheConf.indexMask);
+
+		replaceIndex = -1;
+		for (setIndex = 0; setIndex < L2CacheConf.numSets; setIndex++)
 		{
-			latency += L2CacheConf.hitLatency;
-			L2_Hit_Read++;
-			return latency;
+			if (IS_CACHELINE_VALID(L2Cache[setIndex][index].flags))
+			{
+				if (L2Cache[setIndex][index].tag == tag)
+				{
+					latency += L2CacheConf.hitLatency;
+					L2_Hit_Read++;
+					return latency;
+				}
+			}
+			else
+			{
+				replaceIndex = setIndex;
+			}
 		}
-	}
 
-	// L2 Miss has occured!
-	L2_Miss++;
-	latency += L2CacheConf.missLatency;
-	latency += memReadLatency;
+		// L2 Miss has occured!
+		L2_Miss++;
+		latency += L2CacheConf.missLatency;
+
+		// Data will be present for next access!
+		if (replaceIndex == -1)
+			replaceIndex = random() % L2CacheConf.numSets;
+		L2Cache[replaceIndex][index].tag = tag;
+		SET_CACHELINE_VALID(L2Cache[replaceIndex][index].flags);
+
+		latency += memReadLatency;
+	}
 
 	return latency;
 }
@@ -296,56 +330,85 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	unsigned long tag;
 	unsigned long index;
 	int setIndex = 0;
+	int replaceIndex;
 
 	if (isReadAccess == 0 && L1DCacheConf.isWriteThrough == 1) // Write Access
 	{
 		// Simply increment latency by time to write to memory
 		latency += memWriteLatency;
 		L1D_Hit_Writethrough++;
+		return latency;
 	}
 	// For writeback, there is no latency. We can safely take this assumption,
 	//   as we are only using a Single Core System.
 
 	tag = getTagFromAddress(address, L1DCacheConf.tagLenBits, L1DCacheConf.tagMask);
-	index = getIndexFromAddress(address, L1DCacheConf.indexLenBits, L1DCacheConf.indexMask);
+	index = getIndexFromAddress(address, L1DCacheConf.subIndexLenBits, L1DCacheConf.indexMask);
 
+	replaceIndex = -1;
 	for (setIndex = 0; setIndex < L1DCacheConf.numSets; setIndex++)
 	{
-		if (L1DCache[setIndex][index].tag == tag &&
-				IS_CACHELINE_VALID(L1DCache[setIndex][index].flags))
+		if (IS_CACHELINE_VALID(L1DCache[setIndex][index].flags))
 		{
-			latency += L1DCacheConf.hitLatency;
-			if (isReadAccess)
-				L1D_Hit_Read++;
-			else
-				L1D_Hit_Writeback++;
-			return latency;
+			if (L1DCache[setIndex][index].tag == tag)
+			{
+				latency += L1DCacheConf.hitLatency;
+				if (isReadAccess)
+					L1D_Hit_Read++;
+				else
+					L1D_Hit_Writeback++;
+				return latency;
+			}
+		}
+		else
+		{
+			replaceIndex = setIndex;
 		}
 	}
 	// L1 Miss has occured!
 	L1D_Miss++;
 	latency += L1DCacheConf.missLatency;
 
-	tag = getTagFromAddress(address, L2CacheConf.tagLenBits, L2CacheConf.tagMask);
-	index = getIndexFromAddress(address, L2CacheConf.indexLenBits, L2CacheConf.indexMask);
+	// Data will be present for next access!
+	if (replaceIndex == -1)
+		replaceIndex = random() % L1DCacheConf.numSets;
+	L1DCache[replaceIndex][index].tag = tag;
+	SET_CACHELINE_VALID(L1DCache[replaceIndex][index].flags);
 
+	tag = getTagFromAddress(address, L2CacheConf.tagLenBits, L2CacheConf.tagMask);
+	index = getIndexFromAddress(address, L2CacheConf.subIndexLenBits, L2CacheConf.indexMask);
+
+	replaceIndex = -1;
 	for (setIndex = 0; setIndex < L2CacheConf.numSets; setIndex++)
 	{
-		if (L2Cache[setIndex][index].tag == tag &&
-				IS_CACHELINE_VALID(L2Cache[setIndex][index].flags))
+		if (IS_CACHELINE_VALID(L2Cache[setIndex][index].flags))
 		{
-			latency += L2CacheConf.hitLatency;
-			if (isReadAccess)
-				L2_Hit_Read++;
-			else
-				L2_Hit_Writeback++;
-			return latency;
+			if (L2Cache[setIndex][index].tag == tag)
+			{
+				latency += L2CacheConf.hitLatency;
+				if (isReadAccess)
+					L2_Hit_Read++;
+				else
+					L2_Hit_Writeback++;
+				return latency;
+			}
+		}
+		else
+		{
+			replaceIndex = setIndex;
 		}
 	}
 
 	// L2 Miss has occured!
 	L2_Miss++;
 	latency += L2CacheConf.missLatency;
+
+	// Data will be present for next access!
+	if (replaceIndex == -1)
+		replaceIndex = random() % L2CacheConf.numSets;
+	L2Cache[replaceIndex][index].tag = tag;
+	SET_CACHELINE_VALID(L2Cache[replaceIndex][index].flags);
+
 	latency += memReadLatency;
 	return latency;
 }
@@ -353,7 +416,9 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 void cortexA5_cacheSimInit()
 {
 	// Allocate space for caches
+	printf("%s: %d\n", __func__, __LINE__);
 	initCacheParams();
+	printf("%s: %d\n", __func__, __LINE__);
 
 	L1DCache = (cacheLine_t **) alloc2D(L1DCacheConf.numSets,
 				L1DCacheConf.numLines, sizeof(cacheLine_t));
@@ -362,15 +427,12 @@ void cortexA5_cacheSimInit()
 	L2Cache = (cacheLine_t **) alloc2D(L2CacheConf.numSets,
 				L2CacheConf.numLines, sizeof(cacheLine_t));
 
+	printf("%s: %d\n", __func__, __LINE__);
 	return;
 }
 
 void cortexA5_cacheSimFini()
 {
-	free(L1DCache);
-	free(L1ICache);
-	free(L2Cache);
-
 	printf("Statistics : \n");
 
 	printf("\nL1 Data Cache\n");
@@ -386,6 +448,10 @@ void cortexA5_cacheSimFini()
 	printf("\t Hit Read = %ld\n", L2_Hit_Read);
 	printf("\t Hit Writeback = %ld\n", L2_Hit_Writeback);
 	printf("\t Miss = %ld\n", L2_Miss);
+
+	free(L1DCache);
+	free(L1ICache);
+	free(L2Cache);
 
 	return;
 }

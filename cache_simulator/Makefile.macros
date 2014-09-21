@@ -11,6 +11,7 @@ CSIM_DIR = $(current_dir)
 
 # Hardware Model to use
 CACHESIM_HWMOD = cortexA5
+#CACHESIM_HWMOD = generic
 
 CACHESIM_SRC = $(CSIM_DIR)/src
 CACHESIM_HEADERS = $(CSIM_DIR)/headers/
