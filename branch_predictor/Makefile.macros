@@ -1,0 +1,14 @@
+# Configuration for cache simulator
+
+# Stupid Makefile Issue: Make sure no white space at the end of the variable declarations
+
+# http://stackoverflow.com/questions/18136918/how-to-get-current-directory-of-your-makefile
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
+
+# Path to Cache Simulator
+BPRED_DIR := $(current_dir)
+
+BPRED_SRC = $(BPRED_DIR)/src
+BPRED_HEADERS = $(BPRED_DIR)/headers/
+BPRED_LIB = $(BPRED_DIR)/lib/
