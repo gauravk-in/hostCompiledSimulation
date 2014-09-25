@@ -66,8 +66,9 @@ cacheLine_t **L1DCache;
 cacheLine_t **L1ICache;
 cacheLine_t **L2Cache;
 
-unsigned int memWriteLatency = 100;
-unsigned int memReadLatency = 100;
+unsigned int memWriteLatency = 55;
+unsigned int memReadLatency = 55;
+unsigned int memReadPrefetchLatency = 10;
 
 unsigned long L1D_Hit_Read = 0;
 unsigned long L1D_Hit_Writeback = 0;
@@ -83,7 +84,64 @@ unsigned long L2_Hit_Writethrough = 0;
 unsigned long L2I_Miss = 0;
 unsigned long L2D_Miss = 0;
 
+#define PREFETCH_TABLE_MAX_ENTRIES 3
+
+unsigned int prefetch_table_entries;
+
+struct prevAccess
+{
+	unsigned long address;
+	unsigned long sequentialAccess;
+	struct prevAccess *next;
+	struct prevAccess *prev;
+};
+typedef struct prevAccess prevAccess_t;
+
+prevAccess_t *prevAccessList_head;
+prevAccess_t *prevAccessList_tail;
+
 /**** LOCAL FUNCTIONS *********************************************************/
+
+void insertAccess(prevAccess_t **head, prevAccess_t **tail, unsigned long address, unsigned long seqAccess)
+{
+	prevAccess_t *new_entry;
+
+	if (*head == NULL && *tail == NULL)
+	{
+		// Empty
+		new_entry = malloc(sizeof(prevAccess_t));
+		new_entry->address = address;
+		new_entry->sequentialAccess = seqAccess;
+		*head = new_entry;
+		*tail = new_entry;
+		new_entry->next = new_entry;
+		new_entry->prev = new_entry;
+		prefetch_table_entries++;
+	}
+	else{
+		if(prefetch_table_entries < PREFETCH_TABLE_MAX_ENTRIES)
+		{
+			new_entry = malloc(sizeof(prevAccess_t));
+			new_entry->address = address;
+			new_entry->sequentialAccess = seqAccess;
+			(*tail)->next = new_entry;
+			new_entry->prev = *tail;
+			new_entry->next = *head;
+			(*head)->prev = new_entry;
+			(*tail) = new_entry;
+			prefetch_table_entries++;
+		}
+		else
+		{
+			(*head)->address = address;
+			(*head)->sequentialAccess = seqAccess;
+			(*head) = (*head)->next;
+			(*tail) = (*tail)->next;
+		}
+	}
+
+	return;
+}
 
 int log_base2(int val)
 {
@@ -308,6 +366,7 @@ unsigned long long cortexA5_simICache(unsigned long address,
 		}
 
 		// L2 Miss has occured!
+		L1I_Miss--;
 		L2I_Miss++;
 		latency += L2CacheConf.missLatency;
 
@@ -332,6 +391,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	unsigned long index;
 	int setIndex = 0;
 	int replaceIndex;
+	int i;
 
 	if (isReadAccess == 0 && L1DCacheConf.isWriteThrough == 1) // Write Access
 	{
@@ -401,6 +461,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	}
 
 	// L2 Miss has occured!
+	L1D_Miss--;
 	L2D_Miss++;
 	latency += L2CacheConf.missLatency;
 
@@ -410,16 +471,32 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	L2Cache[replaceIndex][index].tag = tag;
 	SET_CACHELINE_VALID(L2Cache[replaceIndex][index].flags);
 
+	prevAccess_t *access = prevAccessList_tail;
+	for (i = 0; i < prefetch_table_entries && access != NULL; i++)
+	{
+
+		if (address == access->address + L2CacheConf.lineLenBytes)
+		{
+			//printf("0x%lx - 0x%lx\n", access->address, address);
+			if (access->sequentialAccess > 5)
+			{
+				latency += memReadPrefetchLatency;
+			}
+			insertAccess(&prevAccessList_head, &prevAccessList_tail, address, access->sequentialAccess+1);
+			return latency;
+		}
+		access = access->prev;
+	}
+
 	latency += memReadLatency;
+	insertAccess(&prevAccessList_head, &prevAccessList_tail, address, 0);
 	return latency;
 }
 
 void cortexA5_cacheSimInit()
 {
 	// Allocate space for caches
-	printf("%s: %d\n", __func__, __LINE__);
 	initCacheParams();
-	printf("%s: %d\n", __func__, __LINE__);
 
 	L1DCache = (cacheLine_t **) alloc2D(L1DCacheConf.numSets,
 				L1DCacheConf.numLines, sizeof(cacheLine_t));
@@ -428,7 +505,10 @@ void cortexA5_cacheSimInit()
 	L2Cache = (cacheLine_t **) alloc2D(L2CacheConf.numSets,
 				L2CacheConf.numLines, sizeof(cacheLine_t));
 
-	printf("%s: %d\n", __func__, __LINE__);
+	prevAccessList_head = NULL;
+	prevAccessList_tail = NULL;
+	prefetch_table_entries = 0;
+
 	return;
 }
 
