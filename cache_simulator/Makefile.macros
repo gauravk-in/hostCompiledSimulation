@@ -7,7 +7,7 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
 # Path to Cache Simulator
-CSIM_DIR = $(current_dir)
+CSIM_DIR := $(current_dir)
 
 # Hardware Model to use
 CACHESIM_HWMOD = cortexA5

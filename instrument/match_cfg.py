@@ -581,12 +581,11 @@ def match_cfg(listISCFileNames, listObjdumpFileNames, listBinaryFileNames):
             
     printDebugMapCFG(listISCFunctions, listObjdumpFunctions, gdbMapping)
 
-#     for funcISC in listISCFunctions:
-#         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
-# #         display_cfgs(app, funcISC.cfg, funcObj.cfg, "%s" % funcISC.functionName)
-#         psISCFileName = draw_cfg(funcISC, outputPath)
-#         psObjFileName = draw_cfg(funcObj, outputPath)
-#         call(args = ["evince", psISCFileName, psObjFileName])
+    for funcISC in listISCFunctions:
+        funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
+        psISCFileName = draw_cfg(funcISC, outputPath)
+        psObjFileName = draw_cfg(funcObj, outputPath)
+        call(args = ["evince", psISCFileName, psObjFileName])
 
     return listISCFunctions, listObjdumpFunctions
 

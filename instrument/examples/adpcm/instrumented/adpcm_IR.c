@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "ir2c.h"
 #include "cacheSim.h"
+#include "branchPred.h"
 extern unsigned long SP;
 extern unsigned long long memAccessCycles;
 extern unsigned long long pipelineCycles;
@@ -99,7 +100,6 @@ void  adpcm_coder (short indata[], unsigned long indata_addr, char outdata[], un
   uintptr_t ivtmp_28;
   int bufferstep;
   int outputbuffer;
-  unsigned long outputbuffer_addr = 0x8;
   int index;
   int vpdiff;
   int valpred;
@@ -108,7 +108,6 @@ void  adpcm_coder (short indata[], unsigned long indata_addr, char outdata[], un
   int delta;
   int sign;
   signed char * outp;
-  unsigned long outp_addr = 0x0;
 
 adpcm_coderbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
@@ -121,7 +120,7 @@ memAccessCycles += simDCache(0x4a8, 1);  // PC Relative Load
 memAccessCycles += simICache(0x36c, 44);
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 247
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 249
-pipelineCycles += 23;
+pipelineCycles += 23 - (enterBlock(0xf3, 0xfd) ? 7 : 0);
   valpred = state->valprev;
   memAccessCycles += simDCache(state_addr, 1);
   index = state->index;
@@ -136,11 +135,11 @@ pipelineCycles += 23;
 
 adpcm_coderbb_3:
 //  # PRED: 2 [91.0%]  (true,exec)
+memAccessCycles += simDCache((SP + 0x0), 1);  // Spilling Register
 memAccessCycles += simDCache(0x4a8, 1);  // PC Relative Load
-memAccessCycles += simDCache((SP + outp_addr), 0);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x398, 32);
-pipelineCycles += 15;
+pipelineCycles += 15 - (enterBlock(0xfe, 0x105) ? 7 : 0);
   outp =  outdata;
   memAccessCycles += simDCache(outdata_addr, 1);
   ivtmp_28 = 0;
@@ -150,7 +149,11 @@ pipelineCycles += 15;
 adpcm_coderbb_4:
 //  # PRED: 18 [91.0%]  (true,exec) 3 [100.0%]  (fallthru,exec)
 memAccessCycles += simDCache((SP + 0x4), 1);  // Reading Spilt Register
-pipelineCycles += 48;
+memAccessCycles += simDCache((SP + 0x8), 1);  // Spilling Register
+memAccessCycles += simDCache((SP + 0x8), 1);  // Reading Spilt Register
+memAccessCycles += simDCache((SP + 0x0), 1);  // Reading Spilt Register
+memAccessCycles += simDCache((SP + 0x0), 1);  // Spilling Register
+pipelineCycles += 48 - (enterBlock(0x106, 0x137) ? 7 : 0);
   diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;
   memAccessCycles += simDCache(indata_addr + (sizeof(short ) * (+ivtmp_28)), 1);
   if (diff < 0)
@@ -262,15 +265,12 @@ adpcm_coderbb_15:
 
 adpcm_coderbb_16:
 //  # PRED: 15 [50.0%]  (true,exec)
-memAccessCycles += simDCache((SP + outputbuffer_addr), 0);
   outputbuffer = delta_37 << 4 & 255;
   goto adpcm_coderbb_18;
 //  # SUCC: 18 [100.0%]  (fallthru,exec)
 
 adpcm_coderbb_17:
 //  # PRED: 15 [50.0%]  (false,exec)
-memAccessCycles += simDCache((SP + outputbuffer_addr), 1);
-memAccessCycles += simDCache((SP + outp_addr), 0);
   *outp =  (signed char) delta_37 & 15 | (signed char) outputbuffer;
   outp = (uintptr_t)outp + 1;
 //  # SUCC: 18 [100.0%]  (fallthru,exec)
@@ -279,9 +279,8 @@ adpcm_coderbb_18:
 //  # PRED: 16 [100.0%]  (fallthru,exec) 17 [100.0%]  (fallthru,exec)
 // Simulating I Cache for obj block 2
 memAccessCycles += simICache(0x3b8, 200);
+// TODO: UnmappedLS: Store GlobalVar adpcmdata at line 306
 // TODO: UnmappedLS: Load GlobalVar pcmdata at line 263
-// TODO: UnmappedLS: Load LocalVar outp at line 305
-// TODO: UnmappedLS: Store GlobalVar pcmdata at line 306
   bufferstep = bufferstep == 0;
   len = len + -1;
   ivtmp_28 = ivtmp_28 + 2;
@@ -293,7 +292,9 @@ memAccessCycles += simICache(0x3b8, 200);
 
 adpcm_coderbb_19:
 //  # PRED: 18 [9.0%]  (false,exec)
-pipelineCycles += 10;
+memAccessCycles += simDCache((SP + 0x8), 1);  // Reading Spilt Register
+memAccessCycles += simDCache((SP + 0x0), 1);  // Reading Spilt Register
+pipelineCycles += 10 - (enterBlock(0x138, 0x13b) ? 7 : 0);
   if (bufferstep == 0)
     goto adpcm_coderbb_20;
   else
@@ -302,7 +303,6 @@ pipelineCycles += 10;
 
 adpcm_coderbb_20:
 //  # PRED: 19 [67.0%]  (true,exec)
-memAccessCycles += simDCache((SP + outputbuffer_addr), 1);
   *outp = (signed char) (signed char) outputbuffer;
 //  # SUCC: 21 [100.0%]  (fallthru,exec)
 
@@ -310,14 +310,13 @@ adpcm_coderbb_21:
 //  # PRED: 19 [33.0%]  (false,exec) 20 [100.0%]  (fallthru,exec) 2 [9.0%]  (false,exec)
 // Simulating I Cache for obj block 3
 memAccessCycles += simICache(0x480, 16);
-// TODO: UnmappedLS: Load LocalVar outp at line 314
-// TODO: UnmappedLS: Store GlobalVar stepsizeTable at line 315
+// TODO: UnmappedLS: Store GlobalVar adpcmdata at line 315
 memAccessCycles += simDCache((SP + 0xc), 1);  // Reading Spilt Register
 // Simulating I Cache for obj block 4
 memAccessCycles += simICache(0x490, 24);
 // TODO: UnmappedLS: Store GlobalVar coder_1_state at line 317
 // TODO: UnmappedLS: Store GlobalVar coder_1_state at line 318
-pipelineCycles += 19;
+pipelineCycles += 19 - (enterBlock(0x13c, 0x141) ? 7 : 0);
   state->valprev = (short int) (short int) valpred;
   memAccessCycles += simDCache(state_addr, 0);
   state->index = (char) (char) index;

@@ -412,7 +412,9 @@ def annot_pipeline_sim(listISCFunctions,
             # Block Done!
             blockIndISC = blockObj.mapsTo[0]
             blockISC = funcISC.cfg.listBlocks[blockIndISC]
-            annot_str = "pipelineCycles += %d;" % (currBlockCycles)
+            annot_str = "pipelineCycles += %d - (enterBlock(0x%x, 0x%x) ? 7 : 0);" % (currBlockCycles, 
+                                                                                      blockObj.startLine,
+                                                                                      blockObj.endLine)
             annot = Annotation(annot_str,
                                funcISC.fileName,
                                blockISC.startLine,

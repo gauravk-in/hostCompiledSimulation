@@ -59,6 +59,11 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                 addAnnotationToDict(dictAnnotVarFuncDecl,
                                     lineNum,
                                     annot)
+                annot_str = '#include "branchPred.h"'
+                annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                addAnnotationToDict(dictAnnotVarFuncDecl,
+                                    lineNum,
+                                    annot)    
                 if not isGlobalSPVarDeclared:
                     isGlobalSPVarDeclared = 1
                     if ISCFileName == mainFuncFile:
@@ -308,6 +313,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                 
         if funcISC.functionName == "main":
             annot_str = "cacheSimInit();"
+            annot = Annotation(annot_str, funcISC.fileName, funcISC.cfg.listBlocks[0].startLine-1, False)
+            addAnnotationToDict(dictAnnotLoadStore, funcISC.cfg.listBlocks[0].startLine-1, annot)
+            annot_str = "branchPred_init();"
             annot = Annotation(annot_str, funcISC.fileName, funcISC.cfg.listBlocks[0].startLine-1, False)
             addAnnotationToDict(dictAnnotLoadStore, funcISC.cfg.listBlocks[0].startLine-1, annot)
             

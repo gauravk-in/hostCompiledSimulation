@@ -80,7 +80,8 @@ unsigned long L1I_Miss = 0;
 unsigned long L2_Hit_Read = 0;
 unsigned long L2_Hit_Writeback = 0;
 unsigned long L2_Hit_Writethrough = 0;
-unsigned long L2_Miss = 0;
+unsigned long L2I_Miss = 0;
+unsigned long L2D_Miss = 0;
 
 /**** LOCAL FUNCTIONS *********************************************************/
 
@@ -98,7 +99,7 @@ void initCacheParams ()
 	/*** L1 DCache *****************/
 
 	L1DCacheConf.lineLenBytes 		= 32;
-	L1DCacheConf.cacheSizeBytes 	= 4 * 1024; // 4 KB
+	L1DCacheConf.cacheSizeBytes 	= 32 * 1024; // 4 KB
 	L1DCacheConf.numSets 			= 4;
 
 	L1DCacheConf.numLines  			= L1DCacheConf.cacheSizeBytes /
@@ -132,7 +133,7 @@ void initCacheParams ()
 	/*** L1 ICache *****************/
 
 	L1ICacheConf.lineLenBytes 		= 32;
-	L1ICacheConf.cacheSizeBytes 	= 4 * 1024; // 4 KB
+	L1ICacheConf.cacheSizeBytes 	= 32 * 1024; // 4 KB
 	L1ICacheConf.numSets 			= 2;
 
 	L1ICacheConf.numLines  			= L1ICacheConf.cacheSizeBytes /
@@ -166,8 +167,8 @@ void initCacheParams ()
 	/*** L2 Cache *****************/
 
 	L2CacheConf.lineLenBytes 		= 32;
-	L2CacheConf.cacheSizeBytes 		= 32 * 1024; // 32 KB
-	L2CacheConf.numSets 			= 4;
+	L2CacheConf.cacheSizeBytes 		= 512 * 1024; // 32 KB
+	L2CacheConf.numSets 			= 16;
 
 	L2CacheConf.numLines  			= L2CacheConf.cacheSizeBytes /
 			(L2CacheConf.lineLenBytes * L2CacheConf.numSets);
@@ -194,8 +195,8 @@ void initCacheParams ()
 
 	L2CacheConf.isWriteThrough = 0;
 
-	L2CacheConf.hitLatency = 14;
-	L2CacheConf.missLatency = 14;
+	L2CacheConf.hitLatency = 16;
+	L2CacheConf.missLatency = 16;
 }
 
 
@@ -307,7 +308,7 @@ unsigned long long cortexA5_simICache(unsigned long address,
 		}
 
 		// L2 Miss has occured!
-		L2_Miss++;
+		L2I_Miss++;
 		latency += L2CacheConf.missLatency;
 
 		// Data will be present for next access!
@@ -400,7 +401,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	}
 
 	// L2 Miss has occured!
-	L2_Miss++;
+	L2D_Miss++;
 	latency += L2CacheConf.missLatency;
 
 	// Data will be present for next access!
@@ -447,7 +448,8 @@ void cortexA5_cacheSimFini()
 	printf("\nL2 Unified Cache\n");
 	printf("\t Hit Read = %ld\n", L2_Hit_Read);
 	printf("\t Hit Writeback = %ld\n", L2_Hit_Writeback);
-	printf("\t Miss = %ld\n", L2_Miss);
+	printf("\t Inst. Miss = %ld\n", L2I_Miss);
+	printf("\t Data Miss = %ld\n", L2D_Miss);
 
 	free(L1DCache);
 	free(L1ICache);
