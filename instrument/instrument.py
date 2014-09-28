@@ -267,17 +267,30 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
             if m is not None:
                 funcName = m.group("name")
                 funcParams = m.group("params")
+                logging.debug("Found Function Call to %s, params (%s)\n" % (funcName, funcParams))
                 funcISC = find(lambda fn: fn.functionName == funcName, listISCFunctions)
+                if (funcISC is None):
+                    logging.error(" ISC Function : %s not found in listISCFunctions!\n" % (funcName))
+                    continue
                 listParamsInCall = funcParams.split(",")
                 listParamsInAnnotCall = []
                 paramInd = -1
+                
+                skipLine = 0
                 for param in funcISC.listParams:
                     paramInd = paramInd + 1
                     listParamsInAnnotCall.append(listParamsInCall[paramInd])
                     if param.isPointer:
                         m = re.match("\s*&(?P<varName>\w*)", listParamsInCall[paramInd])
+                        if m is None:
+                            logging.error("%s:%d: Can't instrument, too complicated!" % (ISCFileName, lineNum))
+                            skipLine = 1
+                            break
                         paramVarName = m.group("varName")
                         listParamsInAnnotCall.append(paramVarName + "_addr")
+                
+                if skipLine:
+                    continue
                 
                 annot_str = funcName + " ("
                 for param in listParamsInAnnotCall[:-1]:
@@ -288,6 +301,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                                    lineNum,
                                    True)
                 addAnnotationToDict(dictAnnotVarFuncDecl, lineNum, annot)
+                continue
             
             m = re_BlockEndRBrace.match(line)
             if m is not None and inFunction == 1:
@@ -326,6 +340,11 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
         
         for blockObj in funcObj.cfg.listBlocks:
             mappedBlocksISCInd = blockObj.mapsTo
+            if len(mappedBlocksISCInd) == 0:
+                logging.error("Func %s ObjBlock %s does not have a mapping!" %
+                              (funcObj, blockObj.name))
+                continue
+            
             blockLSInfo = findLoadStoreBetweenLines(listLSInfo, blockObj.startLine, blockObj.endLine)
 #             print blockLSInfo
             for blockISCInd in mappedBlocksISCInd:
@@ -567,7 +586,7 @@ def instrumentCache(listISCFileNames, listObjdumpFileNames, listBinaryFileNames,
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.DEBUG)
     
     optparser = OptionParser()
     optparser.add_option("-i", "--isc", action="append", dest="listISCFileNames",

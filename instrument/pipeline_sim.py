@@ -65,6 +65,10 @@ def annot_pipeline_sim(listISCFunctions,
             prevDestReg = None
             currBlockCycles = 7; # For filling the pipeline on cold start
             
+            if len(blockObj.mapsTo) == 0:
+                logging.error("Block %s in func %s does not map to any block!!!" % (blockObj.name, funcObj.functionName))
+                continue
+            
             for lineNumObj in range(blockObj.startLine, blockObj.endLine + 1):
                 lineObj = lc.getline(funcObj.fileName, lineNumObj)
                 

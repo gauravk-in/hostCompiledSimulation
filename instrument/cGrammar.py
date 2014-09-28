@@ -281,15 +281,18 @@ def act_deref_operator(tokens):
     global deref_operator_seen
     deref_operator_seen = 1
 
+def act_size_of(tokens):
+    print ("sizeof operator seen!")
+
 cast_expression = Forward()
 unary_expression = Forward()
-unary_expression << ( postfix_expression
+unary_expression << ( (SIZEOF.setParseAction(act_size_of) + LPAREN + type_name + RPAREN)
+                      | (SIZEOF.setParseAction(act_size_of) + unary_expression)
+                      | postfix_expression
                       | (INC_OP + unary_expression)
                       | (DEC_OP + unary_expression)
                       | (unary_operator + cast_expression)
                       | (DEREF_OP.setParseAction(act_deref_operator) + Combine(cast_expression))
-                      | (SIZEOF + unary_expression)
-                      | (SIZEOF + LPAREN + type_name + RPAREN)
                       )  
 
 cast_expression << ( ((LPAREN + type_name + RPAREN).suppress() + cast_expression)
@@ -451,6 +454,10 @@ def ignore_statement(line):
     
     if line.isspace():
         return True
+    
+    # OMG! Such an ugly hack!
+    if len(line) > 150:
+        return True
 
 class Access:
     def __init__(self, varName, isIndexed, index, isRead):
@@ -512,7 +519,7 @@ def parse_statement(line):
     
     r = statement.parseString(line)
 
-    assert (len(list_annotations) == len(currStatementAccesses))
+#     assert (len(list_annotations) == len(currStatementAccesses))
 
 #     return list_annotations
     return currStatementAccesses
@@ -520,7 +527,7 @@ def parse_statement(line):
 def test():
 
     lines = [  "pcmdata[start - start_40] = *(short int*)((uintptr_t)ivtmp_28);"
-             , "a = b + c;"
+             , "a = (b << c) - (b - c);"
              , "diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;"
              , "*outp = (signed char) (signed char) outputbuffer;"
              , "*(outp + i) = (signed char) (signed char) outputbuffer;"
@@ -528,6 +535,8 @@ def test():
              , "valpred = state.valprev;"
              , "valpred_41 = (valpred_34 > -32768) ? valpred_35 : -32768;"
              , "if (a == b)"
+#              , "*(unsigned long*)((uintptr_t)ivtmp_79 + 12) =  ((*(unsigned long*)((uintptr_t)ivtmp_79 + (int)4294967276) ^ *(unsigned long*)((uintptr_t)ivtmp_79)) ^ *(unsigned long*)((uintptr_t)ivtmp_79 + (int)4294967252));"
+#              , "*(unsigned long*)((uintptr_t)ivtmp_79 + 12) =  ((*(unsigned long*)((uintptr_t)ivtmp_79 + (int)4294967276) ^ *(unsigned long*)((uintptr_t)ivtmp_79)) ^ *(unsigned long*)((uintptr_t)ivtmp_79 + (int)4294967252)) ^ *(unsigned long*)((uintptr_t)ivtmp_79 + (int)4294967244);"
              ]
     
     expected_annotations = [[("start", "simDCache((start_addr), 0);" ),

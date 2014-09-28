@@ -14,9 +14,9 @@ PreProcDir = "\s*#(?:include|define|ifndef|endif).*"
 re_PreProcDir = re.compile("(?:%s)" % PreProcDir)
 
 # Variable Declarations
-TypeSpecifiers = "char|int|float|double|short|long|void"
+TypeSpecifiers = "char|int|float|double|short|long|void|size_t"
 OptionalSpecifiers = "signed|unsigned"
-StorageClass = "(?:static|extern|auto|register)"
+StorageClass = "(?:static|extern|auto|register|const)"
 UserDefined = "struct\s*[\w_]*"
 IRCSpecific = "uintptr_t"
 DataTypes = "((?:(?:%s)|(?:%s)|(?:%s)|(?:%s)|(?:%s))\s*)+(?:\*)*" % (StorageClass, OptionalSpecifiers, TypeSpecifiers, UserDefined, IRCSpecific)

@@ -210,7 +210,10 @@ def identifyLoadStore(listISCFunctions,
         logging.debug("")
         logging.debug("Starting Emulation of Func %s" % func.name)
         funcObj = find(lambda fn: fn.functionName == func.name, listObjdumpFunctions)
-        assert(funcObj is not None)
+        if funcObj is None:
+            # If branching to a function, that is not implemented in source files,
+            #     we will ignore this function!
+            continue;
         funcISC = find(lambda fn: fn.functionName == func.name, listISCFunctions)
         assert(funcISC is not None)
         listEmulatedFunctions.append(func.name)
@@ -229,7 +232,7 @@ def identifyLoadStore(listISCFunctions,
                 ret = armEmu.emulate(instObj)
                 if ret == -1:
                     logging.debug("\t %d: Instruction could not be emulated!" % lineNumObj)
-                    return -1
+                    continue
                 
                 '''
                 Branch Instruction
@@ -410,7 +413,10 @@ def identifyLoadStore(listISCFunctions,
                                 lsInfo.readSpiltReg((ldrAdd - armEmu.reg["sp"].value), lineNumObj)
                                 currFuncListLSInfo.append(lsInfo)
                                 del lsInfo
-                                armEmu.reg[destReg].setValue(currFuncSpilledRegister[ldrAdd - armEmu.reg["sp"].value])
+                                if (ldrAdd - armEmu.reg["sp"].value) in currFuncSpilledRegister: 
+                                    armEmu.reg[destReg].setValue(currFuncSpilledRegister[ldrAdd - armEmu.reg["sp"].value])
+                                else:
+                                    armEmu.reg[destReg].setInvalid();
                                 logging.debug(" %d: Reading Spilled Register in %s from address %d ( = %d)" % 
                                               (lineNumObj, destReg, 
                                                (ldrAdd - armEmu.reg["sp"].value),
