@@ -41,7 +41,7 @@ extern unsigned int ARR_SIZE;
 static void sha_transform(struct SHA_INFO *sha_info)
 {
     int i;
-    LONG temp, A, B, C, D, E, W[80];
+    unsigned long temp, A, B, C, D, E, W[80];
 
     for (i = 0; i < 16; ++i) {
 	W[i] = sha_info->data[i];
@@ -102,13 +102,13 @@ static void sha_transform(struct SHA_INFO *sha_info)
 
 /* change endianness of data */
 
-static void byte_reverse(LONG *buffer, int count)
+static void byte_reverse(unsigned long *buffer, int count)
 {
     int i;
-    BYTE ct[4], *cp;
+    unsigned char ct[4], *cp;
 
-    count /= sizeof(LONG);
-    cp = (BYTE *) buffer;
+    count /= sizeof(unsigned long);
+    cp = (unsigned char *) buffer;
     for (i = 0; i < count; ++i) {
 	ct[0] = cp[0];
 	ct[1] = cp[1];
@@ -118,7 +118,7 @@ static void byte_reverse(LONG *buffer, int count)
 	cp[1] = ct[2];
 	cp[2] = ct[1];
 	cp[3] = ct[0];
-	cp += sizeof(LONG);
+	cp += sizeof(unsigned long);
     }
 }
 
@@ -141,11 +141,11 @@ void sha_init(struct SHA_INFO *sha_info)
 
 void sha_update(struct SHA_INFO *sha_info, unsigned char *buffer, int count)
 {
-    if ((sha_info->count_lo + ((LONG) count << 3)) < sha_info->count_lo) {
+    if ((sha_info->count_lo + ((unsigned long) count << 3)) < sha_info->count_lo) {
 	++sha_info->count_hi;
     }
-    sha_info->count_lo += (LONG) count << 3;
-    sha_info->count_hi += (LONG) count >> 29;
+    sha_info->count_lo += (unsigned long) count << 3;
+    sha_info->count_hi += (unsigned long) count >> 29;
     while (count >= SHA_BLOCKSIZE) {
 	my_memcpy(sha_info->data, buffer, SHA_BLOCKSIZE);
 #ifdef LITTLE_ENDIAN
@@ -163,21 +163,21 @@ void sha_update(struct SHA_INFO *sha_info, unsigned char *buffer, int count)
 void sha_final(struct SHA_INFO *sha_info)
 {
     int count;
-    LONG lo_bit_count, hi_bit_count;
+    unsigned long lo_bit_count, hi_bit_count;
 
     lo_bit_count = sha_info->count_lo;
     hi_bit_count = sha_info->count_hi;
     count = (int) ((lo_bit_count >> 3) & 0x3f);
-    ((BYTE *) sha_info->data)[count++] = 0x80;
+    ((unsigned char *) sha_info->data)[count++] = 0x80;
     if (count > 56) {
-	my_memset((BYTE *) &sha_info->data + count, 0, 64 - count);
+	my_memset((unsigned char *) &sha_info->data + count, 0, 64 - count);
 #ifdef LITTLE_ENDIAN
 	byte_reverse(sha_info->data, SHA_BLOCKSIZE);
 #endif /* LITTLE_ENDIAN */
 	sha_transform(sha_info);
 	my_memset(&sha_info->data, 0, 56);
     } else {
-	my_memset((BYTE *) &sha_info->data + count, 0, 56 - count);
+	my_memset((unsigned char *) &sha_info->data + count, 0, 56 - count);
     }
 #ifdef LITTLE_ENDIAN
     byte_reverse(sha_info->data, SHA_BLOCKSIZE);
@@ -193,14 +193,14 @@ void sha_final(struct SHA_INFO *sha_info)
 
 void sha_stream(struct SHA_INFO *sha_info, unsigned char *inData, unsigned long dSize)
 {
-    LONG i;
-    LONG j,k, start,end;
-    LONG count = 0;
+    unsigned long i;
+    unsigned long j,k, start,end;
+    unsigned long count = 0;
 
     j = ARR_SIZE/(BLOCK_SIZE); //no. of blocks
     k = ARR_SIZE%(BLOCK_SIZE); //size of last block
 
-    BYTE data[BLOCK_SIZE];
+    unsigned char data[BLOCK_SIZE];
 
     sha_init(sha_info);
 
