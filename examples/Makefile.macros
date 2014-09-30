@@ -4,7 +4,7 @@
 #APPBASEDIR=crc32
 #APPBASEDIR=adpcm
 #APPBASEDIR=sha
-APPBASEDIR=simple
+#APPBASEDIR=simple
 
 ##################
 #Define directory where application source files are stored. Must contain IR files too

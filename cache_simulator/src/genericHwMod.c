@@ -145,8 +145,8 @@ void readConfigFile()
 	// L1 Cache Parameters - same for separate Instruction and Data Cache
 	// L1 Size Params
 	L1Params.cacheSets 			= 4;
-	L1Params.cacheSizeBytes 	= 16 * 1024;
-	L1Params.lineSizeBytes 		= 16;
+	L1Params.cacheSizeBytes 	= 32 * 1024;
+	L1Params.lineSizeBytes 		= 32;
 	L1Params.indexLengthBits 	= log_base2(L1Params.cacheSizeBytes / (L1Params.cacheSets * L1Params.lineSizeBytes));
 	L1Params.offsetLengthBits 	= log_base2(L1Params.lineSizeBytes);
 	L1Params.tagLengthBits 		= 32 - L1Params.indexLengthBits - L1Params.offsetLengthBits;
@@ -188,9 +188,9 @@ void readConfigFile()
 
 	// L2 Cache Parameters - unified cache for data and instruction
 	// L2 Size Params
-	L2Params.cacheSets 			= 8;
-	L2Params.cacheSizeBytes 	= 128 * 1024;
-	L2Params.lineSizeBytes 		= 64;
+	L2Params.cacheSets 			= 16;
+	L2Params.cacheSizeBytes 	= 512 * 1024;
+	L2Params.lineSizeBytes 		= 32;
 	L2Params.indexLengthBits 	= log_base2(L2Params.cacheSizeBytes / (L2Params.cacheSets * L2Params.lineSizeBytes));
 	L2Params.offsetLengthBits 	= log_base2(L2Params.lineSizeBytes);
 	L2Params.tagLengthBits 		= 32 - L2Params.indexLengthBits - L2Params.offsetLengthBits;

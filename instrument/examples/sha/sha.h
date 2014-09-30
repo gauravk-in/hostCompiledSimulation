@@ -19,10 +19,10 @@ struct SHA_INFO {
 };
 
 void sha_init(struct SHA_INFO *);
-void sha_update(struct SHA_INFO *, BYTE *, int);
+void sha_update(struct SHA_INFO *, unsigned char *, int);
 void sha_final(struct SHA_INFO *);
 
-void sha_stream(struct SHA_INFO *, BYTE *, LONG);
+void sha_stream(struct SHA_INFO *, unsigned char *, unsigned long);
 void sha_print(struct SHA_INFO *);
 
 #endif /* SHA_H */

@@ -1,6 +1,6 @@
 /***********************************************************
  Intermediate representation of
-    sha/app_dir/sha_driver.c
+    test_memory/app_dir/main.c
 
  Converted by ir2c v0.1
 
@@ -9,22 +9,15 @@
 #include <stdint.h>
 #include "ir2c.h"
 
-/* NIST Secure Hash Algorithm */
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include "sha.h"
-#include "in_small.h"
-#include "my_variable.h"
-struct SHA_INFO sha_info; //making global
+#include "test_memory.h"
 
 
 int main() {
 mainbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
-  sha_stream (&sha_info, &in_Data, ARR_SIZE);
+  fill_L1_DCache ();
+  fill_L2_Cache ();
+  fill_L1_read_again ();
   return 0;
 //  # SUCC: EXIT [100.0%] 
 

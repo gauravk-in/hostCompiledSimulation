@@ -50,7 +50,7 @@ extern unsigned int ARR_SIZE;
 /* do SHA transformation */
 
 
-static void sha_transform(SHA_INFO *sha_info) {
+static void sha_transform(struct SHA_INFO *sha_info) {
   LONG A_133;
   LONG E_132;
   LONG D_131;
@@ -79,10 +79,10 @@ static void sha_transform(SHA_INFO *sha_info) {
   LONG C_97;
   uintptr_t ivtmp_94;
   uintptr_t ivtmp_93;
-  uintptr_t D_2941;
+  uintptr_t D_2940;
   uintptr_t ivtmp_79;
   uintptr_t ivtmp_71;
-  uintptr_t D_2918;
+  uintptr_t D_2917;
   uintptr_t ivtmp_63;
   LONG W[80];
   LONG E;
@@ -113,14 +113,14 @@ sha_transformbb_4:
 //  # PRED: 3 [5.9%]  (false,exec)
   ivtmp_79 = (uintptr_t)&W[13];
   ivtmp_63 = (uintptr_t)&W;
-  D_2941 = ivtmp_63 + 308;
+  D_2940 = ivtmp_63 + 308;
 //  # SUCC: 5 [100.0%]  (fallthru,exec)
 
 sha_transformbb_5:
 //  # PRED: 5 [98.5%]  (true,exec) 4 [100.0%]  (fallthru,exec)
   *(LONG*)((uintptr_t)ivtmp_79 + 12) =  ((*(LONG*)((uintptr_t)ivtmp_79 + (int)4294967276) ^ *(LONG*)((uintptr_t)ivtmp_79)) ^ *(LONG*)((uintptr_t)ivtmp_79 + (int)4294967252)) ^ *(LONG*)((uintptr_t)ivtmp_79 + (int)4294967244);
   ivtmp_79 = ivtmp_79 + 4;
-  if (ivtmp_79 != D_2941)
+  if (ivtmp_79 != D_2940)
     goto sha_transformbb_5;
   else
     goto sha_transformbb_6;
@@ -160,7 +160,7 @@ sha_transformbb_13:
 
 sha_transformbb_8:
 //  # PRED: 7 [4.8%]  (false,exec)
-  D_2918 = ivtmp_63 + 80;
+  D_2917 = ivtmp_63 + 80;
   ivtmp_116 = ivtmp_63;
   E_132 = D;
   D_131 = C;
@@ -173,7 +173,7 @@ sha_transformbb_9:
   temp_100 = (((*(LONG*)((uintptr_t)ivtmp_116 + 80) + 1859775393) + E_132) + ((A_129<<27)|(A_129>>(sizeof(A_129)*CHAR_BIT-27)))) + ((C_97 ^ B_130) ^ D_131);
   C_101 = (B_130<<2)|(B_130>>(sizeof(B_130)*CHAR_BIT-2));
   ivtmp_116 = ivtmp_116 + 4;
-  if (ivtmp_116 != D_2918)
+  if (ivtmp_116 != D_2917)
     goto sha_transformbb_14;
   else
     goto sha_transformbb_16;
@@ -213,7 +213,7 @@ sha_transformbb_10:
   temp_104 = (((*(LONG*)((uintptr_t)ivtmp_115 + 160) + (int)2400959708) + E_128) + ((A_125<<27)|(A_125>>(sizeof(A_125)*CHAR_BIT-27)))) + ((D_127 | C_101) & B_126 | D_127 & C_101);
   C_105 = (B_126<<2)|(B_126>>(sizeof(B_126)*CHAR_BIT-2));
   ivtmp_115 = ivtmp_115 + 4;
-  if (ivtmp_115 != D_2918)
+  if (ivtmp_115 != D_2917)
     goto sha_transformbb_15;
   else
     goto sha_transformbb_18;
@@ -232,7 +232,7 @@ sha_transformbb_11:
   temp_113 = (((*(LONG*)((uintptr_t)ivtmp_63 + 240) + (int)3395469782) + E_123) + ((A_117<<27)|(A_117>>(sizeof(A_117)*CHAR_BIT-27)))) + ((C_105 ^ B_119) ^ D_121);
   C_114 = (B_119<<2)|(B_119>>(sizeof(B_119)*CHAR_BIT-2));
   ivtmp_63 = ivtmp_63 + 4;
-  if (ivtmp_63 != D_2918)
+  if (ivtmp_63 != D_2917)
     goto sha_transformbb_17;
   else
     goto sha_transformbb_19;
@@ -270,7 +270,7 @@ sha_transformbb_12:
 
 
 
-void sha_init(SHA_INFO *sha_info) {
+void sha_init(struct SHA_INFO *sha_info) {
 sha_initbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
   sha_info->digest[0] = 1732584193;
@@ -287,7 +287,7 @@ sha_initbb_2:
 
 
 
-void sha_print(SHA_INFO *sha_info) {
+void sha_print(struct SHA_INFO *sha_info) {
 sha_printbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
   printf (&"%08lx %08lx %08lx %08lx %08lx\n"[0], sha_info->digest[0], sha_info->digest[1], sha_info->digest[2], sha_info->digest[3], sha_info->digest[4]);
@@ -298,20 +298,20 @@ sha_printbb_2:
 
 
 
-void sha_final(SHA_INFO *sha_info) {
+void sha_final(struct SHA_INFO *sha_info) {
   int count_203;
   LONG hi_bit_count;
   LONG lo_bit_count;
   int count;
-  LONG * D_2806;
+  LONG * D_2805;
 
 sha_finalbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
   lo_bit_count = sha_info->count_lo;
   hi_bit_count = sha_info->count_hi;
   count = (int) (lo_bit_count >> 3) & 63;
-  D_2806 = &sha_info->data;
-  *(BYTE*)( (uintptr_t)D_2806 + (unsigned int) count) = 128;
+  D_2805 = &sha_info->data;
+  *(BYTE*)( (uintptr_t)D_2805 + (unsigned int) count) = 128;
   count_203 = count + 1;
   if (count_203 > 56)
     goto sha_finalbb_3;
@@ -321,15 +321,15 @@ sha_finalbb_2:
 
 sha_finalbb_3:
 //  # PRED: 2 [39.0%]  (true,exec)
-  my_memset (D_2806 + (unsigned int) count_203, 0, (size_t) (64 - count_203));
+  my_memset (D_2805 + (unsigned int) count_203, 0, (size_t) (64 - count_203));
   sha_transform (sha_info);
-  my_memset (D_2806, 0, 56);
+  my_memset (D_2805, 0, 56);
   goto sha_finalbb_5;
 //  # SUCC: 5 [100.0%]  (fallthru,exec)
 
 sha_finalbb_4:
 //  # PRED: 2 [61.0%]  (false,exec)
-  my_memset (D_2806 + (unsigned int) count_203, 0, (size_t) (56 - count_203));
+  my_memset (D_2805 + (unsigned int) count_203, 0, (size_t) (56 - count_203));
 //  # SUCC: 5 [100.0%]  (fallthru,exec)
 
 sha_finalbb_5:
@@ -344,22 +344,22 @@ sha_finalbb_5:
 
 
 
-void sha_update(SHA_INFO *sha_info, BYTE *buffer, int count) {
-  uintptr_t D_3104;
+void sha_update(struct SHA_INFO *sha_info, unsigned char *buffer, int count) {
+  uintptr_t D_3103;
   uintptr_t ivtmp_232;
-  int D_3090;
-  uintptr_t D_3087;
-  LONG * D_2796;
-  long unsigned int D_2788;
+  int D_3089;
+  uintptr_t D_3086;
+  LONG * D_2795;
+  long unsigned int D_2787;
   long unsigned int count_1;
-  LONG D_2786;
+  LONG D_2785;
 
 sha_updatebb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
-  D_2786 = sha_info->count_lo;
+  D_2785 = sha_info->count_lo;
   count_1 = (long unsigned int) count;
-  D_2788 = count_1 << 3;
-  if (D_2786 > D_2788 + D_2786)
+  D_2787 = count_1 << 3;
+  if (D_2785 > D_2787 + D_2785)
     goto sha_updatebb_3;
   else
     goto sha_updatebb_4;
@@ -372,7 +372,7 @@ sha_updatebb_3:
 
 sha_updatebb_4:
 //  # PRED: 2 [50.0%]  (false,exec) 3 [100.0%]  (fallthru,exec)
-  sha_info->count_lo =  D_2788 + sha_info->count_lo;
+  sha_info->count_lo =  D_2787 + sha_info->count_lo;
   sha_info->count_hi =  (count_1 >> 29) + sha_info->count_hi;
   if (count > 63)
     goto sha_updatebb_5;
@@ -382,14 +382,14 @@ sha_updatebb_4:
 
 sha_updatebb_5:
 //  # PRED: 4 [91.0%]  (true,exec)
-  D_2796 = &sha_info->data;
+  D_2795 = &sha_info->data;
   ivtmp_232 = 0;
 //  # SUCC: 6 [100.0%]  (fallthru,exec)
 
 sha_updatebb_6:
 //  # PRED: 6 [91.0%]  (true,exec) 5 [100.0%]  (fallthru,exec)
-  D_3104 = ivtmp_232 + (uintptr_t)buffer;
-  my_memcpy (D_2796,  D_3104, 64);
+  D_3103 = ivtmp_232 + (uintptr_t)buffer;
+  my_memcpy (D_2795,  D_3103, 64);
   sha_transform (sha_info);
   ivtmp_232 = ivtmp_232 + 64;
   if ((int) (count_1 - ivtmp_232) > 63)
@@ -400,10 +400,10 @@ sha_updatebb_6:
 
 sha_updatebb_7:
 //  # PRED: 6 [9.0%]  (false,exec)
-  D_3087 = (count_1 + (int)4294967232) / 64;
-  buffer = (uintptr_t)buffer + (D_3087 + 1) * 64;
-  D_3090 = count + -64;
-  count = D_3090 + (int) D_3087 * -64;
+  D_3086 = (count_1 + (int)4294967232) / 64;
+  buffer = (uintptr_t)buffer + (D_3086 + 1) * 64;
+  D_3089 = count + -64;
+  count = D_3089 + (int) D_3086 * -64;
 //  # SUCC: 8 [100.0%]  (fallthru,exec)
 
 sha_updatebb_8:
@@ -416,11 +416,11 @@ sha_updatebb_8:
 
 
 
-void sha_stream(SHA_INFO *sha_info, BYTE *inData, LONG dSize) {
+void sha_stream(struct SHA_INFO *sha_info, unsigned char *inData, unsigned long int dSize) {
   LONG end_289;
   LONG end_288;
   uintptr_t ivtmp_273;
-  uintptr_t D_3144;
+  uintptr_t D_3143;
   uintptr_t ivtmp_267;
   BYTE data[8192];
   LONG count;
@@ -462,7 +462,7 @@ sha_streambb_14:
 
 sha_streambb_4:
 //  # PRED: 4 [99.0%]  (true,exec) 14 [100.0%]  (fallthru)
-  *(BYTE*)((uintptr_t)&data + (uintptr_t)ivtmp_273) = *(BYTE *)((BYTE *) (end_289 + (uintptr_t)inData) + (uintptr_t)ivtmp_273);
+  *(BYTE*)((uintptr_t)&data + (uintptr_t)ivtmp_273) = *(unsigned char *)((unsigned char *) (end_289 + (uintptr_t)inData) + (uintptr_t)ivtmp_273);
   ivtmp_273 = ivtmp_273 + 1;
   if (ivtmp_273 != 8192)
     goto sha_streambb_4;
@@ -506,15 +506,15 @@ sha_streambb_7:
 
 sha_streambb_8:
 //  # PRED: 7 [99.0%]  (true,exec)
-  D_3144 = end - start;
+  D_3143 = end - start;
   ivtmp_267 = 0;
 //  # SUCC: 9 [100.0%]  (fallthru,exec)
 
 sha_streambb_9:
 //  # PRED: 9 [99.0%]  (true,exec) 8 [100.0%]  (fallthru,exec)
-  *(BYTE*)((uintptr_t)&data + (uintptr_t)ivtmp_267) = *(BYTE *)((uintptr_t)inData + start + (uintptr_t)ivtmp_267);
+  *(BYTE*)((uintptr_t)&data + (uintptr_t)ivtmp_267) = *(unsigned char *)((uintptr_t)inData + start + (uintptr_t)ivtmp_267);
   ivtmp_267 = ivtmp_267 + 1;
-  if (ivtmp_267 != D_3144)
+  if (ivtmp_267 != D_3143)
     goto sha_streambb_9;
   else
     goto sha_streambb_10;

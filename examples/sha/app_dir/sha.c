@@ -38,7 +38,7 @@ extern unsigned int ARR_SIZE;
 
 /* do SHA transformation */
 
-static void sha_transform(SHA_INFO *sha_info)
+static void sha_transform(struct SHA_INFO *sha_info)
 {
     int i;
     LONG temp, A, B, C, D, E, W[80];
@@ -126,7 +126,7 @@ static void byte_reverse(LONG *buffer, int count)
 
 /* initialize the SHA digest */
 
-void sha_init(SHA_INFO *sha_info)
+void sha_init(struct SHA_INFO *sha_info)
 {
     sha_info->digest[0] = 0x67452301L;
     sha_info->digest[1] = 0xefcdab89L;
@@ -139,7 +139,7 @@ void sha_init(SHA_INFO *sha_info)
 
 /* update the SHA digest */
 
-void sha_update(SHA_INFO *sha_info, BYTE *buffer, int count)
+void sha_update(struct SHA_INFO *sha_info, unsigned char *buffer, int count)
 {
     if ((sha_info->count_lo + ((LONG) count << 3)) < sha_info->count_lo) {
 	++sha_info->count_hi;
@@ -160,7 +160,7 @@ void sha_update(SHA_INFO *sha_info, BYTE *buffer, int count)
 
 /* finish computing the SHA digest */
 
-void sha_final(SHA_INFO *sha_info)
+void sha_final(struct SHA_INFO *sha_info)
 {
     int count;
     LONG lo_bit_count, hi_bit_count;
@@ -191,7 +191,7 @@ void sha_final(SHA_INFO *sha_info)
 
 #define BLOCK_SIZE	8192
 
-void sha_stream(SHA_INFO *sha_info, BYTE *inData, LONG dSize)
+void sha_stream(struct SHA_INFO *sha_info, unsigned char *inData, unsigned long dSize)
 {
     LONG i;
     LONG j,k, start,end;
@@ -239,7 +239,7 @@ void sha_stream(SHA_INFO *sha_info, BYTE *inData, LONG dSize)
 
 /* print a SHA digest */
 
-void sha_print(SHA_INFO *sha_info)
+void sha_print(struct SHA_INFO *sha_info)
 {
     printf("%08lx %08lx %08lx %08lx %08lx\n",
 	sha_info->digest[0], sha_info->digest[1], sha_info->digest[2],

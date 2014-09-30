@@ -68,7 +68,7 @@ cacheLine_t **L2Cache;
 
 unsigned int memWriteLatency = 55;
 unsigned int memReadLatency = 55;
-unsigned int memReadPrefetchLatency = 10;
+unsigned int memReadPrefetchLatency = 0;
 
 unsigned long L1D_Hit_Read = 0;
 unsigned long L1D_Hit_Writeback = 0;
@@ -218,7 +218,7 @@ void initCacheParams ()
 
 	L1ICacheConf.isWriteThrough = 0;
 
-	L1ICacheConf.hitLatency = 2;
+	L1ICacheConf.hitLatency = 0;
 	L1ICacheConf.missLatency = 2;
 
 
@@ -311,13 +311,17 @@ unsigned long long cortexA5_simICache(unsigned long address,
 	unsigned long _address;
 	int setIndex = 0;
 	int replaceIndex;
+	int hit = 0;
+	unsigned long address_32;
 
-	for (_address = address; _address <= address + nBytes; _address += 4)
+	address_32 = address & (~L1ICacheConf.lineLenBytes);
+	for (_address = address_32; _address <= address + nBytes; _address += 32)
 	{
 		tag = getTagFromAddress(_address, L1ICacheConf.tagLenBits, L1ICacheConf.tagMask);
 		index = getIndexFromAddress(_address, L1ICacheConf.subIndexLenBits, L1ICacheConf.indexMask);
 
 		replaceIndex = -1;
+		hit = 0;
 		for (setIndex = 0; setIndex < L1ICacheConf.numSets; setIndex++)
 		{
 			if (IS_CACHELINE_VALID(L1ICache[setIndex][index].flags))
@@ -326,7 +330,8 @@ unsigned long long cortexA5_simICache(unsigned long address,
 				{
 					latency += L1ICacheConf.hitLatency;
 					L1I_Hit_Read++;
-					return latency;
+					hit = 1;
+					break;
 				}
 			}
 			else
@@ -334,6 +339,10 @@ unsigned long long cortexA5_simICache(unsigned long address,
 				replaceIndex = setIndex;
 			}
 		}
+
+		if (hit)
+			continue;
+		
 		// L1 Miss has occured!
 		L1I_Miss++;
 		latency += L1ICacheConf.missLatency;
@@ -348,6 +357,7 @@ unsigned long long cortexA5_simICache(unsigned long address,
 		index = getIndexFromAddress(_address, L2CacheConf.subIndexLenBits, L2CacheConf.indexMask);
 
 		replaceIndex = -1;
+		hit = 0;
 		for (setIndex = 0; setIndex < L2CacheConf.numSets; setIndex++)
 		{
 			if (IS_CACHELINE_VALID(L2Cache[setIndex][index].flags))
@@ -356,7 +366,8 @@ unsigned long long cortexA5_simICache(unsigned long address,
 				{
 					latency += L2CacheConf.hitLatency;
 					L2_Hit_Read++;
-					return latency;
+					hit = 1;
+					break;
 				}
 			}
 			else
@@ -365,11 +376,13 @@ unsigned long long cortexA5_simICache(unsigned long address,
 			}
 		}
 
+		if (hit)
+			continue;
+
 		// L2 Miss has occured!
 		L1I_Miss--;
 		L2I_Miss++;
 		latency += L2CacheConf.missLatency;
-
 		// Data will be present for next access!
 		if (replaceIndex == -1)
 			replaceIndex = random() % L2CacheConf.numSets;

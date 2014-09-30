@@ -8,8 +8,8 @@
 
 #define HERE printf("%s: %s: %d\n", __FILE__, __func__, __LINE__)
 
-#define MAX_REPEATS 1
-#define MAX_ACCESSES 128
+#define MAX_REPEATS 4
+#define MAX_ACCESSES 8192 * 4
 
 #define START_ADD 0x0
 

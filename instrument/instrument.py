@@ -281,7 +281,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                     paramInd = paramInd + 1
                     listParamsInAnnotCall.append(listParamsInCall[paramInd])
                     if param.isPointer:
-                        m = re.match("\s*&(?P<varName>\w*)", listParamsInCall[paramInd])
+                        m = re.match("\s*&?(?P<varName>\w*)", listParamsInCall[paramInd])
                         if m is None:
                             logging.error("%s:%d: Can't instrument, too complicated!" % (ISCFileName, lineNum))
                             skipLine = 1
@@ -387,8 +387,12 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                         access = lineAccesses.pop()
                         if access.varName in currFuncListParamsToAnnot:
                             if access.isIndexed:
-                                param = find(lambda p: p.name == access.varName, funcISC.listParams)
-                                annot_str = "memAccessCycles += simDCache(%s_addr + (sizeof(%s) * (%s)), %d);" % (access.varName, param.type, access.index, access.isRead)
+                                if access.ifIndexedIsArray:
+                                    param = find(lambda p: p.name == access.varName, funcISC.listParams)
+                                    annot_str = "memAccessCycles += simDCache(%s_addr + (sizeof(%s) * (%s)), %d);" % (access.varName, param.type, access.index, access.isRead)
+                                else:
+                                    param = find(lambda p: p.name == access.varName, funcISC.listParams)
+                                    annot_str = "memAccessCycles += simDCache(%s_addr + (%s), %d);" % (access.varName, access.index, access.isRead)
                             else:
                                 annot_str = "memAccessCycles += simDCache(%s_addr, %d);" % (access.varName, access.isRead)
                             annot = Annotation(annot_str, funcISC.fileName, lineNumISC, False)
@@ -404,10 +408,16 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                                 if lsInfo.var != None and access.varName == lsInfo.var.name and access.isRead == lsInfo.isLoad:
                                     var = find(lambda var: var.name == access.varName, listGlobalVariables + listLocalVariables)
                                     if access.isIndexed:
-                                        if var.isLocal:
-                                            annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%d * (%s))), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
+                                        if access.ifIndexedIsArray:
+                                            if var.isLocal:
+                                                annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%d * (%s))), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
+                                            else:
+                                                annot_str = "memAccessCycles += simDCache(%s_addr + (%d * (%s)), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
                                         else:
-                                            annot_str = "memAccessCycles += simDCache(%s_addr + (%d * (%s)), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
+                                            if var.isLocal:
+                                                annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%s)), %d);" % (access.varName, access.index, access.isRead)
+                                            else:
+                                                annot_str = "memAccessCycles += simDCache(%s_addr + (%s), %d);" % (access.varName, access.index, access.isRead)
                                     else:
                                         if var.isLocal:
                                             annot_str = "memAccessCycles += simDCache((SP + %s_addr), %d);" % (access.varName, access.isRead)

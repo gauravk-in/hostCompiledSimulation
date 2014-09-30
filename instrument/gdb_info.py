@@ -1,6 +1,7 @@
 import re
 import sys
 from subprocess import call
+import logging
 
 from cfg import *
 
@@ -62,7 +63,7 @@ def debugListVariables(listVariables):
 #         self.file = ""
 #         self.lineNum = -1
 #         
-#     def __init__(self, name, type, length, file):
+#     def __init_ _(self, name, type, length, file):
 #         self.name = name
 #         self.address = -1
 #         self.type = type
@@ -211,6 +212,8 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
     binaryFileName = listBinaryFileNames[0]    
     
     VarValTypes = "(?P<valTypeOptOut>\<value optimized out\>)|\{.*\}|.*"
+    re_breakPointLine = re.compile("Breakpoint\s\d*,\s\w*\s\(.*((?:,$)|(?:\) at .*$))")
+    re_breakPointMultiLine = re.compile(".*((?:,$)|(?:\) at .*$))")
     re_LocalVar = re.compile("\s*(?P<varName>\w*)\s*=\s*(?:%s)" % (VarValTypes))
     re_InfoScope = re.compile("\s*Symbol (?P<varName>\w*) is (?P<varType>.*), length (?P<length>\d*).")
     re_SPLine = re.compile("\s*SP = (?P<valSP>[a-f0-9]*)")
@@ -243,12 +246,33 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
         
         listLocalVarNames = []
         gdbOFile = open(gdbOFileName, 'r')
+        inBreakPointMultiLine = 0
+        breakPointLineSeen = 0
         for line in gdbOFile:
-            m = re_LocalVar.match(line)
+            m = re_breakPointLine.match(line)
             if m is not None:
-                if m.group("valTypeOptOut") is None:
-                    varName = m.group("varName")
-                    listLocalVarNames.append(varName)
+                if m.group(1) is ",":
+                    print "BreakPointLine First Seen!"
+                    inBreakPointMultiLine = 1
+                else:
+                    breakPointLineSeen = 1
+                    
+            if inBreakPointMultiLine:
+                m = re_breakPointMultiLine.match(line)
+                if m is not None:
+                    if m.group(1) is ",":
+                        inBreakPointMultiLine = 1
+                    else:
+                        breakPointLineSeen = 1
+                else:
+                    logging.error("Can't find correct pattern for Break Point Line : 1")
+                        
+            if breakPointLineSeen:
+                m = re_LocalVar.match(line)
+                if m is not None:
+                    if m.group("valTypeOptOut") is None:
+                        varName = m.group("varName")
+                        listLocalVarNames.append(varName)
         gdbOFile.close()
         
         gdbXFile = open(gdbXFileName, 'w')
@@ -304,43 +328,63 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
         
         valSP = 0
         gdbOFile = open(gdbOFileName, 'r')
+        inBreakPointMultiLine = 0
+        breakPointLineSeen = 0
         for line in gdbOFile:
-            m = re_SPLine.match(line)
+            m = re_breakPointLine.match(line)
             if m is not None:
-                valSP = int(m.group("valSP"), 16)
-                continue
-            
-            m = re_LocalVarLine.match(line)
-            if m is not None:
-                varName = m.group("varName")
-                continue
-            
-            m = re_addressLine.match(line)
-            if m is not None:
-                address = int(m.group("address"), 16) - valSP 
-                continue
-            
-            m = re_typeLine.match(line)
-            if m is not None:
-                varType = m.group("varType")
-                if m.group("varLen"):
-                    varLen = int(m.group("varLen"))
+                if m.group(1) is ",":
+                    inBreakPointMultiLine = 1
                 else:
-                    varLen = 1
-                continue
-            
-            m = re_sizeLine.match(line)
-            if m is not None:
-                varSize = int(m.group("varSize"))
-                listLocalVariables.append(Variable(isLocal = True,
-                                                   name = varName, 
-                                                   type = varType, 
-                                                   length = varLen, 
-                                                   scope = func.functionName, 
-                                                   address = address, 
-                                                   size = varSize))
-                                                   
-                continue
+                    breakPointLineSeen = 1
+                    
+            if inBreakPointMultiLine:
+                m = re_breakPointMultiLine.match(line)
+                if m is not None:
+                    if m.group(1) is ",":
+                        inBreakPointMultiLine = 1
+                    else:
+                        breakPointLineSeen = 1
+                else:
+                    logging.error("Can't find correct pattern for Break Point Line : 1")
+                        
+            if breakPointLineSeen:
+                m = re_SPLine.match(line)
+                if m is not None:
+                    valSP = int(m.group("valSP"), 16)
+                    continue
+                
+                m = re_LocalVarLine.match(line)
+                if m is not None:
+                    varName = m.group("varName")
+                    continue
+                
+                m = re_addressLine.match(line)
+                if m is not None:
+                    address = int(m.group("address"), 16) - valSP 
+                    continue
+                
+                m = re_typeLine.match(line)
+                if m is not None:
+                    varType = m.group("varType")
+                    if m.group("varLen"):
+                        varLen = int(m.group("varLen"))
+                    else:
+                        varLen = 1
+                    continue
+                
+                m = re_sizeLine.match(line)
+                if m is not None:
+                    varSize = int(m.group("varSize"))
+                    listLocalVariables.append(Variable(isLocal = True,
+                                                       name = varName, 
+                                                       type = varType, 
+                                                       length = varLen, 
+                                                       scope = func.functionName, 
+                                                       address = address, 
+                                                       size = varSize))
+                                                       
+                    continue
         gdbOFile.close()
     
     debugListVariables(listLocalVariables)        

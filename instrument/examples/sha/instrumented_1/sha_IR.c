@@ -464,9 +464,9 @@ sha_finalbb_3:
 // Simulating I Cache for obj block 2
 memAccessCycles += simICache(0x5ec, 8);
 pipelineCycles += 8 - (enterBlock(0x199, 0x19a) ? 7 : 0);
-  my_memset (D_2805 + (unsigned int) count_203, sha_info_addr + (unsigned long) count_203,  0,  (size_t) (64 - count_203));
+  my_memset (D_2805 + (unsigned int) count_203, sha_info_addr + (unsigned long) count_203, 0, (size_t) (64 - count_203));
   sha_transform (sha_info, sha_info_addr);
-  my_memset (D_2805, sha_info_addr,  0,  56);
+  my_memset (D_2805, sha_info_addr, 0, 56);
   goto sha_finalbb_5;
 //  # SUCC: 5 [100.0%]  (fallthru,exec)
 
@@ -475,7 +475,7 @@ sha_finalbb_4:
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x5c8, 36);
 pipelineCycles += 12 - (enterBlock(0x190, 0x198) ? 7 : 0);
-  my_memset (D_2805 + (unsigned int) count_203, sha_info_addr + (unsigned long) count_203,  0,  (size_t) (56 - count_203));
+  my_memset (D_2805 + (unsigned int) count_203, sha_info_addr + (unsigned long) count_203, 0, (size_t) (56 - count_203));
 //  # SUCC: 5 [100.0%]  (fallthru,exec)
 
 sha_finalbb_5:
@@ -566,7 +566,7 @@ memAccessCycles += simICache(0x524, 44);
 pipelineCycles += 15 - (enterBlock(0x165, 0x16f) ? 7 : 0);
   D_3103 = ivtmp_232 + (uintptr_t)buffer;
   memAccessCycles += simDCache(buffer_addr, 1);
-  my_memcpy (D_2795, sha_info_addr,   D_3103, buffer_addr + (unsigned long) ivtmp_232,  64);
+  my_memcpy (D_2795, sha_info_addr,  D_3103, buffer_addr + ivtmp_232, 64);
   sha_transform (sha_info, sha_info_addr);
   ivtmp_232 = ivtmp_232 + 64;
   if ((int) (count_1 - ivtmp_232) > 63)
@@ -593,7 +593,7 @@ sha_updatebb_8:
 // Simulating I Cache for obj block 4
 memAccessCycles += simICache(0x570, 28);
 pipelineCycles += 20 - (enterBlock(0x178, 0x17e) ? 7 : 0);
-  my_memcpy (&sha_info->data, sha_info_addr,  buffer, buffer_addr,  (size_t) count);
+  my_memcpy (&sha_info->data, sha_info_addr,  buffer, buffer_addr, (size_t) count);
   return;
 //  # SUCC: EXIT [100.0%] 
 
@@ -608,7 +608,7 @@ void  sha_stream (struct SHA_INFO *sha_info, unsigned long sha_info_addr, unsign
   uintptr_t D_3143;
   uintptr_t ivtmp_267;
   unsigned  char data[8192];
-  unsigned long data_addr;
+  unsigned long data_addr = 0x1fdfb8;
   unsigned long count;
   unsigned long end;
   unsigned long start;
@@ -680,7 +680,7 @@ sha_streambb_5:
 // Simulating I Cache for obj block 5
 memAccessCycles += simICache(0x688, 32);
 pipelineCycles += 13 - (enterBlock(0x1c2, 0x1c9) ? 7 : 0);
-  sha_update (sha_info, sha_info_addr,  &data, data_addr,  8192);
+  sha_update (sha_info, sha_info_addr, &data, data_addr, 8192);
   count = count + 1;
   if (j > count)
     goto sha_streambb_12;
@@ -753,7 +753,7 @@ sha_streambb_10:
 // Simulating I Cache for obj block 10
 memAccessCycles += simICache(0x6ec, 16);
 pipelineCycles += 10 - (enterBlock(0x1db, 0x1de) ? 7 : 0);
-  sha_update (sha_info, sha_info_addr,  &data, data_addr,  (int) (end - start));
+  sha_update (sha_info, sha_info_addr, &data, data_addr, (int) (end - start));
 //  # SUCC: 11 [100.0%]  (fallthru,exec)
 
 sha_streambb_11:

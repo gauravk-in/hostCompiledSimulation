@@ -203,7 +203,8 @@ def act_rparen_expression(tokens):
         addAccessToList(Access(base_pointer_var_name, 
                                             True, 
                                             deref_index_string, 
-                                            assign_operator_seen))
+                                            assign_operator_seen,
+                                            False))
 #         if deref_index_string != "":
 #             annotation = (base_pointer_var_name, "simDCache((%s_addr + (%s)), %d);" % (base_pointer_var_name, deref_index_string, assign_operator_seen))
 #         else:
@@ -460,11 +461,12 @@ def ignore_statement(line):
         return True
 
 class Access:
-    def __init__(self, varName, isIndexed, index, isRead):
+    def __init__(self, varName, isIndexed, index, isRead, ifIndexedIsArray = True):
         self.varName = varName
         self.isIndexed = isIndexed
         self.index = index
         self.isRead = isRead
+        self.ifIndexedIsArray = ifIndexedIsArray
         
     def debug(self):
         if self.isRead:

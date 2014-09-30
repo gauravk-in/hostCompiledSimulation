@@ -1,6 +1,6 @@
 /***********************************************************
  Intermediate representation of
-    sha/app_dir/sha_driver.c
+    test_memory/app_dir/main.c
 
  Converted by ir2c v0.1
 
@@ -14,17 +14,7 @@ unsigned long SP = 0x1234;
 unsigned long long memAccessCycles = 0;
 unsigned long long pipelineCycles = 0;
 
-/* NIST Secure Hash Algorithm */
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include "sha.h"
-#include "in_small.h"
-#include "my_variable.h"
-struct SHA_INFO sha_info; //making global
-unsigned long sha_info_addr = 0x56770;
+#include "test_memory.h"
 
 
 int main() {
@@ -33,14 +23,12 @@ mainbb_2:
 cacheSimInit();
 branchPred_init();
 SP = SP + 0x8;
-memAccessCycles += simDCache(0x224, 1);  // PC Relative Load
-memAccessCycles += simDCache(0x228, 1);  // PC Relative Load
-memAccessCycles += simDCache(0x22c, 1);  // PC Relative Load
 // Simulating I Cache for obj block 0
-memAccessCycles += simICache(0x200, 36);
-// TODO: UnmappedLS: Load GlobalVar ARR_SIZE at line 154
-pipelineCycles += 16 - (enterBlock(0x96, 0x9e) ? 7 : 0);
-  sha_stream (&sha_info, sha_info_addr,  &in_Data, in_Data_addr,  ARR_SIZE);
+memAccessCycles += simICache(0x3cc, 28);
+pipelineCycles += 12 - (enterBlock(0x111, 0x117) ? 7 : 0);
+  fill_L1_DCache ();
+//  fill_L2_Cache ();
+//  fill_L1_read_again ();
   printf("memAccessCycles = \%llu\n", memAccessCycles);
   printf("pipelineCycles = \%llu\n", pipelineCycles);
   cacheSimFini();

@@ -7,7 +7,7 @@
 #include "sha.h"
 #include "in_small.h"
 #include "my_variable.h"
-SHA_INFO sha_info; //making global
+struct SHA_INFO sha_info; //making global
 
 int main()
 {
