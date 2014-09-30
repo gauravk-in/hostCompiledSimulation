@@ -25,7 +25,7 @@ struct test {
   unsigned int v;
   unsigned int k;
 } m = { 1, 1 };
-unsigned int m_addr = 0x7c8;
+unsigned long m_addr = 0x7c8;
 
 void sieve_func() {
   int j_76;
@@ -56,12 +56,12 @@ pipelineCycles += 24 - (enterBlock(0x96, 0x9f) ? 7 : 0);
 
 sieve_funcbb_3:
 //  # PRED: 3 [99.0%]  (true,exec) 2 [100.0%]  (fallthru,exec)
-memAccessCycles += simDCache(results_addr + (4 * (+ivtmp_68)), 0);
+memAccessCycles += simDCache(results_addr + (+ivtmp_68), 0);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x228, 28);
 pipelineCycles += 13 - (enterBlock(0xa0, 0xa6) ? 7 : 0);
   *(unsigned int*)((uintptr_t)&results + (uintptr_t)ivtmp_68) = 0;
-  memAccessCycles += simDCache((SP + sieve_addr + (4 * (+ivtmp_68))), 0);
+  memAccessCycles += simDCache((SP + sieve_addr + (+ivtmp_68)), 0);
   *(unsigned int*)((uintptr_t)&sieve + (uintptr_t)ivtmp_68) = 1;
   ivtmp_68 = ivtmp_68 + 4;
   if (ivtmp_68 != 2000000)
@@ -86,7 +86,7 @@ sieve_funcbb_4:
 memAccessCycles += simICache(0x278, 16);
 pipelineCycles += 9 - (enterBlock(0xb4, 0xb7) ? 7 : 0);
   D_2263 = (unsigned int) i_72;
-  memAccessCycles += simDCache((SP + sieve_addr + (4 * (+D_2263*4))), 1);
+  memAccessCycles += simDCache((SP + sieve_addr + (+D_2263*4)), 1);
   if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2263 * 4) != 0)
     goto sieve_funcbb_5;
   else
@@ -157,7 +157,7 @@ sieve_funcbb_9:
 //  # PRED: 11 [99.0%]  (true,exec) 8 [100.0%]  (fallthru,exec)
 pipelineCycles += 12 - (enterBlock(0xd2, 0xd8) ? 7 : 0);
   D_2240 = (unsigned int) j;
-  memAccessCycles += simDCache((SP + sieve_addr + (4 * (+D_2240*4))), 1);
+  memAccessCycles += simDCache((SP + sieve_addr + (+D_2240*4)), 1);
   if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2240 * 4) != 0)
     goto sieve_funcbb_10;
   else

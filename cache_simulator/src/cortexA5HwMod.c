@@ -66,9 +66,9 @@ cacheLine_t **L1DCache;
 cacheLine_t **L1ICache;
 cacheLine_t **L2Cache;
 
-unsigned int memWriteLatency = 55;
-unsigned int memReadLatency = 55;
-unsigned int memReadPrefetchLatency = 0;
+unsigned int memWriteLatency = 80;
+unsigned int memReadLatency = 80;
+unsigned int memReadPrefetchLatency = -15;
 
 unsigned long L1D_Hit_Read = 0;
 unsigned long L1D_Hit_Writeback = 0;

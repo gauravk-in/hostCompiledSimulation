@@ -13,9 +13,9 @@ typedef unsigned long LONG;
 #define SHA_DIGESTSIZE		20
 
 struct SHA_INFO {
-    LONG digest[5];		/* message digest */
-    LONG count_lo, count_hi;	/* 64-bit bit count */
-    LONG data[16];		/* SHA data buffer */
+    unsigned long digest[5];		/* message digest */
+    unsigned long count_lo, count_hi;	/* 64-bit bit count */
+    unsigned long data[16];		/* SHA data buffer */
 };
 
 void sha_init(struct SHA_INFO *);

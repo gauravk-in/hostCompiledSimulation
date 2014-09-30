@@ -51,32 +51,32 @@ extern unsigned int ARR_SIZE;
 
 
 static void sha_transform(struct SHA_INFO *sha_info) {
-  unsigned long A_133;
-  unsigned long E_132;
-  unsigned long D_131;
-  unsigned long B_130;
-  unsigned long A_129;
-  unsigned long E_128;
-  unsigned long D_127;
-  unsigned long B_126;
-  unsigned long A_125;
-  unsigned long E_124;
-  unsigned long E_123;
-  unsigned long D_122;
-  unsigned long D_121;
-  unsigned long B_120;
-  unsigned long B_119;
-  unsigned long A_118;
-  unsigned long A_117;
+  long unsigned int A_133;
+  long unsigned int E_132;
+  uintptr_t D_131;
+  long unsigned int B_130;
+  long unsigned int A_129;
+  long unsigned int E_128;
+  uintptr_t D_127;
+  long unsigned int B_126;
+  long unsigned int A_125;
+  long unsigned int E_124;
+  long unsigned int E_123;
+  uintptr_t D_122;
+  uintptr_t D_121;
+  long unsigned int B_120;
+  long unsigned int B_119;
+  long unsigned int A_118;
+  long unsigned int A_117;
   uintptr_t ivtmp_116;
   uintptr_t ivtmp_115;
-  unsigned long C_114;
-  unsigned long temp_113;
-  unsigned long C_105;
-  unsigned long temp_104;
-  unsigned long C_101;
-  unsigned long temp_100;
-  unsigned long C_97;
+  long unsigned int C_114;
+  long unsigned int temp_113;
+  long unsigned int C_105;
+  long unsigned int temp_104;
+  long unsigned int C_101;
+  long unsigned int temp_100;
+  long unsigned int C_97;
   uintptr_t ivtmp_94;
   uintptr_t ivtmp_93;
   uintptr_t D_2940;
@@ -84,13 +84,13 @@ static void sha_transform(struct SHA_INFO *sha_info) {
   uintptr_t ivtmp_71;
   uintptr_t D_2917;
   uintptr_t ivtmp_63;
-  unsigned long W[80];
-  unsigned long E;
-  unsigned long D;
-  unsigned long C;
-  unsigned long B;
-  unsigned long A;
-  unsigned long temp;
+  long unsigned int W[80];
+  long unsigned int E;
+  long unsigned int D;
+  long unsigned int C;
+  long unsigned int B;
+  long unsigned int A;
+  long unsigned int temp;
 
 sha_transformbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
@@ -100,7 +100,7 @@ sha_transformbb_2:
 
 sha_transformbb_3:
 //  # PRED: 3 [94.1%]  (true,exec) 2 [100.0%]  (fallthru,exec)
-  *(unsigned long*)((uintptr_t)&W + (uintptr_t)ivtmp_93) = *(unsigned long*)((uintptr_t)ivtmp_94 + 28);
+  *(long unsigned int*)((uintptr_t)&W + (uintptr_t)ivtmp_93) = *(long unsigned int*)((uintptr_t)ivtmp_94 + 28);
   ivtmp_93 = ivtmp_93 + 4;
   ivtmp_94 = ivtmp_94 + 4;
   if (ivtmp_93 != 64)
@@ -118,7 +118,7 @@ sha_transformbb_4:
 
 sha_transformbb_5:
 //  # PRED: 5 [98.5%]  (true,exec) 4 [100.0%]  (fallthru,exec)
-  *(unsigned long*)((uintptr_t)ivtmp_79 + 12) =  ((*(unsigned long*)((uintptr_t)ivtmp_79 + (int)4294967276) ^ *(unsigned long*)((uintptr_t)ivtmp_79)) ^ *(unsigned long*)((uintptr_t)ivtmp_79 + (int)4294967252)) ^ *(unsigned long*)((uintptr_t)ivtmp_79 + (int)4294967244);
+  *(long unsigned int*)((uintptr_t)ivtmp_79 + 12) =  ((*(long unsigned int*)((uintptr_t)ivtmp_79 + (int)4294967276) ^ *(long unsigned int*)((uintptr_t)ivtmp_79)) ^ *(long unsigned int*)((uintptr_t)ivtmp_79 + (int)4294967252)) ^ *(long unsigned int*)((uintptr_t)ivtmp_79 + (int)4294967244);
   ivtmp_79 = ivtmp_79 + 4;
   if (ivtmp_79 != D_2940)
     goto sha_transformbb_5;
@@ -139,7 +139,7 @@ sha_transformbb_6:
 
 sha_transformbb_7:
 //  # PRED: 13 [100.0%]  (fallthru) 6 [100.0%]  (fallthru,exec)
-  temp = (((*(unsigned long*)((uintptr_t)&W + (uintptr_t)ivtmp_71) + 1518500249) + E) + ((A_133<<27)|(A_133>>(sizeof(A_133)*CHAR_BIT-27)))) + (~B & D | C & B);
+  temp = (((*(long unsigned int*)((uintptr_t)&W + (uintptr_t)ivtmp_71) + 1518500249) + E) + ((A_133<<27)|(A_133>>(sizeof(A_133)*CHAR_BIT-27)))) + (~B & D | C & B);
   C_97 = (B<<2)|(B>>(sizeof(B)*CHAR_BIT-2));
   ivtmp_71 = ivtmp_71 + 4;
   if (ivtmp_71 != 80)
@@ -170,7 +170,7 @@ sha_transformbb_8:
 
 sha_transformbb_9:
 //  # PRED: 14 [100.0%]  (fallthru) 8 [100.0%]  (fallthru,exec)
-  temp_100 = (((*(unsigned long*)((uintptr_t)ivtmp_116 + 80) + 1859775393) + E_132) + ((A_129<<27)|(A_129>>(sizeof(A_129)*CHAR_BIT-27)))) + ((C_97 ^ B_130) ^ D_131);
+  temp_100 = (((*(long unsigned int*)((uintptr_t)ivtmp_116 + 80) + 1859775393) + E_132) + ((A_129<<27)|(A_129>>(sizeof(A_129)*CHAR_BIT-27)))) + ((C_97 ^ B_130) ^ D_131);
   C_101 = (B_130<<2)|(B_130>>(sizeof(B_130)*CHAR_BIT-2));
   ivtmp_116 = ivtmp_116 + 4;
   if (ivtmp_116 != D_2917)
@@ -210,7 +210,7 @@ sha_transformbb_15:
 
 sha_transformbb_10:
 //  # PRED: 15 [100.0%]  (fallthru) 16 [100.0%]  (fallthru)
-  temp_104 = (((*(unsigned long*)((uintptr_t)ivtmp_115 + 160) + (int)2400959708) + E_128) + ((A_125<<27)|(A_125>>(sizeof(A_125)*CHAR_BIT-27)))) + ((D_127 | C_101) & B_126 | D_127 & C_101);
+  temp_104 = (((*(long unsigned int*)((uintptr_t)ivtmp_115 + 160) + (int)2400959708) + E_128) + ((A_125<<27)|(A_125>>(sizeof(A_125)*CHAR_BIT-27)))) + ((D_127 | C_101) & B_126 | D_127 & C_101);
   C_105 = (B_126<<2)|(B_126>>(sizeof(B_126)*CHAR_BIT-2));
   ivtmp_115 = ivtmp_115 + 4;
   if (ivtmp_115 != D_2917)
@@ -229,7 +229,7 @@ sha_transformbb_18:
 
 sha_transformbb_11:
 //  # PRED: 17 [100.0%]  (fallthru) 18 [100.0%]  (fallthru)
-  temp_113 = (((*(unsigned long*)((uintptr_t)ivtmp_63 + 240) + (int)3395469782) + E_123) + ((A_117<<27)|(A_117>>(sizeof(A_117)*CHAR_BIT-27)))) + ((C_105 ^ B_119) ^ D_121);
+  temp_113 = (((*(long unsigned int*)((uintptr_t)ivtmp_63 + 240) + (int)3395469782) + E_123) + ((A_117<<27)|(A_117>>(sizeof(A_117)*CHAR_BIT-27)))) + ((C_105 ^ B_119) ^ D_121);
   C_114 = (B_119<<2)|(B_119>>(sizeof(B_119)*CHAR_BIT-2));
   ivtmp_63 = ivtmp_63 + 4;
   if (ivtmp_63 != D_2917)
@@ -300,10 +300,10 @@ sha_printbb_2:
 
 void sha_final(struct SHA_INFO *sha_info) {
   int count_203;
-  unsigned long hi_bit_count;
-  unsigned long lo_bit_count;
+  long unsigned int hi_bit_count;
+  long unsigned int lo_bit_count;
   int count;
-  unsigned long * D_2805;
+  long unsigned int * D_2805;
 
 sha_finalbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
@@ -311,7 +311,7 @@ sha_finalbb_2:
   hi_bit_count = sha_info->count_hi;
   count = (int) (lo_bit_count >> 3) & 63;
   D_2805 = &sha_info->data;
-  *(unsigned  char*)( (uintptr_t)D_2805 + (unsigned int) count) = 128;
+  *(unsigned char*)( (uintptr_t)D_2805 + (unsigned int) count) = 128;
   count_203 = count + 1;
   if (count_203 > 56)
     goto sha_finalbb_3;
@@ -349,10 +349,10 @@ void sha_update(struct SHA_INFO *sha_info, unsigned char *buffer, int count) {
   uintptr_t ivtmp_232;
   int D_3089;
   uintptr_t D_3086;
-  unsigned long * D_2795;
+  long unsigned int * D_2795;
   long unsigned int D_2787;
   long unsigned int count_1;
-  unsigned long D_2785;
+  long unsigned int D_2785;
 
 sha_updatebb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
@@ -417,16 +417,16 @@ sha_updatebb_8:
 
 
 void sha_stream(struct SHA_INFO *sha_info, unsigned char *inData, unsigned long int dSize) {
-  unsigned long end_289;
-  unsigned long end_288;
+  long unsigned int end_289;
+  long unsigned int end_288;
   uintptr_t ivtmp_273;
   uintptr_t D_3143;
   uintptr_t ivtmp_267;
-  unsigned  char data[8192];
-  unsigned long count;
-  unsigned long end;
-  unsigned long start;
-  unsigned long j;
+  unsigned char data[8192];
+  long unsigned int count;
+  long unsigned int end;
+  long unsigned int start;
+  long unsigned int j;
   unsigned int ARR_SIZE_4;
 
 sha_streambb_2:
@@ -462,7 +462,7 @@ sha_streambb_14:
 
 sha_streambb_4:
 //  # PRED: 4 [99.0%]  (true,exec) 14 [100.0%]  (fallthru)
-  *(unsigned  char*)((uintptr_t)&data + (uintptr_t)ivtmp_273) = *(unsigned char *)((unsigned char *) (end_289 + (uintptr_t)inData) + (uintptr_t)ivtmp_273);
+  *(unsigned char*)((uintptr_t)&data + (uintptr_t)ivtmp_273) = *(unsigned char *)((unsigned char *) (end_289 + (uintptr_t)inData) + (uintptr_t)ivtmp_273);
   ivtmp_273 = ivtmp_273 + 1;
   if (ivtmp_273 != 8192)
     goto sha_streambb_4;
@@ -512,7 +512,7 @@ sha_streambb_8:
 
 sha_streambb_9:
 //  # PRED: 9 [99.0%]  (true,exec) 8 [100.0%]  (fallthru,exec)
-  *(unsigned  char*)((uintptr_t)&data + (uintptr_t)ivtmp_267) = *(unsigned char *)((uintptr_t)inData + start + (uintptr_t)ivtmp_267);
+  *(unsigned char*)((uintptr_t)&data + (uintptr_t)ivtmp_267) = *(unsigned char *)((uintptr_t)inData + start + (uintptr_t)ivtmp_267);
   ivtmp_267 = ivtmp_267 + 1;
   if (ivtmp_267 != D_3143)
     goto sha_streambb_9;

@@ -153,7 +153,7 @@ adpcm_coderbb_4:
 memAccessCycles += simDCache((SP + 0x4), 1);  // Reading Spilt Register
 pipelineCycles += 48 - (enterBlock(0x106, 0x137) ? 7 : 0);
   diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;
-  memAccessCycles += simDCache(indata_addr + (sizeof(short ) * (+ivtmp_28)), 1);
+  memAccessCycles += simDCache(indata_addr + (+ivtmp_28), 1);
   if (diff < 0)
     goto adpcm_coderbb_5;
   else
@@ -274,6 +274,8 @@ memAccessCycles += simDCache((SP + outputbuffer_addr), 1);
 memAccessCycles += simDCache((SP + outp_addr), 0);
   *outp =  (signed char) delta_37 & 15 | (signed char) outputbuffer;
   outp = (uintptr_t)outp + 1;
+  // MANUAL!
+  outp_addr = outp_addr + 1;
 //  # SUCC: 18 [100.0%]  (fallthru,exec)
 
 adpcm_coderbb_18:
