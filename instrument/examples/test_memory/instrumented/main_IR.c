@@ -10,6 +10,7 @@
 #include "ir2c.h"
 #include "cacheSim.h"
 #include "branchPred.h"
+#include <stdio.h>
 unsigned long SP = 0x1234;
 unsigned long long memAccessCycles = 0;
 unsigned long long pipelineCycles = 0;
@@ -24,11 +25,11 @@ cacheSimInit();
 branchPred_init();
 SP = SP + 0x8;
 // Simulating I Cache for obj block 0
-memAccessCycles += simICache(0x3cc, 28);
-pipelineCycles += 12 - (enterBlock(0x111, 0x117) ? 7 : 0);
+memAccessCycles += simICache(0x354, 28);
+pipelineCycles += 12 - (enterBlock(0xf3, 0xf9) ? 7 : 0);
   fill_L1_DCache ();
-//  fill_L2_Cache ();
-//  fill_L1_read_again ();
+  fill_L2_Cache ();
+  fill_L1_read_again ();
   printf("memAccessCycles = \%llu\n", memAccessCycles);
   printf("pipelineCycles = \%llu\n", pipelineCycles);
   cacheSimFini();

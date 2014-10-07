@@ -8,6 +8,11 @@
 #include <limits.h>
 #include <stdint.h>
 #include "ir2c.h"
+#include "cacheSim.h"
+#include "branchPred.h"
+extern unsigned long SP;
+extern unsigned long long memAccessCycles;
+extern unsigned long long pipelineCycles;
 
 /* +++Date last modified: 05-Jul-1997 */
 

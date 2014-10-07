@@ -10,7 +10,7 @@ TRUNCAPP1 = basicmath_small_truncated3_IR
 MATH = my_math #when libsource, COPTS is as per lib source compilation. Uncomment paths, VPATH in that case
 
 TREEDUMP = -fdump-tree-all-blocks-details
-OPT = -O1 #is O3 in original MiBench download. Use O3 for final testing
+OPT = -O1 -g #is O3 in original MiBench download. Use O3 for final testing
 DEBUG = -g
 
 ifdef PHASE
@@ -18,9 +18,9 @@ ifdef PHASE
   OBJDUMP = $(CROSS_OBJDUMP)
   OEXT = elf
   ifeq (${MATH}, libsource)
-    COPTS = -D_IEEE_LIBM -D__IEEE_BIG_ENDIAN -I${MY_MPATH2} -I${MY_MPATH3} -static -msoft-float ${OPT} ${TREEDUMP} -I. -T generic-hosted.ld
+    COPTS = -D_IEEE_LIBM -D__IEEE_BIG_ENDIAN -I${MY_MPATH2} -I${MY_MPATH3} -static -msoft-float ${OPT} -I. -T generic-hosted.ld
   else
-    COPTS = -static -msoft-float ${OPT} ${TREEDUMP} -I. -T generic-hosted.ld
+    COPTS = -static -msoft-float ${OPT} -I. -T generic-hosted.ld
   endif
 else
   CC = $(GCC)

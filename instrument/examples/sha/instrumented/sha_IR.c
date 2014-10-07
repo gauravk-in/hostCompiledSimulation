@@ -91,7 +91,6 @@ static void  sha_transform (struct SHA_INFO *sha_info, unsigned long sha_info_ad
   uintptr_t D_2917;
   uintptr_t ivtmp_63;
   long unsigned int W[80];
-  unsigned long W_addr = 0x10;
   long unsigned int E;
   long unsigned int D;
   long unsigned int C;
@@ -112,7 +111,7 @@ pipelineCycles += 19 - (enterBlock(0xa4, 0xa8) ? 7 : 0);
 
 sha_transformbb_3:
 //  # PRED: 3 [94.1%]  (true,exec) 2 [100.0%]  (fallthru,exec)
-memAccessCycles += simDCache((SP + W_addr + (+ivtmp_93)), 0);
+memAccessCycles += simDCache((SP + 0x10), 1);  // Spilling Register
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x244, 28);
 // TODO: UnmappedLS: Load GlobalVar sha_info at line 170
@@ -138,13 +137,13 @@ pipelineCycles += 9 - (enterBlock(0xb0, 0xb1) ? 7 : 0);
 
 sha_transformbb_5:
 //  # PRED: 5 [98.5%]  (true,exec) 4 [100.0%]  (fallthru,exec)
+memAccessCycles += simDCache((SP + 0x44), 1);  // Reading Spilt Register
+memAccessCycles += simDCache((SP + 0x30), 1);  // Reading Spilt Register
+memAccessCycles += simDCache((SP + 0x18), 1);  // Reading Spilt Register
+memAccessCycles += simDCache((SP + 0x10), 1);  // Reading Spilt Register
+memAccessCycles += simDCache((SP + 0x50), 1);  // Spilling Register
 // Simulating I Cache for obj block 3
 memAccessCycles += simICache(0x268, 44);
-// TODO: UnmappedLS: Load LocalVar W at line 178
-// TODO: UnmappedLS: Load LocalVar W at line 179
-// TODO: UnmappedLS: Load LocalVar W at line 181
-// TODO: UnmappedLS: Load LocalVar W at line 183
-// TODO: UnmappedLS: Store LocalVar W at line 185
 pipelineCycles += 23 - (enterBlock(0xb2, 0xbc) ? 7 : 0);
   *(long unsigned int*)((uintptr_t)ivtmp_79 + 12) =  ((*(long unsigned int*)((uintptr_t)ivtmp_79 + (int)4294967276) ^ *(long unsigned int*)((uintptr_t)ivtmp_79)) ^ *(long unsigned int*)((uintptr_t)ivtmp_79 + (int)4294967252)) ^ *(long unsigned int*)((uintptr_t)ivtmp_79 + (int)4294967244);
   ivtmp_79 = ivtmp_79 + 4;
@@ -188,9 +187,9 @@ pipelineCycles += 24 - (enterBlock(0xbd, 0xcd) ? 7 : 0);
 
 sha_transformbb_7:
 //  # PRED: 13 [100.0%]  (fallthru) 6 [100.0%]  (fallthru,exec)
+memAccessCycles += simDCache((SP + 0x10), 1);  // Reading Spilt Register
 // Simulating I Cache for obj block 5
 memAccessCycles += simICache(0x2d8, 48);
-// TODO: UnmappedLS: Load LocalVar W at line 206
 pipelineCycles += 16 - (enterBlock(0xce, 0xd9) ? 7 : 0);
   temp = (((*(long unsigned int*)((uintptr_t)&W + (uintptr_t)ivtmp_71) + 1518500249) + E) + ((A_133<<27)|(A_133>>(sizeof(A_133)*CHAR_BIT-27)))) + (~B & D | C & B);
   C_97 = (B<<2)|(B>>(sizeof(B)*CHAR_BIT-2));
@@ -230,9 +229,9 @@ pipelineCycles += 11 - (enterBlock(0xe0, 0xe3) ? 7 : 0);
 
 sha_transformbb_9:
 //  # PRED: 14 [100.0%]  (fallthru) 8 [100.0%]  (fallthru,exec)
+memAccessCycles += simDCache((SP + 0x60), 1);  // Reading Spilt Register
 // Simulating I Cache for obj block 8
 memAccessCycles += simICache(0x330, 44);
-// TODO: UnmappedLS: Load LocalVar W at line 228
 pipelineCycles += 17 - (enterBlock(0xe4, 0xee) ? 7 : 0);
   temp_100 = (((*(long unsigned int*)((uintptr_t)ivtmp_116 + 80) + 1859775393) + E_132) + ((A_129<<27)|(A_129>>(sizeof(A_129)*CHAR_BIT-27)))) + ((C_97 ^ B_130) ^ D_131);
   C_101 = (B_130<<2)|(B_130>>(sizeof(B_130)*CHAR_BIT-2));
@@ -284,9 +283,9 @@ pipelineCycles += 12 - (enterBlock(0x106, 0x10b) ? 7 : 0);
 
 sha_transformbb_10:
 //  # PRED: 15 [100.0%]  (fallthru) 16 [100.0%]  (fallthru)
+memAccessCycles += simDCache((SP + 0xb0), 1);  // Reading Spilt Register
 // Simulating I Cache for obj block 11
 memAccessCycles += simICache(0x384, 52);
-// TODO: UnmappedLS: Load LocalVar W at line 249
 pipelineCycles += 18 - (enterBlock(0xf9, 0x105) ? 7 : 0);
   temp_104 = (((*(long unsigned int*)((uintptr_t)ivtmp_115 + 160) + (int)2400959708) + E_128) + ((A_125<<27)|(A_125>>(sizeof(A_125)*CHAR_BIT-27)))) + ((D_127 | C_101) & B_126 | D_127 & C_101);
   C_105 = (B_126<<2)|(B_126>>(sizeof(B_126)*CHAR_BIT-2));
@@ -311,9 +310,9 @@ pipelineCycles += 9 - (enterBlock(0x10c, 0x10d) ? 7 : 0);
 
 sha_transformbb_11:
 //  # PRED: 17 [100.0%]  (fallthru) 18 [100.0%]  (fallthru)
+memAccessCycles += simDCache((SP + 0x100), 1);  // Reading Spilt Register
 // Simulating I Cache for obj block 14
 memAccessCycles += simICache(0x3d8, 44);
-// TODO: UnmappedLS: Load LocalVar W at line 270
 pipelineCycles += 17 - (enterBlock(0x10e, 0x118) ? 7 : 0);
   temp_113 = (((*(long unsigned int*)((uintptr_t)ivtmp_63 + 240) + (int)3395469782) + E_123) + ((A_117<<27)|(A_117>>(sizeof(A_117)*CHAR_BIT-27)))) + ((C_105 ^ B_119) ^ D_121);
   C_114 = (B_119<<2)|(B_119>>(sizeof(B_119)*CHAR_BIT-2));
@@ -464,9 +463,9 @@ sha_finalbb_3:
 // Simulating I Cache for obj block 2
 memAccessCycles += simICache(0x5ec, 8);
 pipelineCycles += 8 - (enterBlock(0x199, 0x19a) ? 7 : 0);
-  my_memset (D_2805 + (unsigned int) count_203, sha_info_addr + (unsigned long) count_203,  0,  (size_t) (64 - count_203));
+  my_memset (D_2805 + (unsigned int) count_203, D_2805_addr,  0,  (size_t) (64 - count_203));
   sha_transform (sha_info, sha_info_addr);
-  my_memset (D_2805, sha_info_addr,  0,  56);
+  my_memset (D_2805, D_2805_addr,  0,  56);
   goto sha_finalbb_5;
 //  # SUCC: 5 [100.0%]  (fallthru,exec)
 
@@ -475,7 +474,7 @@ sha_finalbb_4:
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x5c8, 36);
 pipelineCycles += 12 - (enterBlock(0x190, 0x198) ? 7 : 0);
-  my_memset (D_2805 + (unsigned int) count_203, sha_info_addr + (unsigned long) count_203,  0,  (size_t) (56 - count_203));
+  my_memset (D_2805 + (unsigned int) count_203, D_2805_addr,  0,  (size_t) (56 - count_203));
 //  # SUCC: 5 [100.0%]  (fallthru,exec)
 
 sha_finalbb_5:
@@ -566,7 +565,7 @@ memAccessCycles += simICache(0x524, 44);
 pipelineCycles += 15 - (enterBlock(0x165, 0x16f) ? 7 : 0);
   D_3103 = ivtmp_232 + (uintptr_t)buffer;
   memAccessCycles += simDCache(buffer_addr, 1);
-  my_memcpy (D_2795, sha_info_addr,   D_3103, buffer_addr + ivtmp_232,  64);
+  my_memcpy (D_2795, D_2795_addr,   D_3103, D_3103_addr,  64);
   sha_transform (sha_info, sha_info_addr);
   ivtmp_232 = ivtmp_232 + 64;
   if ((int) (count_1 - ivtmp_232) > 63)
@@ -608,7 +607,6 @@ void  sha_stream (struct SHA_INFO *sha_info, unsigned long sha_info_addr, unsign
   uintptr_t D_3143;
   uintptr_t ivtmp_267;
   unsigned char data[8192];
-  unsigned long data_addr = 0x1fdfb8;
   long unsigned int count;
   long unsigned int end;
   long unsigned int start;

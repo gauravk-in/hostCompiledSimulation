@@ -29,11 +29,11 @@ void fill_L1_read_again() {
 
 fill_L1_read_againbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
-SP = SP + 0x10;
-memAccessCycles += simDCache(0x3c4, 1);  // PC Relative Load
+SP = SP + 0x8;
+memAccessCycles += simDCache(0x34c, 1);  // PC Relative Load
 // Simulating I Cache for obj block 0
-memAccessCycles += simICache(0x314, 20);
-pipelineCycles += 15 - (enterBlock(0xe1, 0xe5) ? 7 : 0);
+memAccessCycles += simICache(0x2d0, 24);
+pipelineCycles += 14 - (enterBlock(0xd0, 0xd5) ? 7 : 0);
   ivtmp_43 = 0;
   sum = 0;
 //  # SUCC: 3 [100.0%]  (fallthru,exec)
@@ -42,9 +42,8 @@ fill_L1_read_againbb_3:
 //  # PRED: 3 [99.0%]  (true,exec) 2 [100.0%]  (fallthru,exec)
 memAccessCycles += simDCache(data_8192_addr + (+ivtmp_43), 1);
 // Simulating I Cache for obj block 1
-memAccessCycles += simICache(0x328, 40);
-// TODO: UnmappedLS: Load GlobalVar data_8192 at line 232
-pipelineCycles += 15 - (enterBlock(0xe6, 0xef) ? 7 : 0);
+memAccessCycles += simICache(0x2e8, 24);
+pipelineCycles += 12 - (enterBlock(0xd6, 0xdb) ? 7 : 0);
   sum = sum + (long long unsigned int) *(unsigned int*)((uintptr_t)&data_8192 + (uintptr_t)ivtmp_43);
   ivtmp_43 = ivtmp_43 + 4;
   if (ivtmp_43 != 32768)
@@ -55,10 +54,11 @@ pipelineCycles += 15 - (enterBlock(0xe6, 0xef) ? 7 : 0);
 
 fill_L1_read_againbb_4:
 //  # PRED: 3 [1.0%]  (false,exec)
-memAccessCycles += simDCache(0x3c8, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x350, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x34c, 1);  // PC Relative Load
 // Simulating I Cache for obj block 2
-memAccessCycles += simICache(0x350, 36);
-pipelineCycles += 15 - (enterBlock(0xf0, 0xf8) ? 7 : 0);
+memAccessCycles += simICache(0x300, 36);
+pipelineCycles += 15 - (enterBlock(0xdc, 0xe4) ? 7 : 0);
   printf (&"fill_L1_DCache : Sum (8192) = %llu\n"[0], sum);
   ivtmp_34 = 0;
   sum_47 = 0;
@@ -68,10 +68,8 @@ fill_L1_read_againbb_5:
 //  # PRED: 5 [99.0%]  (true,exec) 4 [100.0%]  (fallthru,exec)
 memAccessCycles += simDCache(data_8192_addr + (+ivtmp_34), 1);
 // Simulating I Cache for obj block 3
-memAccessCycles += simICache(0x374, 56);
-// TODO: UnmappedLS: Load GlobalVar data_8192 at line 252
-// TODO: UnmappedLS: Load GlobalVar data_8192 at line 254
-pipelineCycles += 19 - (enterBlock(0xf9, 0x106) ? 7 : 0);
+memAccessCycles += simICache(0x324, 24);
+pipelineCycles += 13 - (enterBlock(0xe5, 0xea) ? 7 : 0);
   sum_47 = sum_47 + (long long unsigned int) *(unsigned int*)((uintptr_t)&data_8192 + (uintptr_t)ivtmp_34);
   ivtmp_34 = ivtmp_34 + 4;
   if (ivtmp_34 != 32772)
@@ -82,10 +80,10 @@ pipelineCycles += 19 - (enterBlock(0xf9, 0x106) ? 7 : 0);
 
 fill_L1_read_againbb_6:
 //  # PRED: 5 [1.0%]  (false,exec)
-memAccessCycles += simDCache(0x3c8, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x350, 1);  // PC Relative Load
 // Simulating I Cache for obj block 4
-memAccessCycles += simICache(0x3ac, 24);
-pipelineCycles += 14 - (enterBlock(0x107, 0x10c) ? 7 : 0);
+memAccessCycles += simICache(0x33c, 16);
+pipelineCycles += 10 - (enterBlock(0xeb, 0xee) ? 7 : 0);
   printf (&"fill_L1_DCache : Sum (8192) = %llu\n"[0], sum_47);
   return;
 //  # SUCC: EXIT [100.0%] 
@@ -101,10 +99,10 @@ void fill_L2_Cache() {
 fill_L2_Cachebb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
 SP = SP + 0x8;
-memAccessCycles += simDCache(0x30c, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x2c8, 1);  // PC Relative Load
 // Simulating I Cache for obj block 0
-memAccessCycles += simICache(0x2b8, 20);
-pipelineCycles += 13 - (enterBlock(0xc8, 0xcc) ? 7 : 0);
+memAccessCycles += simICache(0x28c, 20);
+pipelineCycles += 13 - (enterBlock(0xbd, 0xc1) ? 7 : 0);
   ivtmp_77 = 0;
   sum = 0;
 //  # SUCC: 3 [100.0%]  (fallthru,exec)
@@ -113,9 +111,8 @@ fill_L2_Cachebb_3:
 //  # PRED: 3 [99.0%]  (true,exec) 2 [100.0%]  (fallthru,exec)
 memAccessCycles += simDCache(data_131072_addr + (+ivtmp_77), 1);
 // Simulating I Cache for obj block 1
-memAccessCycles += simICache(0x2cc, 40);
-// TODO: UnmappedLS: Load GlobalVar data_131072 at line 207
-pipelineCycles += 15 - (enterBlock(0xcd, 0xd6) ? 7 : 0);
+memAccessCycles += simICache(0x2a0, 24);
+pipelineCycles += 12 - (enterBlock(0xc2, 0xc7) ? 7 : 0);
   sum = sum + (long long unsigned int) *(unsigned int*)((uintptr_t)&data_131072 + (uintptr_t)ivtmp_77);
   ivtmp_77 = ivtmp_77 + 4;
   if (ivtmp_77 != 524288)
@@ -126,10 +123,10 @@ pipelineCycles += 15 - (enterBlock(0xcd, 0xd6) ? 7 : 0);
 
 fill_L2_Cachebb_4:
 //  # PRED: 3 [1.0%]  (false,exec)
-memAccessCycles += simDCache(0x310, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x2cc, 1);  // PC Relative Load
 // Simulating I Cache for obj block 2
-memAccessCycles += simICache(0x2f4, 24);
-pipelineCycles += 12 - (enterBlock(0xd7, 0xdc) ? 7 : 0);
+memAccessCycles += simICache(0x2b8, 16);
+pipelineCycles += 10 - (enterBlock(0xc8, 0xcb) ? 7 : 0);
   printf (&"fill_L1_DCache : Sum (131072) = %llu\n"[0], sum);
   return;
 //  # SUCC: EXIT [100.0%] 
@@ -145,10 +142,10 @@ void fill_L1_DCache() {
 fill_L1_DCachebb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
 SP = SP + 0x8;
-memAccessCycles += simDCache(0x2b0, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x284, 1);  // PC Relative Load
 // Simulating I Cache for obj block 0
-memAccessCycles += simICache(0x25c, 20);
-pipelineCycles += 13 - (enterBlock(0xaf, 0xb3) ? 7 : 0);
+memAccessCycles += simICache(0x244, 24);
+pipelineCycles += 14 - (enterBlock(0xa9, 0xae) ? 7 : 0);
   ivtmp_108 = 0;
   sum = 0;
 //  # SUCC: 3 [100.0%]  (fallthru,exec)
@@ -157,9 +154,8 @@ fill_L1_DCachebb_3:
 //  # PRED: 3 [99.0%]  (true,exec) 2 [100.0%]  (fallthru,exec)
 memAccessCycles += simDCache(data_8192_addr + (+ivtmp_108), 1);
 // Simulating I Cache for obj block 1
-memAccessCycles += simICache(0x270, 40);
-// TODO: UnmappedLS: Load GlobalVar data_8192 at line 182
-pipelineCycles += 15 - (enterBlock(0xb4, 0xbd) ? 7 : 0);
+memAccessCycles += simICache(0x25c, 24);
+pipelineCycles += 12 - (enterBlock(0xaf, 0xb4) ? 7 : 0);
   sum = sum + (long long unsigned int) *(unsigned int*)((uintptr_t)&data_8192 + (uintptr_t)ivtmp_108);
   ivtmp_108 = ivtmp_108 + 4;
   if (ivtmp_108 != 32768)
@@ -170,10 +166,10 @@ pipelineCycles += 15 - (enterBlock(0xb4, 0xbd) ? 7 : 0);
 
 fill_L1_DCachebb_4:
 //  # PRED: 3 [1.0%]  (false,exec)
-memAccessCycles += simDCache(0x2b4, 1);  // PC Relative Load
+memAccessCycles += simDCache(0x288, 1);  // PC Relative Load
 // Simulating I Cache for obj block 2
-memAccessCycles += simICache(0x298, 24);
-pipelineCycles += 12 - (enterBlock(0xbe, 0xc3) ? 7 : 0);
+memAccessCycles += simICache(0x274, 16);
+pipelineCycles += 10 - (enterBlock(0xb5, 0xb8) ? 7 : 0);
   printf (&"fill_L1_DCache : Sum (8192) = %llu\n"[0], sum);
   return;
 //  # SUCC: EXIT [100.0%] 
@@ -199,8 +195,8 @@ pipelineCycles += 13 - (enterBlock(0x96, 0x9a) ? 7 : 0);
 half_fill_L1_DCachebb_3:
 //  # PRED: 3 [99.0%]  (true,exec) 2 [100.0%]  (fallthru,exec)
 // Simulating I Cache for obj block 1
-memAccessCycles += simICache(0x214, 40);
-pipelineCycles += 15 - (enterBlock(0x9b, 0xa4) ? 7 : 0);
+memAccessCycles += simICache(0x214, 24);
+pipelineCycles += 12 - (enterBlock(0x9b, 0xa0) ? 7 : 0);
   sum = sum + (long long unsigned int) *(unsigned int*)((uintptr_t)&data_131072 + (uintptr_t)ivtmp_139);
   ivtmp_139 = ivtmp_139 + 4;
   if (ivtmp_139 != 16384)
@@ -212,8 +208,8 @@ pipelineCycles += 15 - (enterBlock(0x9b, 0xa4) ? 7 : 0);
 half_fill_L1_DCachebb_4:
 //  # PRED: 3 [1.0%]  (false,exec)
 // Simulating I Cache for obj block 2
-memAccessCycles += simICache(0x23c, 24);
-pipelineCycles += 12 - (enterBlock(0xa5, 0xaa) ? 7 : 0);
+memAccessCycles += simICache(0x22c, 16);
+pipelineCycles += 10 - (enterBlock(0xa1, 0xa4) ? 7 : 0);
   printf (&"fill_L1_DCache : Sum (8192) = %llu\n"[0], sum);
   return;
 //  # SUCC: EXIT [100.0%] 
