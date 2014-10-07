@@ -25,6 +25,8 @@ BITXOR_OP = Literal("^")
 BITOR_OP = Literal("|")
 BITAND_OP = Literal("&")
 
+CONSTANT_EXP = CONSTANT + Literal("e") + (ADD_OP|SUB_OP) + CONSTANT
+
 EQ_OP = Literal("==")
 NE_OP = Literal("!=")
 GT_OP = Literal(">")
@@ -223,6 +225,7 @@ def act_lparen_expression(tokens):
 expression = Forward()
 primary_expression = ( IDENTIFIER.setParseAction(act_identifier)
                        ^ CONSTANT
+                       ^ CONSTANT_EXP
                        ^ STRING_LITERAL
                        ^ ((LPAREN.setParseAction(act_lparen_expression) + expression + RPAREN.setParseAction(act_rparen_expression)))
                        )
@@ -271,7 +274,7 @@ def act_array_index_lbrace(tokens):
 
 # Removing Left Recursion
 postfix_expression_1 = Forward()
-postfix_expression_1 << ( (Literal("[").setParseAction(act_array_index_lbrace) + Combine(expression).setParseAction(act_array_index_expression) + Literal("]").setParseAction(act_array_index_rbrace))
+postfix_expression_1 << ( (Literal("[").setParseAction(act_array_index_lbrace) + Combine(expression).setParseAction(act_array_index_expression) + Literal("]").setParseAction(act_array_index_rbrace) + postfix_expression_1)
                           | (PTR_OP + IDENTIFIER + postfix_expression_1)
                           | (Literal(".") + IDENTIFIER + postfix_expression_1)
                           | Empty()
