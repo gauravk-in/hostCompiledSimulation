@@ -5,6 +5,8 @@ CFLAGS = -O3
 
 HEADERS = $(CACHESIM_HEADERS)
 
+CFLAGS += -I$(HEADERS)
+
 # Cache Simulation Source Code
 SOURCES = cacheSim.c cacheSimStat.c cacheSimStat.h cacheSimHwMod.h $(HEADERS)/cacheSim.h
 OBJECTS = cacheSim.o cacheSimStat.o

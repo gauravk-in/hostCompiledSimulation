@@ -82,6 +82,11 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                         addAnnotationToDict(dictAnnotVarFuncDecl,
                                             lineNum,
                                             annot)
+                        annot_str = "struct csim_result_t csim_result;"
+                        annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                        addAnnotationToDict(dictAnnotVarFuncDecl,
+                                            lineNum,
+                                            annot)
                     else:
                         annot_str = "extern unsigned long SP;"
                         annot = Annotation(annot_str, ISCFileName, lineNum, False)
@@ -94,6 +99,11 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                                             lineNum,
                                             annot)
                         annot_str = "extern unsigned long long pipelineCycles;"
+                        annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                        addAnnotationToDict(dictAnnotVarFuncDecl,
+                                            lineNum,
+                                            annot)
+                        annot_str = "extern struct csim_result_t csim_result;"
                         annot = Annotation(annot_str, ISCFileName, lineNum, False)
                         addAnnotationToDict(dictAnnotVarFuncDecl,
                                             lineNum,
@@ -326,7 +336,7 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                 currFuncListParamsToAnnot.append(param.name)
                 
         if funcISC.functionName == "main":
-            annot_str = "cacheSimInit();"
+            annot_str = "cacheSimInit(&csim_result);"
             annot = Annotation(annot_str, funcISC.fileName, funcISC.cfg.listBlocks[0].startLine-1, False)
             addAnnotationToDict(dictAnnotLoadStore, funcISC.cfg.listBlocks[0].startLine-1, annot)
             annot_str = "branchPred_init();"
@@ -353,7 +363,7 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                 for i in range(len(blockLSInfo)):
                     lsInfo = blockLSInfo.pop(0)
                     if lsInfo.isLoad and lsInfo.isPCRelLoad:
-                        annot_str = "memAccessCycles += simDCache(0x%x, 1);  // PC Relative Load" % (lsInfo.PCRelAdd)
+                        annot_str = "memAccessCycles += simDCache(0x%x, 1, &csim_result);  // PC Relative Load" % (lsInfo.PCRelAdd)
                         annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
                         addAnnotationToDict(dictAnnotLoadStore, 
                                             blockISC.startLine-1,
@@ -361,14 +371,14 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                         continue
                     elif lsInfo.isSpiltRegister:
                         if lsInfo.isLoad:
-                            annot_str = "memAccessCycles += simDCache((SP + 0x%x), 1);  // Reading Spilt Register" % (lsInfo.spiltRegAdd)
+                            annot_str = "memAccessCycles += simDCache((SP + 0x%x), 1, &csim_result);  // Reading Spilt Register" % (lsInfo.spiltRegAdd)
                             annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
                             addAnnotationToDict(dictAnnotLoadStore, 
                                                 blockISC.startLine-1,
                                                 annot)
                             continue
                         else:
-                            annot_str = "memAccessCycles += simDCache((SP + 0x%x), 1);  // Spilling Register" % (lsInfo.spiltRegAdd)
+                            annot_str = "memAccessCycles += simDCache((SP + 0x%x), 1, &csim_result);  // Spilling Register" % (lsInfo.spiltRegAdd)
                             annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
                             addAnnotationToDict(dictAnnotLoadStore, 
                                                 blockISC.startLine-1,
@@ -389,12 +399,12 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                             if access.isIndexed:
                                 if access.ifIndexedIsArray:
                                     param = find(lambda p: p.name == access.varName, funcISC.listParams)
-                                    annot_str = "memAccessCycles += simDCache(%s_addr + (sizeof(%s) * (%s)), %d);" % (access.varName, param.type, access.index, access.isRead)
+                                    annot_str = "memAccessCycles += simDCache(%s_addr + (sizeof(%s) * (%s)), %d, &csim_result);" % (access.varName, param.type, access.index, access.isRead)
                                 else:
                                     param = find(lambda p: p.name == access.varName, funcISC.listParams)
-                                    annot_str = "memAccessCycles += simDCache(%s_addr + (%s), %d);" % (access.varName, access.index, access.isRead)
+                                    annot_str = "memAccessCycles += simDCache(%s_addr + (%s), %d, &csim_result);" % (access.varName, access.index, access.isRead)
                             else:
-                                annot_str = "memAccessCycles += simDCache(%s_addr, %d);" % (access.varName, access.isRead)
+                                annot_str = "memAccessCycles += simDCache(%s_addr, %d, &csim_result);" % (access.varName, access.isRead)
                             annot = Annotation(annot_str, funcISC.fileName, lineNumISC, False)
                             annot.debug()
                             addAnnotationToDict(dictAnnotLoadStore, 
@@ -410,19 +420,19 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                                     if access.isIndexed:
                                         if access.ifIndexedIsArray:
                                             if var.isLocal:
-                                                annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%d * (%s))), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
+                                                annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%d * (%s))), %d, &csim_result);" % (access.varName, var.size/var.length, access.index, access.isRead)
                                             else:
-                                                annot_str = "memAccessCycles += simDCache(%s_addr + (%d * (%s)), %d);" % (access.varName, var.size/var.length, access.index, access.isRead)
+                                                annot_str = "memAccessCycles += simDCache(%s_addr + (%d * (%s)), %d, &csim_result);" % (access.varName, var.size/var.length, access.index, access.isRead)
                                         else:
                                             if var.isLocal:
-                                                annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%s)), %d);" % (access.varName, access.index, access.isRead)
+                                                annot_str = "memAccessCycles += simDCache((SP + %s_addr + (%s)), %d, &csim_result);" % (access.varName, access.index, access.isRead)
                                             else:
-                                                annot_str = "memAccessCycles += simDCache(%s_addr + (%s), %d);" % (access.varName, access.index, access.isRead)
+                                                annot_str = "memAccessCycles += simDCache(%s_addr + (%s), %d, &csim_result);" % (access.varName, access.index, access.isRead)
                                     else:
                                         if var.isLocal:
-                                            annot_str = "memAccessCycles += simDCache((SP + %s_addr), %d);" % (access.varName, access.isRead)
+                                            annot_str = "memAccessCycles += simDCache((SP + %s_addr), %d, &csim_result);" % (access.varName, access.isRead)
                                         else:
-                                            annot_str = "memAccessCycles += simDCache(%s_addr, %d);" % (access.varName, access.isRead)
+                                            annot_str = "memAccessCycles += simDCache(%s_addr, %d, &csim_result);" % (access.varName, access.isRead)
                                     annot = Annotation(annot_str, funcISC.fileName, lineNumISC-1, False)
                                     annot.debug()
                                     addAnnotationToDict(dictAnnotLoadStore, 
@@ -449,7 +459,7 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
             addAnnotationToDict(dictAnnotLoadStore,
                                 blockISC.startLine-1,
                                 annot)
-            annot_str = "memAccessCycles += simICache(0x%x, %d);" % (blockStartAddress, blockSizeRounded)
+            annot_str = "memAccessCycles += simICache(0x%x, %d, &csim_result);" % (blockStartAddress, blockSizeRounded)
             annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
             addAnnotationToDict(dictAnnotLoadStore,
                                 blockISC.startLine-1,
@@ -478,7 +488,7 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                     annot_str = 'printf("pipelineCycles = \%llu\\n", pipelineCycles);'
                     annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
                     addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
-                    annot_str = 'cacheSimFini();'
+                    annot_str = 'cacheSimFini(&csim_result);'
                     annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
                     addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
                     break

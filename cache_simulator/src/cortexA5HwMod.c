@@ -303,7 +303,8 @@ inline unsigned long getIndexFromAddress(unsigned long address,
 /**** HWMOD FUNCTIONS *********************************************************/
 
 unsigned long long cortexA5_simICache(unsigned long address,
-										   unsigned int nBytes)
+		unsigned int nBytes,
+		struct csim_result_t *result)
 {
 	unsigned int latency = 0;
 	unsigned long tag;
@@ -397,25 +398,41 @@ unsigned long long cortexA5_simICache(unsigned long address,
 
 
 unsigned long long cortexA5_simDCache(unsigned long address,
-										   unsigned int isReadAccess)
+		unsigned int isReadAccess,
+		struct csim_result_t *result)
 {
-	unsigned int latency = 0;
+	unsigned long long latency = 0;
 	unsigned long tag;
 	unsigned long index;
 	int setIndex = 0;
 	int replaceIndex;
 	int i;
 
-	if (isReadAccess == 0 && L1DCacheConf.isWriteThrough == 1) // Write Access
+	if (isReadAccess)
 	{
-		// Simply increment latency by time to write to memory
-		latency += memWriteLatency;
-		L1D_Hit_Writethrough++;
-		return latency;
+		// Check for prefetch!
+		prevAccess_t *access = prevAccessList_tail;
+		for (i = 0; i < prefetch_table_entries && access != NULL; i++)
+		{
+			if (address == access->address + L2CacheConf.lineLenBytes)
+			{
+				//printf("0x%lx - 0x%lx\n", access->address, address);
+				if (access->sequentialAccess > 5)
+				{
+					result->cyclesConsumed += memReadPrefetchLatency;
+					latency += memReadPrefetchLatency;
+				}
+				insertAccess(&prevAccessList_head, &prevAccessList_tail, address, access->sequentialAccess+1);
+				result->prefetches++;
+				return latency;
+			}
+			access = access->prev;
+		}
+		// If here, data was not prefetched!
+		insertAccess(&prevAccessList_head, &prevAccessList_tail, address, 0);
 	}
-	// For writeback, there is no latency. We can safely take this assumption,
-	//   as we are only using a Single Core System.
 
+	// Lookup in L1
 	tag = getTagFromAddress(address, L1DCacheConf.tagLenBits, L1DCacheConf.tagMask);
 	index = getIndexFromAddress(address, L1DCacheConf.subIndexLenBits, L1DCacheConf.indexMask);
 
@@ -426,11 +443,17 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 		{
 			if (L1DCache[setIndex][index].tag == tag)
 			{
+				result->cyclesConsumed += L1DCacheConf.hitLatency;
 				latency += L1DCacheConf.hitLatency;
 				if (isReadAccess)
+				{
 					L1D_Hit_Read++;
-				else
+					result->L1Hits++;
+				}
+				else // Write Access
+				{
 					L1D_Hit_Writeback++;
+				}
 				return latency;
 			}
 		}
@@ -439,16 +462,33 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 			replaceIndex = setIndex;
 		}
 	}
-	// L1 Miss has occured!
-	L1D_Miss++;
-	latency += L1DCacheConf.missLatency;
+
+	// If here, data was not found in L1 Cache
 
 	// Data will be present for next access!
+	// This is executed for both read and write instructions
 	if (replaceIndex == -1)
 		replaceIndex = random() % L1DCacheConf.numSets;
 	L1DCache[replaceIndex][index].tag = tag;
 	SET_CACHELINE_VALID(L1DCache[replaceIndex][index].flags);
 
+//	if (isReadAccess)
+//	{
+		// L1 Miss has occured!
+		L1D_Miss++;
+		result->cyclesConsumed += L1DCacheConf.missLatency;
+		latency += L1DCacheConf.missLatency;
+//	}
+//	else // Write Access, do nothing, data has been put in L1, return!
+	if (!isReadAccess)
+	{
+		result->cyclesConsumed += L1DCacheConf.missLatency;
+		latency += L1DCacheConf.missLatency;
+		return latency;
+	}
+	// No write instructions will come here!
+
+	// Lookup in L2
 	tag = getTagFromAddress(address, L2CacheConf.tagLenBits, L2CacheConf.tagMask);
 	index = getIndexFromAddress(address, L2CacheConf.subIndexLenBits, L2CacheConf.indexMask);
 
@@ -459,11 +499,10 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 		{
 			if (L2Cache[setIndex][index].tag == tag)
 			{
+				result->cyclesConsumed += L2CacheConf.hitLatency;
 				latency += L2CacheConf.hitLatency;
-				if (isReadAccess)
-					L2_Hit_Read++;
-				else
-					L2_Hit_Writeback++;
+				L2_Hit_Read++;
+				result->L2Hits++;
 				return latency;
 			}
 		}
@@ -472,10 +511,12 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 			replaceIndex = setIndex;
 		}
 	}
-
+	// If here, data was not found in L2.
 	// L2 Miss has occured!
 	L1D_Miss--;
 	L2D_Miss++;
+	result->L2Misses++;
+	result->cyclesConsumed += L2CacheConf.missLatency;
 	latency += L2CacheConf.missLatency;
 
 	// Data will be present for next access!
@@ -484,32 +525,22 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	L2Cache[replaceIndex][index].tag = tag;
 	SET_CACHELINE_VALID(L2Cache[replaceIndex][index].flags);
 
-	prevAccess_t *access = prevAccessList_tail;
-	for (i = 0; i < prefetch_table_entries && access != NULL; i++)
-	{
-
-		if (address == access->address + L2CacheConf.lineLenBytes)
-		{
-			//printf("0x%lx - 0x%lx\n", access->address, address);
-			if (access->sequentialAccess > 5)
-			{
-				latency += memReadPrefetchLatency;
-			}
-			insertAccess(&prevAccessList_head, &prevAccessList_tail, address, access->sequentialAccess+1);
-			return latency;
-		}
-		access = access->prev;
-	}
-
+	// Fetch Data from the memory
+	result->cyclesConsumed += memReadLatency;
 	latency += memReadLatency;
-	insertAccess(&prevAccessList_head, &prevAccessList_tail, address, 0);
 	return latency;
 }
 
-void cortexA5_cacheSimInit()
+void cortexA5_cacheSimInit(struct csim_result_t *result)
 {
 	// Allocate space for caches
 	initCacheParams();
+
+	result->L1Hits = 0;
+	result->L2Hits = 0;
+	result->L2Misses = 0;
+	result->prefetches = 0;
+	result->cyclesConsumed = 0;
 
 	L1DCache = (cacheLine_t **) alloc2D(L1DCacheConf.numSets,
 				L1DCacheConf.numLines, sizeof(cacheLine_t));
@@ -525,9 +556,14 @@ void cortexA5_cacheSimInit()
 	return;
 }
 
-void cortexA5_cacheSimFini()
+void cortexA5_cacheSimFini(struct csim_result_t *result)
 {
 	printf("Statistics : \n");
+
+	printf ("\nTotal L1 Hits = %llu\n", result->L1Hits);
+	printf ("Total L2 Hits = %llu\n", result->L2Hits);
+	printf ("Total L2 Misses = %llu\n", result->L2Misses);
+	printf ("Total Prefetches = %llu\n", result->prefetches);
 
 	printf("\nL1 Data Cache\n");
 	printf("\t Hit Read = %ld\n", L1D_Hit_Read);

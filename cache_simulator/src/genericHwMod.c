@@ -588,7 +588,8 @@ unsigned int generic_simL1DCache(unsigned long address,
  *
  * @return number of clock cycles spent
  */
-unsigned long long generic_simICache(unsigned long address, unsigned int nBytes)
+unsigned long long generic_simICache(unsigned long address, unsigned int nBytes,
+		struct csim_result_t *result)
 {
 	unsigned long long nCycles = 0;
 	unsigned int ret;
@@ -615,7 +616,8 @@ unsigned long long generic_simICache(unsigned long address, unsigned int nBytes)
  *
  * @return number of clock cycles spent
  */
-unsigned long long generic_simDCache(unsigned long address, unsigned int isReadAccess)
+unsigned long long generic_simDCache(unsigned long address, unsigned int isReadAccess,
+		struct csim_result_t *result)
 {
 	unsigned long long nCycles = 0;
 	unsigned int ret;
@@ -638,7 +640,7 @@ unsigned long long generic_simDCache(unsigned long address, unsigned int isReadA
 /**
  * Initialize the cache data structures
  */
-void generic_cacheSimInit()
+void generic_cacheSimInit(struct csim_result_t *result)
 {
 	readConfigFile();
 
@@ -673,7 +675,7 @@ void generic_cacheSimInit()
  * Frees data structures and cleans up
  *
  */
-void generic_cacheSimFini()
+void generic_cacheSimFini(struct csim_result_t *result)
 {
 	free(L1DCache);
 }

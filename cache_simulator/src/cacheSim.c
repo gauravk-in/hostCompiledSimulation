@@ -47,14 +47,16 @@
  *
  * @return number of clock cycles spent
  */
-unsigned long long simICache(unsigned long address, unsigned int nBytes)
+unsigned long long simICache(unsigned long address,
+		unsigned int nBytes,
+		struct csim_result_t *result)
 {
 	unsigned long long nCycles;
 	cacheSimStat.access_type = ACCESS_TYPE_INVALID;
 	cacheSimStat.nCycles = 0;
 	cacheSimStat.powerMicroJ = 0;
 
-	nCycles = hwMod.simICache(address, nBytes);
+	nCycles = hwMod.simICache(address, nBytes, result);
 
 #ifdef COLLECT_STAT
 	cacheSimStatCollect();
@@ -70,14 +72,16 @@ unsigned long long simICache(unsigned long address, unsigned int nBytes)
  *
  * @return number of clock cycles spent
  */
-unsigned long long simDCache(unsigned long address, unsigned int isReadAccess)
+unsigned long long simDCache(unsigned long address,
+		unsigned int isReadAccess,
+		struct csim_result_t *result)
 {
 	unsigned long long nCycles;
 	cacheSimStat.access_type = ACCESS_TYPE_INVALID;
 	cacheSimStat.nCycles = 0;
 	cacheSimStat.powerMicroJ = 0;
 
-	nCycles = hwMod.simDCache(address, isReadAccess);
+	nCycles = hwMod.simDCache(address, isReadAccess, result);
 
 #ifdef COLLECT_STAT
 	cacheSimStatCollect();
@@ -89,17 +93,17 @@ unsigned long long simDCache(unsigned long address, unsigned int isReadAccess)
 /**
  * Initialize the cache data structures
  */
-void cacheSimInit()
+void cacheSimInit(struct csim_result_t *result)
 {
-	hwMod.cacheSimInit();
+	hwMod.cacheSimInit(result);
 }
 
 /**
  * Frees data structures and cleans up
  */
-void cacheSimFini()
+void cacheSimFini(struct csim_result_t *result)
 {
-	hwMod.cacheSimFini();
+	hwMod.cacheSimFini(result);
 
 #ifdef COLLECT_STAT
 	cacheSimStatPrint();

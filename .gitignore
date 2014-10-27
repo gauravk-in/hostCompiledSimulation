@@ -11,3 +11,4 @@ examples/crc32/app_dir/in_large.h
 *.gdbo
 *.gdbx
 *.gch
+in_large.h

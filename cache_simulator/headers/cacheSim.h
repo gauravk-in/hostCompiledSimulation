@@ -9,15 +9,20 @@
 #ifndef CACHE_SIM_H
 #define CACHE_SIM_H
 
+#include "cacheSimResult.h"
+
 /**
  * Simulates Instruction Cache access by benchmark
  *
  * @param address Starting address of instructions in the basic block
  * @param nBytes Number of bytes of instructions accessed in the basic block
+ * @param
  *
  * @return number of clock cycles spent
  */
-extern unsigned long long simICache(unsigned long address, unsigned int nBytes);
+extern unsigned long long simICache(unsigned long address,
+		unsigned int nBytes,
+		struct csim_result_t *result);
 
 /**
  * Simulates Data Cache access by benchmark
@@ -27,17 +32,19 @@ extern unsigned long long simICache(unsigned long address, unsigned int nBytes);
  *
  * @return number of clock cycles spent
  */
-extern unsigned long long simDCache(unsigned long address, unsigned int isReadAccess);
+extern unsigned long long simDCache(unsigned long address,
+		unsigned int isReadAccess,
+		struct csim_result_t *result);
 
 /**
  * Initialize the cache data structures
  */
-extern void cacheSimInit();
+extern void cacheSimInit(struct csim_result_t *result);
 
 /**
  * Frees data structures and cleans up
  *
  */
-extern void cacheSimFini();
+extern void cacheSimFini(struct csim_result_t *result);
 
 #endif // CACHE_SIM_H

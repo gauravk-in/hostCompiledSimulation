@@ -9,6 +9,7 @@
 #define CACHE_SIM_HW_MOD_H
 
 #include "cacheSimStat.h"
+#include "cacheSimResult.h"
 
 /**
  * Cache Simulation Hardware Model Descriptor
@@ -23,7 +24,9 @@ struct cacheSimHwMod_t
 	 *
 	 * @return number of clock cycles spent
 	 */
-	unsigned long long (*simICache) (unsigned long address, unsigned int nBytes);
+	unsigned long long (*simICache) (unsigned long address,
+			unsigned int nBytes,
+			struct csim_result_t *result);
 
 	/**
 	 * Simulates Data Cache access by benchmark
@@ -33,7 +36,9 @@ struct cacheSimHwMod_t
 	 *
 	 * @return number of clock cycles spent
 	 */
-	unsigned long long (*simDCache) (unsigned long address, unsigned int isReadAccess);
+	unsigned long long (*simDCache) (unsigned long address,
+			unsigned int isReadAccess,
+			struct csim_result_t *result);
 
 	/**
 	 * Initialize the cache data structures
@@ -41,12 +46,12 @@ struct cacheSimHwMod_t
 	 * @param configFile Path to the json config file which describes cache
 	 *        organization
 	 */
-	void (*cacheSimInit) ();
+	void (*cacheSimInit) (struct csim_result_t *result);
 
 	/**
 	 * Frees data structures and cleans up
 	 */
-	void (*cacheSimFini) ();
+	void (*cacheSimFini) (struct csim_result_t *result);
 };
 
 
