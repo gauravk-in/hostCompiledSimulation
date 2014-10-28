@@ -66,9 +66,9 @@ cacheLine_t **L1DCache;
 cacheLine_t **L1ICache;
 cacheLine_t **L2Cache;
 
-unsigned int memWriteLatency = 80;
-unsigned int memReadLatency = 80;
-unsigned int memReadPrefetchLatency = -15;
+unsigned int memWriteLatency = 200;
+unsigned int memReadLatency = 200;
+unsigned int memReadPrefetchLatency = 0;
 
 unsigned long L1D_Hit_Read = 0;
 unsigned long L1D_Hit_Writeback = 0;
@@ -184,8 +184,8 @@ void initCacheParams ()
 
 	L1DCacheConf.isWriteThrough = 0;
 
-	L1DCacheConf.hitLatency = 2;
-	L1DCacheConf.missLatency = 2;
+	L1DCacheConf.hitLatency = 0;
+	L1DCacheConf.missLatency = 0;
 
 
 	/*** L1 ICache *****************/
@@ -219,7 +219,7 @@ void initCacheParams ()
 	L1ICacheConf.isWriteThrough = 0;
 
 	L1ICacheConf.hitLatency = 0;
-	L1ICacheConf.missLatency = 2;
+	L1ICacheConf.missLatency = 0;
 
 
 	/*** L2 Cache *****************/
@@ -408,30 +408,6 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	int replaceIndex;
 	int i;
 
-	if (isReadAccess)
-	{
-		// Check for prefetch!
-		prevAccess_t *access = prevAccessList_tail;
-		for (i = 0; i < prefetch_table_entries && access != NULL; i++)
-		{
-			if (address == access->address + L2CacheConf.lineLenBytes)
-			{
-				//printf("0x%lx - 0x%lx\n", access->address, address);
-				if (access->sequentialAccess > 5)
-				{
-					result->cyclesConsumed += memReadPrefetchLatency;
-					latency += memReadPrefetchLatency;
-				}
-				insertAccess(&prevAccessList_head, &prevAccessList_tail, address, access->sequentialAccess+1);
-				result->prefetches++;
-				return latency;
-			}
-			access = access->prev;
-		}
-		// If here, data was not prefetched!
-		insertAccess(&prevAccessList_head, &prevAccessList_tail, address, 0);
-	}
-
 	// Lookup in L1
 	tag = getTagFromAddress(address, L1DCacheConf.tagLenBits, L1DCacheConf.tagMask);
 	index = getIndexFromAddress(address, L1DCacheConf.subIndexLenBits, L1DCacheConf.indexMask);
@@ -472,16 +448,17 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	L1DCache[replaceIndex][index].tag = tag;
 	SET_CACHELINE_VALID(L1DCache[replaceIndex][index].flags);
 
-//	if (isReadAccess)
-//	{
-		// L1 Miss has occured!
+	if (isReadAccess)
+	{
+//		 L1 Miss has occured!
 		L1D_Miss++;
 		result->cyclesConsumed += L1DCacheConf.missLatency;
 		latency += L1DCacheConf.missLatency;
-//	}
-//	else // Write Access, do nothing, data has been put in L1, return!
+	}
+	else // Write Access, do nothing, data has been put in L1, return!
 	if (!isReadAccess)
 	{
+		L1D_Hit_Writeback++;
 		result->cyclesConsumed += L1DCacheConf.missLatency;
 		latency += L1DCacheConf.missLatency;
 		return latency;
@@ -525,6 +502,29 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	L2Cache[replaceIndex][index].tag = tag;
 	SET_CACHELINE_VALID(L2Cache[replaceIndex][index].flags);
 
+	// Check for prefetch!
+	prevAccess_t *access = prevAccessList_tail;
+	for (i = 0; i < prefetch_table_entries && access != NULL; i++)
+	{
+		if (address == access->address + L2CacheConf.lineLenBytes)
+		{
+			//printf("0x%lx - 0x%lx\n", access->address, address);
+			if (access->sequentialAccess > 10)
+			{
+				result->cyclesConsumed += memReadPrefetchLatency;
+				latency += memReadPrefetchLatency;
+			}
+			insertAccess(&prevAccessList_head, &prevAccessList_tail, address, access->sequentialAccess+1);
+			result->prefetches++;
+			result->L1Hits++;
+			result->L2Misses--;
+			return latency;
+		}
+		access = access->prev;
+	}
+	// If here, data was not prefetched!
+	insertAccess(&prevAccessList_head, &prevAccessList_tail, address, 0);
+
 	// Fetch Data from the memory
 	result->cyclesConsumed += memReadLatency;
 	latency += memReadLatency;
@@ -564,6 +564,7 @@ void cortexA5_cacheSimFini(struct csim_result_t *result)
 	printf ("Total L2 Hits = %llu\n", result->L2Hits);
 	printf ("Total L2 Misses = %llu\n", result->L2Misses);
 	printf ("Total Prefetches = %llu\n", result->prefetches);
+	printf ("Mem Access Cycles = %llu\n", result->cyclesConsumed);
 
 	printf("\nL1 Data Cache\n");
 	printf("\t Hit Read = %ld\n", L1D_Hit_Read);
