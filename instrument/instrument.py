@@ -64,6 +64,11 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                 addAnnotationToDict(dictAnnotVarFuncDecl,
                                     lineNum,
                                     annot)
+                annot_str = '#include "power_estimator.h"'
+                annot = Annotation(annot_str, ISCFileName, lineNum, False)
+                addAnnotationToDict(dictAnnotVarFuncDecl,
+                                    lineNum,
+                                    annot)
                 if not isGlobalSPVarDeclared:
                     isGlobalSPVarDeclared = 1
                     if ISCFileName == mainFuncFile:
@@ -342,6 +347,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
             annot_str = "branchPred_init();"
             annot = Annotation(annot_str, funcISC.fileName, funcISC.cfg.listBlocks[0].startLine-1, False)
             addAnnotationToDict(dictAnnotLoadStore, funcISC.cfg.listBlocks[0].startLine-1, annot)
+            annot_str = "power_estimator_init();"
+            annot = Annotation(annot_str, funcISC.fileName, funcISC.cfg.listBlocks[0].startLine-1, False)
+            addAnnotationToDict(dictAnnotLoadStore, funcISC.cfg.listBlocks[0].startLine-1, annot)
             
         funcObj = find(lambda fn: fn.functionName == funcISC.functionName, listObjdumpFunctions)
         annot_str = "SP = SP + 0x%x;" % (funcObj.stackSize)
@@ -464,6 +472,11 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
             addAnnotationToDict(dictAnnotLoadStore,
                                 blockISC.startLine-1,
                                 annot)
+            annot_str = "estimate_power(\"%s\", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));" % (blockISC.name)
+            annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
+            addAnnotationToDict(dictAnnotLoadStore,
+                                blockISC.startLine-1,
+                                annot)
             
             flag = 0
             for lsInfo in blockLSInfo:
@@ -489,6 +502,9 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                     annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
                     addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
                     annot_str = 'cacheSimFini(&csim_result);'
+                    annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
+                    addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
+                    annot_str = 'power_estimator_fini();'
                     annot = Annotation(annot_str, funcISC.fileName, returnLineNumber-1, False)
                     addAnnotationToDict(dictAnnotLoadStore, returnLineNumber-1, annot)
                     break

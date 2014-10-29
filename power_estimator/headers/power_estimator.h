@@ -7,7 +7,12 @@
  * period of time, and generates the amount of energy used over the period.
  */
 
-extern double estimate_power(unsigned long long execCycles,
-		unsigned long L1_Hits,
-		unsigned long L2_Hits,
-		unsigned long L2_Misses);
+extern double estimate_power(char *blockName,
+		unsigned long long execCycles,
+		unsigned long long memAccessCycles,
+		unsigned long long L2_Hits,
+		unsigned long long memAccesses);
+
+extern void power_estimator_init();
+
+extern void power_estimator_fini();

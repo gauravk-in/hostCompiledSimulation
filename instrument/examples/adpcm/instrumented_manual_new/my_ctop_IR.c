@@ -69,7 +69,6 @@ mainbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
 cacheSimInit(&csim_result);
 branchPred_init();
-power_estimator_init();
 SP = SP + 0x30;
 memAccessCycles += simDCache(0x354, 1, &csim_result);  // PC Relative Load
 memAccessCycles += simDCache(0x358, 1, &csim_result);  // PC Relative Load
@@ -77,7 +76,6 @@ memAccessCycles += simDCache(ARR_SIZE_addr, 1, &csim_result);
 memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 0, &csim_result);
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x200, 36, &csim_result);
-estimate_power("mainbb_2", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 27 - (enterBlock(0x96, 0x9e) ? 7 : 0);
   ARR_SIZE_0 = ARR_SIZE;
   j = ARR_SIZE_0 / 10240;
@@ -96,7 +94,6 @@ memAccessCycles += simDCache(0x364, 1, &csim_result);  // PC Relative Load
 memAccessCycles += simDCache(0x368, 1, &csim_result);  // PC Relative Load
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x224, 40, &csim_result);
-estimate_power("mainbb_14", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 21 - (enterBlock(0x9f, 0xa8) ? 7 : 0);
   end_43 = 0;
   count = 0;
@@ -117,7 +114,6 @@ mainbb_4:
 memAccessCycles += simDCache((SP + 0x4), 1, &csim_result);  // Reading Spilt Register
 // Simulating I Cache for obj block 3
 memAccessCycles += simICache(0x258, 20, &csim_result);
-estimate_power("mainbb_4", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 13 - (enterBlock(0xac, 0xb0) ? 7 : 0);
   i_45 = (int) end_43;
   ivtmp_34 = (uintptr_t)&in_Data[i_45];
@@ -130,7 +126,6 @@ mainbb_5:
 memAccessCycles += simDCache(pcmdata_addr + (2 * (end_44-end_43)), 0, &csim_result);
 // Simulating I Cache for obj block 4
 memAccessCycles += simICache(0x26c, 36, &csim_result);
-estimate_power("mainbb_5", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 // TODO: UnmappedLS: Load GlobalVar in_Data at line 179
 pipelineCycles += 16 - (enterBlock(0xb1, 0xb9) ? 7 : 0);
   pcmdata[end_44 - end_43] = *(short int*)((uintptr_t)ivtmp_34);
@@ -149,7 +144,6 @@ mainbb_6:
 //  # PRED: 5 [1.0%]  (false,exec) 3 [1.0%]  (false,exec)
 // Simulating I Cache for obj block 5
 memAccessCycles += simICache(0x290, 40, &csim_result);
-estimate_power("mainbb_6", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 14 - (enterBlock(0xba, 0xc3) ? 7 : 0);
   adpcm_coder (&pcmdata, pcmdata_addr,  &adpcmdata, adpcmdata_addr,  10240,  &coder_1_state, coder_1_state_addr);
   count = count + 1;
@@ -163,7 +157,6 @@ mainbb_13:
 //  # PRED: 6 [91.0%]  (true,exec)
 // Simulating I Cache for obj block 2
 memAccessCycles += simICache(0x24c, 12, &csim_result);
-estimate_power("mainbb_13", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
   end_43 = end_46;
   goto mainbb_3;
 //  # SUCC: 3 [100.0%]  (fallthru)
@@ -174,7 +167,6 @@ memAccessCycles += simDCache(0x358, 1, &csim_result);  // PC Relative Load
 memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 1, &csim_result);
 // Simulating I Cache for obj block 6
 memAccessCycles += simICache(0x2b8, 32, &csim_result);
-estimate_power("mainbb_7", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 19 - (enterBlock(0xc4, 0xcb) ? 7 : 0);
   if (ARR_SIZE_0 % 10240 != 0)
     goto mainbb_8;
@@ -187,7 +179,6 @@ mainbb_8:
 memAccessCycles += simDCache(0x354, 1, &csim_result);  // PC Relative Load
 // Simulating I Cache for obj block 7
 memAccessCycles += simICache(0x2d8, 24, &csim_result);
-estimate_power("mainbb_8", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 14 - (enterBlock(0xcc, 0xd1) ? 7 : 0);
   start_40 = j * 10240;
   memAccessCycles += simDCache(ARR_SIZE_addr, 1, &csim_result);
@@ -204,7 +195,6 @@ memAccessCycles += simDCache(0x35c, 1, &csim_result);  // PC Relative Load
 memAccessCycles += simDCache(0x360, 1, &csim_result);  // PC Relative Load
 // Simulating I Cache for obj block 8
 memAccessCycles += simICache(0x2f0, 28, &csim_result);
-estimate_power("mainbb_9", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 13 - (enterBlock(0xd2, 0xd8) ? 7 : 0);
   i = (int) start_40;
   ivtmp_28 = (uintptr_t)&in_Data[i];
@@ -218,7 +208,6 @@ mainbb_10:
 memAccessCycles += simDCache(pcmdata_addr + (2 * (start-start_40)), 0, &csim_result);
 // Simulating I Cache for obj block 9
 memAccessCycles += simICache(0x30c, 36, &csim_result);
-estimate_power("mainbb_10", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 // TODO: UnmappedLS: Inaccurately Matched Load at line 219
 pipelineCycles += 16 - (enterBlock(0xd9, 0xe1) ? 7 : 0);
   memAccessCycles += simDCache(ivtmp_28_addr, 1, &csim_result);
@@ -240,7 +229,6 @@ memAccessCycles += simDCache(0x364, 1, &csim_result);  // PC Relative Load
 memAccessCycles += simDCache(0x368, 1, &csim_result);  // PC Relative Load
 // Simulating I Cache for obj block 10
 memAccessCycles += simICache(0x330, 20, &csim_result);
-estimate_power("mainbb_11", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 11 - (enterBlock(0xe2, 0xe6) ? 7 : 0);
   adpcm_coder (&pcmdata, pcmdata_addr,  &adpcmdata, adpcmdata_addr,  (int) (end - start_40),  &coder_1_state, coder_1_state_addr);
 //  # SUCC: 12 [100.0%]  (fallthru,exec)
@@ -249,11 +237,9 @@ mainbb_12:
 //  # PRED: 7 [39.0%]  (false,exec) 11 [100.0%]  (fallthru,exec)
 // Simulating I Cache for obj block 11
 memAccessCycles += simICache(0x344, 16, &csim_result);
-estimate_power("mainbb_12", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 printf("memAccessCycles = \%llu\n", memAccessCycles);
 printf("pipelineCycles = \%llu\n", pipelineCycles);
 cacheSimFini(&csim_result);
-power_estimator_fini();
 pipelineCycles += 18 - (enterBlock(0xe7, 0xea) ? 7 : 0);
   return 0;
 //  # SUCC: EXIT [100.0%] 

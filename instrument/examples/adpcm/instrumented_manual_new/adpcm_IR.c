@@ -10,7 +10,6 @@
 #include "ir2c.h"
 #include "cacheSim.h"
 #include "branchPred.h"
-#include "power_estimator.h"
 extern unsigned long SP;
 extern unsigned long long memAccessCycles;
 extern unsigned long long pipelineCycles;
@@ -122,7 +121,6 @@ memAccessCycles += simDCache((SP + 0xc), 1, &csim_result);  // Reading Spilt Reg
 memAccessCycles += simDCache(0x4a8, 1, &csim_result);  // PC Relative Load
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x36c, 44, &csim_result);
-estimate_power("adpcm_coderbb_2", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 247
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 249
 pipelineCycles += 23 - (enterBlock(0xf3, 0xfd) ? 7 : 0);
@@ -144,7 +142,6 @@ memAccessCycles += simDCache(0x4a8, 1, &csim_result);  // PC Relative Load
 memAccessCycles += simDCache((SP + outp_addr), 0, &csim_result);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x398, 32, &csim_result);
-estimate_power("adpcm_coderbb_3", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 15 - (enterBlock(0xfe, 0x105) ? 7 : 0);
   outp =  outdata;
 //  memAccessCycles += simDCache(outdata_addr, 1, &csim_result);
@@ -286,7 +283,6 @@ adpcm_coderbb_18:
 //  # PRED: 16 [100.0%]  (fallthru,exec) 17 [100.0%]  (fallthru,exec)
 // Simulating I Cache for obj block 2
 memAccessCycles += simICache(0x3b8, 200, &csim_result);
-estimate_power("adpcm_coderbb_18", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 // TODO: UnmappedLS: Load GlobalVar pcmdata at line 263
 // TODO: UnmappedLS: Load LocalVar outp at line 305
 // TODO: UnmappedLS: Store GlobalVar pcmdata at line 306
@@ -318,7 +314,6 @@ adpcm_coderbb_21:
 //  # PRED: 19 [33.0%]  (false,exec) 20 [100.0%]  (fallthru,exec) 2 [9.0%]  (false,exec)
 // Simulating I Cache for obj block 3
 memAccessCycles += simICache(0x480, 16, &csim_result);
-estimate_power("adpcm_coderbb_21", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 // TODO: UnmappedLS: Load LocalVar outp at line 314
 // TODO: UnmappedLS: Store GlobalVar stepsizeTable at line 315
 memAccessCycles += simDCache((SP + 0xc), 1, &csim_result);  // Reading Spilt Register

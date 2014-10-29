@@ -32,11 +32,15 @@ double MEM_freq = 400;
 double MEM_volt = 1.2;
 double MEM_A_power;
 double MEM_C_power;
-unsigned int MEM_Access_Cycles = 50;
+unsigned int MEM_Access_Cycles = 200;
 
 FILE *output_fp;
 
 unsigned long long totalCycles = 0;
+unsigned long long lastCyclePrinted = 0;
+double lastEnergyPrinted = 0.0;
+unsigned long long prev_execCycles = 0;
+unsigned long long prev_memAccessCycles = 0;
 unsigned long long prev_L2_Hits = 0;
 unsigned long long prev_memAccesses = 0;
 
@@ -61,32 +65,51 @@ double estimate_power(char *blockName,
 	unsigned long long startCycle;
 	unsigned long long currBlock_L2_Hits;
 	unsigned long long currBlock_memAccesses;
+	unsigned long long currBlock_execCycles;
+	unsigned long long currBlock_memAccessCycles;
 	double energy = 0.0;
 	double power = 0.0;
 
 	startCycle = totalCycles;
-	totalCycles += execCycles + memAccessCycles;
+	totalCycles = execCycles + memAccessCycles;
+
+	currBlock_memAccessCycles = memAccessCycles - prev_memAccessCycles;
+	prev_memAccessCycles = memAccessCycles;
+
+	currBlock_execCycles = execCycles - prev_execCycles;
+	prev_execCycles = execCycles;
 
 	// CPU
-	energy = CPU_A_power * execCycles / CPU_freq;
-	energy += CPU_C_power * memAccessCycles / CPU_freq;
+	energy = CPU_A_power * currBlock_execCycles / CPU_freq;
+	energy += CPU_C_power * currBlock_memAccessCycles / CPU_freq;
 
 	// L2
-	currBlock_L2_Hits = prev_L2_Hits - L2_Hits;
+	currBlock_L2_Hits = L2_Hits - prev_L2_Hits;
+	prev_L2_Hits = L2_Hits;
 	energy += L2_A_power * currBlock_L2_Hits * L2_Hit_Cycles / L2_freq;
 	energy += L2_C_power * (((totalCycles - startCycle) / CPU_freq) - (currBlock_L2_Hits * L2_Hit_Cycles / L2_freq));
 
 	// MEM
-	currBlock_memAccesses = prev_memAccesses - memAccesses;
+	currBlock_memAccesses = memAccesses - prev_memAccesses;
+	prev_memAccesses = memAccesses;
 	energy += MEM_A_power * currBlock_memAccesses * MEM_Access_Cycles / MEM_freq;
 	energy += MEM_C_power * (((totalCycles - startCycle) / CPU_freq) - (currBlock_memAccesses * MEM_Access_Cycles / MEM_freq));
 
 	totalEnergy += energy;
-	power = energy / ((totalCycles - startCycle) / CPU_freq);
+//	power = energy / ((totalCycles - startCycle) / CPU_freq);
 
-	fprintf(output_fp, "%s, %llu, %f, %llu, %llu, %llu, %llu\n",
-			blockName, startCycle, power, execCycles, memAccessCycles,
-			currBlock_L2_Hits, currBlock_memAccesses);
+	if(startCycle - lastCyclePrinted > 10000)
+	{
+		power = (totalEnergy - lastEnergyPrinted) / ((startCycle - lastCyclePrinted) / CPU_freq);
+		lastCyclePrinted = startCycle;
+		lastEnergyPrinted = totalEnergy;
+		fprintf(output_fp, "%s, %llu, %f\n",
+					blockName, startCycle, power);
+	}
+
+//	fprintf(output_fp, "%s, %llu, %f, %llu, %llu, %llu, %llu\n",
+//			blockName, startCycle, power, execCycles, memAccessCycles,
+//			currBlock_L2_Hits, currBlock_memAccesses);
 
 	return power;
 }
@@ -95,14 +118,14 @@ void power_estimator_init()
 {
 	output_fp = fopen(POWER_OUTPUT_FILE, "w");
 
-	CPU_A_power = CPU_A_ABV * CPU_volt * CPU_volt * CPU_freq;
-	CPU_C_power = CPU_C_ABV * CPU_volt * CPU_volt * CPU_freq;
+	CPU_A_power = CPU_A_ABV * CPU_volt * CPU_volt * CPU_freq / 1000.0;
+	CPU_C_power = CPU_C_ABV * CPU_volt * CPU_volt * CPU_freq / 1000.0;
 
-	L2_A_power = L2_A_ABV * L2_volt * L2_volt * L2_freq;
-	L2_C_power = L2_C_ABV * L2_volt * L2_volt * L2_freq;
+	L2_A_power = L2_A_ABV * L2_volt * L2_volt * L2_freq / 1000.0;
+	L2_C_power = L2_C_ABV * L2_volt * L2_volt * L2_freq / 1000.0;
 
-	MEM_A_power = MEM_A_ABV * MEM_volt * MEM_volt * MEM_freq;
-	MEM_C_power = MEM_C_ABV * MEM_volt * MEM_volt * MEM_freq;
+	MEM_A_power = MEM_A_ABV * MEM_volt * MEM_volt * MEM_freq / 1000.0;
+	MEM_C_power = MEM_C_ABV * MEM_volt * MEM_volt * MEM_freq / 1000.0;
 }
 
 void power_estimator_fini()
