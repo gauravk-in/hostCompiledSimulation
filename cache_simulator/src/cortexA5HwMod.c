@@ -66,9 +66,9 @@ cacheLine_t **L1DCache;
 cacheLine_t **L1ICache;
 cacheLine_t **L2Cache;
 
-unsigned int memWriteLatency = 200;
-unsigned int memReadLatency = 200;
-unsigned int memReadPrefetchLatency = 0;
+unsigned int memWriteLatency = 80;
+unsigned int memReadLatency = 80;
+unsigned int memReadPrefetchLatency = 15;
 
 unsigned long L1D_Hit_Read = 0;
 unsigned long L1D_Hit_Writeback = 0;
@@ -218,8 +218,8 @@ void initCacheParams ()
 
 	L1ICacheConf.isWriteThrough = 0;
 
-	L1ICacheConf.hitLatency = 0;
-	L1ICacheConf.missLatency = 0;
+	L1ICacheConf.hitLatency = 1;
+	L1ICacheConf.missLatency = 1;
 
 
 	/*** L2 Cache *****************/
@@ -429,7 +429,10 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 			{
 				latency += L1DCacheConf.hitLatency;
 				if (isReadAccess)
+				{
 					L1D_Hit_Read++;
+					result->L1Hits++;
+				}
 				else
 					L1D_Hit_Writeback++;
 				return latency;
@@ -462,7 +465,10 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 			{
 				latency += L2CacheConf.hitLatency;
 				if (isReadAccess)
+				{
 					L2_Hit_Read++;
+					result->L2Hits++;
+				}
 				else
 					L2_Hit_Writeback++;
 				return latency;
@@ -477,6 +483,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	// L2 Miss has occured!
 	L1D_Miss--;
 	L2D_Miss++;
+	result->L2Misses++;
 	latency += L2CacheConf.missLatency;
 
 	// Data will be present for next access!
@@ -485,25 +492,31 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	L2Cache[replaceIndex][index].tag = tag;
 	SET_CACHELINE_VALID(L2Cache[replaceIndex][index].flags);
 
-	prevAccess_t *access = prevAccessList_tail;
-	for (i = 0; i < prefetch_table_entries && access != NULL; i++)
+	if(isReadAccess)
 	{
-
-		if (address == access->address + L2CacheConf.lineLenBytes)
+		prevAccess_t *access = prevAccessList_tail;
+		for (i = 0; i < prefetch_table_entries && access != NULL; i++)
 		{
-			//printf("0x%lx - 0x%lx\n", access->address, address);
-			if (access->sequentialAccess > 5)
+
+			if (address == access->address + L2CacheConf.lineLenBytes)
 			{
-				latency += memReadPrefetchLatency;
+				//printf("0x%lx - 0x%lx\n", access->address, address);
+				if (access->sequentialAccess > 15)
+				{
+					latency += memReadPrefetchLatency;
+					result->prefetches++;
+					result->L1Hits++;
+					result->L2Misses--;
+				}
+				insertAccess(&prevAccessList_head, &prevAccessList_tail, address, access->sequentialAccess+1);
+				return latency;
 			}
-			insertAccess(&prevAccessList_head, &prevAccessList_tail, address, access->sequentialAccess+1);
-			return latency;
+			access = access->prev;
 		}
-		access = access->prev;
+		insertAccess(&prevAccessList_head, &prevAccessList_tail, address, 0);
 	}
 
 	latency += memReadLatency;
-	insertAccess(&prevAccessList_head, &prevAccessList_tail, address, 0);
 	return latency;
 }
 

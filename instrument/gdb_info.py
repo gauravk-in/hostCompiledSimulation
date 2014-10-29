@@ -53,15 +53,6 @@ def debugListVariables(listVariables):
     print ""
 
 
-def gdbxFilePrefix(file):
-    file.write("python\n")
-    file.write("def exe(arg):\n")
-    file.write("\ttry:\n")
-    file.write("\t\tgdb.execute (arg)\n")
-    file.write("\texcept:\n")
-    file.write("\t\tpass\n")
-    file.write("\tpass\n")
-
 # class GlobalVariable:
 #     def __init__(self):
 #         self.name = ""
@@ -238,7 +229,6 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
         gdbOFileName = "/tmp/" + func.functionName + ".lVarName.gdbo"
         
         gdbXFile = open(gdbXFileName, 'w')
-#         gdbxFilePrefix(gdbXFile)
         gdbXFile.write("target sim\n")
         gdbXFile.write("load\n")
         gdbXFile.write("b %s\n" % func.functionName)
@@ -286,7 +276,6 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
         gdbOFile.close()
         
         gdbXFile = open(gdbXFileName, 'w')
-#         gdbxFilePrefix(gdbXFile)
         gdbXFile.write("target sim\n")
         gdbXFile.write("load\n")
         gdbXFile.write("info scope %s\n" % func.functionName)
@@ -314,21 +303,20 @@ def getLocalVariablesForAllFunc(listBinaryFileNames, listFunctionsObj):
         gdbOFile.close()
         
         gdbXFile = open(gdbXFileName, 'w')
-        gdbxFilePrefix(gdbXFile)
-        gdbXFile.write('exe("target sim")\n')
-        gdbXFile.write('exe("load")\n')
-        gdbXFile.write('exe("b %s")\n' % func.functionName)
-#         gdbXFile.write('exe("commands")\n')
-        gdbXFile.write('exe("\tprintf \\"SP = %s\\\\n\\", %s")\n' % ("%x", "$sp"))
+        gdbXFile.write("target sim\n")
+        gdbXFile.write("load\n")
+        gdbXFile.write("b %s\n" % func.functionName)
+        gdbXFile.write("commands\n")
+        gdbXFile.write("\tprintf \"SP = %s\\n\", %s\n" % ("%x", "$sp"))
         for varName in listLocalVarNames:
-            gdbXFile.write('exe(\'printf "LocalVar: %s\\\\n"\')\n' % (varName))
-            gdbXFile.write('exe(\'printf "address = 0x%s\\\\n", &%s\')\n' % ("%x", varName))
-            gdbXFile.write('exe(\'ptype %s\')\n' % varName)
-            gdbXFile.write('exe(\'printf "size = %s\\\\n", sizeof(%s)\')\n' % ("%d", varName))
+            gdbXFile.write("\tprintf \"LocalVar: %s\\n\"\n" % (varName))
+            gdbXFile.write("\tprintf \"address = 0x%s\\n\", &%s\n" % ("%x", varName))
+            gdbXFile.write("\tptype %s\n" % varName)
+            gdbXFile.write("\tprintf \"size = %s\\n\", sizeof(%s)\n" % ("%d", varName))
 #         gdbXFile.write("\tcont\n")
-#         gdbXFile.write('exe("end")\n')
-        gdbXFile.write('exe("run")\n')
-        gdbXFile.write('exe("quit")\n')
+        gdbXFile.write("end\n")
+        gdbXFile.write("run\n")
+        gdbXFile.write("quit\n")
         gdbXFile.close()
         
         gdbOFile = open(gdbOFileName, 'w')

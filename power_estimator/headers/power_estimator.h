@@ -7,7 +7,7 @@
  * period of time, and generates the amount of energy used over the period.
  */
 
-unsigned long long estimate_energy(unsigned long long execCycles,
+extern double estimate_power(unsigned long long execCycles,
 		unsigned long L1_Hits,
 		unsigned long L2_Hits,
 		unsigned long L2_Misses);

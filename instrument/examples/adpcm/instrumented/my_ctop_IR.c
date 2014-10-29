@@ -10,7 +10,7 @@
 #include "ir2c.h"
 #include "cacheSim.h"
 #include "branchPred.h"
-unsigned long SP = 0x1234;
+unsigned long SP = 0x1fffb8;
 unsigned long long memAccessCycles = 0;
 unsigned long long pipelineCycles = 0;
 struct csim_result_t csim_result;
@@ -60,6 +60,10 @@ int main() {
   long unsigned int j;
   int i;
   unsigned int ARR_SIZE_0;
+  unsigned long ARR_SIZE_0_addr = 0x0;
+
+  unsigned long ivtmp_34_addr = 0; // MANUAL                                                                 
+  unsigned long ivtmp_28_addr = 0; 
 
 mainbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
@@ -67,9 +71,9 @@ cacheSimInit(&csim_result);
 branchPred_init();
 SP = SP + 0x30;
 memAccessCycles += simDCache(0x354, 1, &csim_result);  // PC Relative Load
-memAccessCycles += simDCache((SP + 0x0), 1, &csim_result);  // Spilling Register
 memAccessCycles += simDCache(0x358, 1, &csim_result);  // PC Relative Load
 memAccessCycles += simDCache(ARR_SIZE_addr, 1, &csim_result);
+memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 0, &csim_result);
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x200, 36, &csim_result);
 pipelineCycles += 27 - (enterBlock(0x96, 0x9e) ? 7 : 0);
@@ -113,6 +117,7 @@ memAccessCycles += simICache(0x258, 20, &csim_result);
 pipelineCycles += 13 - (enterBlock(0xac, 0xb0) ? 7 : 0);
   i_45 = (int) end_43;
   ivtmp_34 = (uintptr_t)&in_Data[i_45];
+  ivtmp_34_addr = in_Data_addr + (2 * i_45); 
   end_44 = end_43;
 //  # SUCC: 5 [100.0%]  (fallthru,exec)
 
@@ -124,9 +129,11 @@ memAccessCycles += simICache(0x26c, 36, &csim_result);
 // TODO: UnmappedLS: Load GlobalVar in_Data at line 179
 pipelineCycles += 16 - (enterBlock(0xb1, 0xb9) ? 7 : 0);
   pcmdata[end_44 - end_43] = *(short int*)((uintptr_t)ivtmp_34);
+  memAccessCycles += simDCache(ivtmp_34_addr, 1, &csim_result);
   i_45 = i_45 + 1;
   end_44 = (long unsigned int) i_45;
   ivtmp_34 = ivtmp_34 + 2;
+  ivtmp_34_addr = ivtmp_34_addr + 2;
   if (end_44 < end_46)
     goto mainbb_5;
   else
@@ -157,7 +164,7 @@ memAccessCycles += simICache(0x24c, 12, &csim_result);
 mainbb_7:
 //  # PRED: 6 [9.0%]  (false,exec) 2 [9.0%]  (false,exec)
 memAccessCycles += simDCache(0x358, 1, &csim_result);  // PC Relative Load
-memAccessCycles += simDCache((SP + 0x0), 1, &csim_result);  // Reading Spilt Register
+memAccessCycles += simDCache((SP + ARR_SIZE_0_addr), 1, &csim_result);
 // Simulating I Cache for obj block 6
 memAccessCycles += simICache(0x2b8, 32, &csim_result);
 pipelineCycles += 19 - (enterBlock(0xc4, 0xcb) ? 7 : 0);
@@ -191,6 +198,7 @@ memAccessCycles += simICache(0x2f0, 28, &csim_result);
 pipelineCycles += 13 - (enterBlock(0xd2, 0xd8) ? 7 : 0);
   i = (int) start_40;
   ivtmp_28 = (uintptr_t)&in_Data[i];
+  ivtmp_28_addr = in_Data_addr + (2 * i);
   D_2229 = (int) end;
   start = start_40;
 //  # SUCC: 10 [100.0%]  (fallthru,exec)
@@ -202,10 +210,12 @@ memAccessCycles += simDCache(pcmdata_addr + (2 * (start-start_40)), 0, &csim_res
 memAccessCycles += simICache(0x30c, 36, &csim_result);
 // TODO: UnmappedLS: Inaccurately Matched Load at line 219
 pipelineCycles += 16 - (enterBlock(0xd9, 0xe1) ? 7 : 0);
+  memAccessCycles += simDCache(ivtmp_28_addr, 1, &csim_result);
   pcmdata[start - start_40] = *(short int*)((uintptr_t)ivtmp_28);
   i = i + 1;
   start = (long unsigned int) i;
   ivtmp_28 = ivtmp_28 + 2;
+  ivtmp_28_addr = ivtmp_28_addr + 2;
   if (i != D_2229)
     goto mainbb_10;
   else

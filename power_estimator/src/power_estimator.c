@@ -84,8 +84,8 @@ double estimate_power(char *blockName,
 	totalEnergy += energy;
 	power = energy / ((totalCycles - startCycle) / CPU_freq);
 
-	fprintf(output_fp, "%s, %llu, %f, %llu, %llu, %lu, %lu\n",
-			blockName, startCycles, power, execCycles, memAccessCycles,
+	fprintf(output_fp, "%s, %llu, %f, %llu, %llu, %llu, %llu\n",
+			blockName, startCycle, power, execCycles, memAccessCycles,
 			currBlock_L2_Hits, currBlock_memAccesses);
 
 	return power;
@@ -107,5 +107,5 @@ void power_estimator_init()
 
 void power_estimator_fini()
 {
-	fclose(fp);
+	fclose(output_fp);
 }

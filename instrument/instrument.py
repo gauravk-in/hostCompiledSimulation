@@ -63,7 +63,7 @@ def annotateVarFuncDecl(listISCFileNames, listISCFunctions, listGlobalVariables,
                 annot = Annotation(annot_str, ISCFileName, lineNum, False)
                 addAnnotationToDict(dictAnnotVarFuncDecl,
                                     lineNum,
-                                    annot)    
+                                    annot)
                 if not isGlobalSPVarDeclared:
                     isGlobalSPVarDeclared = 1
                     if ISCFileName == mainFuncFile:

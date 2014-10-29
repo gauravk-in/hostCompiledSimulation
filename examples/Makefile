@@ -5,7 +5,7 @@ include Makefile.macros
 #EXAMPLES = adpcm 
 #EXAMPLES = sha sieve
 #EXAMPLES = basicmath 
-EXAMPLES = test_memory 
+EXAMPLES = sieve 
 STARTADR = 0x10000214
 
 # Space separated list of all C files in APPDIR

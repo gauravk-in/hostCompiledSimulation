@@ -14,4 +14,4 @@ cacheSim:
 	
 clean:
 	rm -rf *.o
-	rm -rf $(LIB)/cacheSim.so
+	rm -rf $(LIB)/libcacheSim.so

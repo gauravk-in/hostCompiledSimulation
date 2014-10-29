@@ -40,10 +40,11 @@ void sieve_func() {
   uintptr_t D_2240;
   uintptr_t D_2230;
   uintptr_t ivtmp_36;
-  unsigned long ivtmp_36_addr;
+  unsigned long ivtmp_36_addr; //MANUAL
   int j;
   int i;
   unsigned int sieve[500000];
+  unsigned long sieve_addr = 0x0;
 
 sieve_funcbb_2:
 //  # PRED: ENTRY [100.0%]  (fallthru,exec)
@@ -57,12 +58,12 @@ pipelineCycles += 24 - (enterBlock(0x96, 0x9f) ? 7 : 0);
 
 sieve_funcbb_3:
 //  # PRED: 3 [99.0%]  (true,exec) 2 [100.0%]  (fallthru,exec)
-memAccessCycles += simDCache((SP + 0x0), 1, &csim_result);  // Spilling Register
 memAccessCycles += simDCache(results_addr + (+ivtmp_68), 0, &csim_result);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x228, 28, &csim_result);
 pipelineCycles += 13 - (enterBlock(0xa0, 0xa6) ? 7 : 0);
   *(unsigned int*)((uintptr_t)&results + (uintptr_t)ivtmp_68) = 0;
+  memAccessCycles += simDCache((SP + sieve_addr + (+ivtmp_68)), 0, &csim_result);
   *(unsigned int*)((uintptr_t)&sieve + (uintptr_t)ivtmp_68) = 1;
   ivtmp_68 = ivtmp_68 + 4;
   if (ivtmp_68 != 2000000)
@@ -83,11 +84,11 @@ pipelineCycles += 21 - (enterBlock(0xa7, 0xb3) ? 7 : 0);
 
 sieve_funcbb_4:
 //  # PRED: 7 [99.0%]  (true,exec) 17 [100.0%]  (fallthru)
-memAccessCycles += simDCache((SP + 0x0), 1, &csim_result);  // Reading Spilt Register
 // Simulating I Cache for obj block 3
 memAccessCycles += simICache(0x278, 16, &csim_result);
 pipelineCycles += 9 - (enterBlock(0xb4, 0xb7) ? 7 : 0);
   D_2263 = (unsigned int) i_72;
+  memAccessCycles += simDCache((SP + sieve_addr + (+D_2263*4)), 1, &csim_result);
   if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2263 * 4) != 0)
     goto sieve_funcbb_5;
   else
@@ -116,7 +117,7 @@ pipelineCycles += 8 - (enterBlock(0xbb, 0xbb) ? 7 : 0);
 
 sieve_funcbb_6:
 //  # PRED: 6 [91.0%]  (true,exec) 18 [100.0%]  (fallthru)
-memAccessCycles += simDCache((SP + 0x4), 1, &csim_result);  // Spilling Register
+memAccessCycles += simDCache((SP + sieve_addr + (4 * (j_76))), 0, &csim_result);
 // Simulating I Cache for obj block 6
 memAccessCycles += simICache(0x298, 40, &csim_result);
 pipelineCycles += 17 - (enterBlock(0xbc, 0xc5) ? 7 : 0);
@@ -156,9 +157,9 @@ pipelineCycles += 13 - (enterBlock(0xcc, 0xd1) ? 7 : 0);
 
 sieve_funcbb_9:
 //  # PRED: 11 [99.0%]  (true,exec) 8 [100.0%]  (fallthru,exec)
-memAccessCycles += simDCache((SP + 0x0), 1, &csim_result);  // Reading Spilt Register
 pipelineCycles += 12 - (enterBlock(0xd2, 0xd8) ? 7 : 0);
   D_2240 = (unsigned int) j;
+  memAccessCycles += simDCache((SP + sieve_addr + (+D_2240*4)), 1, &csim_result);
   if (*(unsigned int*)((uintptr_t)&sieve + (uintptr_t)D_2240 * 4) != 0)
     goto sieve_funcbb_10;
   else
@@ -212,7 +213,7 @@ sieve_funcbb_14:
 memAccessCycles += simICache(0x328, 12, &csim_result);
 // TODO: UnmappedLS: Load GlobalVar results at line 224
 pipelineCycles += 8 - (enterBlock(0xe0, 0xe2) ? 7 : 0);
-  memAccessCycles += simDCache(ivtmp_36_addr + 4, 1, &csim_result);
+memAccessCycles += simDCache(ivtmp_36_addr + 4, 1, &csim_result);
   if (*(unsigned int*)((uintptr_t)ivtmp_36 + 4) == 0)
     goto sieve_funcbb_16;
   else
