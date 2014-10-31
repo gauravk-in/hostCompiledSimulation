@@ -72,7 +72,7 @@ def draw_cfg(function, outputPath=None):
         outputPath = "/tmp/"
              
     dotFileName = outputPath + fileNamePrefix + ".dot"
-    psFileName = outputPath + fileNamePrefix + ".ps"
+    psFileName = outputPath + fileNamePrefix + ".pdf"
     
     dotFile = open(dotFileName, "w")
     dotFile.write("digraph "+fileNamePrefix+" {\n")
@@ -119,7 +119,7 @@ def draw_cfg(function, outputPath=None):
     dotFile.write("}\n")
     dotFile.close()
     
-    call(args=["dot", "-Tps", dotFileName, "-o", psFileName])
+    call(args=["dot", "-Tpdf", dotFileName, "-o", psFileName])
     return psFileName
 
 def main(listInputFileNames, outputPath=None):
