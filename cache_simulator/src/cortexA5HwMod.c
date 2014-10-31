@@ -66,9 +66,9 @@ cacheLine_t **L1DCache;
 cacheLine_t **L1ICache;
 cacheLine_t **L2Cache;
 
-unsigned int memWriteLatency = 80;
-unsigned int memReadLatency = 80;
-unsigned int memReadPrefetchLatency = 15;
+unsigned int memWriteLatency = 55;
+unsigned int memReadLatency = 55;
+unsigned int memReadPrefetchLatency = 0;
 
 unsigned long L1D_Hit_Read = 0;
 unsigned long L1D_Hit_Writeback = 0;
@@ -219,13 +219,13 @@ void initCacheParams ()
 	L1ICacheConf.isWriteThrough = 0;
 
 	L1ICacheConf.hitLatency = 1;
-	L1ICacheConf.missLatency = 1;
+	L1ICacheConf.missLatency = 0;
 
 
 	/*** L2 Cache *****************/
 
 	L2CacheConf.lineLenBytes 		= 32;
-	L2CacheConf.cacheSizeBytes 		= 512 * 1024; // 32 KB
+	L2CacheConf.cacheSizeBytes 		= 256 * 1024; // 256 KB
 	L2CacheConf.numSets 			= 16;
 
 	L2CacheConf.numLines  			= L2CacheConf.cacheSizeBytes /
@@ -253,16 +253,16 @@ void initCacheParams ()
 
 	L2CacheConf.isWriteThrough = 0;
 
-	L2CacheConf.hitLatency = 16;
-	L2CacheConf.missLatency = 16;
+	L2CacheConf.hitLatency = 14;
+	L2CacheConf.missLatency = 14;
 }
 
 
 /**
  * Allocates a 2 dimensional array. To be used to allocate space for cache lines
  *
- * @param rows number of sets
- * @param cols number of cache lines
+ * @param rows number of cache lines
+ * @param cols number of sets
  * @param size size of the data structure to be stored
  *
  * @return pointer to array of pointers pointing to rows of data.
@@ -311,7 +311,7 @@ unsigned long long cortexA5_simICache(unsigned long address,
 	unsigned long index;
 	unsigned long _address;
 	int setIndex = 0;
-	int replaceIndex;
+	int invalidSetIndex;
 	int hit = 0;
 	unsigned long address_32;
 
@@ -321,8 +321,8 @@ unsigned long long cortexA5_simICache(unsigned long address,
 		tag = getTagFromAddress(_address, L1ICacheConf.tagLenBits, L1ICacheConf.tagMask);
 		index = getIndexFromAddress(_address, L1ICacheConf.subIndexLenBits, L1ICacheConf.indexMask);
 
-		replaceIndex = -1;
 		hit = 0;
+		invalidSetIndex = -1;
 		for (setIndex = 0; setIndex < L1ICacheConf.numSets; setIndex++)
 		{
 			if (IS_CACHELINE_VALID(L1ICache[setIndex][index].flags))
@@ -331,33 +331,85 @@ unsigned long long cortexA5_simICache(unsigned long address,
 				{
 					latency += L1ICacheConf.hitLatency;
 					L1I_Hit_Read++;
+					result->L1Hits++;
+					result->latency += L1ICacheConf.hitLatency;
 					hit = 1;
 					break;
 				}
 			}
 			else
 			{
-				replaceIndex = setIndex;
+				invalidSetIndex = setIndex;
 			}
 		}
 
 		if (hit)
 			continue;
-		
+
 		// L1 Miss has occured!
 		L1I_Miss++;
 		latency += L1ICacheConf.missLatency;
+		result->latency += L1ICacheConf.missLatency;
 
 		// Data will be present for next access!
-		if (replaceIndex == -1)
-			replaceIndex = random() % L1ICacheConf.numSets;
-		L1ICache[replaceIndex][index].tag = tag;
-		SET_CACHELINE_VALID(L1ICache[replaceIndex][index].flags);
+		if (invalidSetIndex == -1)
+		{
+			invalidSetIndex = random() % L1ICacheConf.numSets;
+
+#define EXCLUSIVE_L2_CACHE
+#ifdef EXCLUSIVE_L2_CACHE
+			{
+				unsigned long L1ReplaceAdd;
+				/**
+				 * Any address is contained in either L1 or L2 Cache. Evicted
+				 * data from L1 Cache, is stored to L2 Cache.
+				 */
+
+				// Extract the replaced address
+				L1ReplaceAdd = L1ICache[index][invalidSetIndex].tag <<
+						(ADDRESS_LEN_BITS - L1ICacheConf.tagLenBits);
+				L1ReplaceAdd += index << L1ICacheConf.subIndexLenBits;
+
+				// Store replaced address in L2.
+				{
+					unsigned long l2Tag;
+					unsigned long l2Index;
+					unsigned int l2InvalidSetIndex;
+
+					l2Tag = getTagFromAddress(L1ReplaceAdd, L2CacheConf.tagLenBits,
+							L2CacheConf.tagMask);
+					l2Index = getIndexFromAddress(L1ReplaceAdd, L2CacheConf.subIndexLenBits,
+							L2CacheConf.indexMask);
+
+					l2InvalidSetIndex = -1;
+					for(setIndex = 0; setIndex < L2CacheConf.numSets; setIndex++)
+					{
+						if(!IS_CACHELINE_VALID(L2Cache[l2Index][setIndex].flags))
+						{
+							l2InvalidSetIndex = setIndex;
+						}
+					}
+
+					if(l2InvalidSetIndex == -1)
+					{
+						l2InvalidSetIndex = random() % L2CacheConf.numSets;
+					}
+					L2Cache[l2Index][l2InvalidSetIndex].tag = l2Tag;
+
+					// Add Latency to write to L2
+					// TODO: May not be needed, due to Store Buffering !!!!
+//					latency += L2CacheConf.hitLatency;
+//					result->latency += L2CacheConf.hitLatency;
+				}
+			}
+#endif
+		}
+		L1ICache[invalidSetIndex][index].tag = tag;
+		SET_CACHELINE_VALID(L1ICache[invalidSetIndex][index].flags);
 
 		tag = getTagFromAddress(_address, L2CacheConf.tagLenBits, L2CacheConf.tagMask);
 		index = getIndexFromAddress(_address, L2CacheConf.subIndexLenBits, L2CacheConf.indexMask);
 
-		replaceIndex = -1;
 		hit = 0;
 		for (setIndex = 0; setIndex < L2CacheConf.numSets; setIndex++)
 		{
@@ -367,32 +419,26 @@ unsigned long long cortexA5_simICache(unsigned long address,
 				{
 					latency += L2CacheConf.hitLatency;
 					L2_Hit_Read++;
+					result->L2Hits++;
+					result->latency += L2CacheConf.hitLatency;
 					hit = 1;
 					break;
 				}
 			}
-			else
-			{
-				replaceIndex = setIndex;
-			}
 		}
 
-		if (hit)
+		if(hit)
 			continue;
 
 		// L2 Miss has occured!
 		L1I_Miss--;
 		L2I_Miss++;
+		result->L2Misses++;
 		latency += L2CacheConf.missLatency;
-		// Data will be present for next access!
-		if (replaceIndex == -1)
-			replaceIndex = random() % L2CacheConf.numSets;
-		L2Cache[replaceIndex][index].tag = tag;
-		SET_CACHELINE_VALID(L2Cache[replaceIndex][index].flags);
-
+		result->latency += L2CacheConf.missLatency;
 		latency += memReadLatency;
+		result->latency += memReadLatency;
 	}
-
 	return latency;
 }
 
@@ -404,79 +450,150 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	unsigned long tag;
 	unsigned long index;
 	int setIndex = 0;
-	int replaceIndex;
-	int i;
+	int invalidSetIndex;
+	unsigned long L1ReplaceAdd = 0;
+	unsigned int L1ReplaceAddFlags = 0;
 
-	if (isReadAccess == 0 && L1DCacheConf.isWriteThrough == 1) // Write Access
-	{
-		// Simply increment latency by time to write to memory
-		latency += memWriteLatency;
-		L1D_Hit_Writethrough++;
-		return latency;
-	}
-	// For writeback, there is no latency. We can safely take this assumption,
-	//   as we are only using a Single Core System.
+	// TODO : Implement the mechanism for Write Through Cache.
+	/**
+	 * For write through, the latency will be memWriteLatency. Allocate the data
+	 * in L1 Cache.
+	 *
+	 * For write back cache, we need to check if data is already in cache. We do
+	 * that later.
+	 */
 
 	tag = getTagFromAddress(address, L1DCacheConf.tagLenBits, L1DCacheConf.tagMask);
 	index = getIndexFromAddress(address, L1DCacheConf.subIndexLenBits, L1DCacheConf.indexMask);
 
-	replaceIndex = -1;
+	invalidSetIndex = -1;
 	for (setIndex = 0; setIndex < L1DCacheConf.numSets; setIndex++)
 	{
-		if (IS_CACHELINE_VALID(L1DCache[setIndex][index].flags))
+		if (IS_CACHELINE_VALID(L1DCache[index][setIndex].flags))
 		{
-			if (L1DCache[setIndex][index].tag == tag)
+			if (L1DCache[index][setIndex].tag == tag)
 			{
+				// Add the latency
 				latency += L1DCacheConf.hitLatency;
+
 				if (isReadAccess)
 				{
 					L1D_Hit_Read++;
 					result->L1Hits++;
 				}
-				else
+				else // Write Access
+				{
 					L1D_Hit_Writeback++;
+					SET_CACHELINE_DIRTY(L1DCache[index][setIndex].flags);
+				}
+
+				// If data was found in L1 Cache, we return from here!!
+				result->latency += latency;
 				return latency;
 			}
 		}
 		else
 		{
-			replaceIndex = setIndex;
+			invalidSetIndex = setIndex;
 		}
 	}
+
 	// L1 Miss has occured!
 	L1D_Miss++;
 	latency += L1DCacheConf.missLatency;
 
-	// Data will be present for next access!
-	if (replaceIndex == -1)
-		replaceIndex = random() % L1DCacheConf.numSets;
-	L1DCache[replaceIndex][index].tag = tag;
-	SET_CACHELINE_VALID(L1DCache[replaceIndex][index].flags);
+	// Allocate Space for Data which will be present next time!!
+	if (invalidSetIndex == -1)
+	{
+		// Replace a random cache line
+		invalidSetIndex = random() % L1DCacheConf.numSets;
 
+#define EXCLUSIVE_L2_CACHE
+#ifdef EXCLUSIVE_L2_CACHE
+		/**
+		 * Any address is contained in either L1 or L2 Cache. Eviceted data
+		 * from L1 Cache, is stored to L2 Cache.
+		 */
+
+		// Extract the replaced address
+		L1ReplaceAdd = L1DCache[index][invalidSetIndex].tag <<
+				(ADDRESS_LEN_BITS - L1DCacheConf.tagLenBits);
+		L1ReplaceAdd += index << L1DCacheConf.subIndexLenBits;
+		L1ReplaceAddFlags = L1DCache[index][invalidSetIndex].flags;
+
+		// Store replaced address in L2.
+		{
+			unsigned long l2Tag;
+			unsigned long l2Index;
+			unsigned int l2InvalidSetIndex;
+
+			l2Tag = getTagFromAddress(L1ReplaceAdd, L2CacheConf.tagLenBits,
+					L2CacheConf.tagMask);
+			l2Index = getIndexFromAddress(L1ReplaceAdd, L2CacheConf.subIndexLenBits,
+					L2CacheConf.indexMask);
+
+			l2InvalidSetIndex = -1;
+			for(setIndex = 0; setIndex < L2CacheConf.numSets; setIndex++)
+			{
+				if(!IS_CACHELINE_VALID(L2Cache[l2Index][setIndex].flags))
+				{
+					l2InvalidSetIndex = setIndex;
+				}
+			}
+
+			if(l2InvalidSetIndex == -1)
+			{
+				l2InvalidSetIndex = random() % L2CacheConf.numSets;
+
+				if(IS_CACHELINE_DIRTY(L2Cache[l2Index][l2InvalidSetIndex].flags))
+				{
+					// Write Back to memory!
+					latency += memWriteLatency;
+					L2_Hit_Writeback++;
+				}
+			}
+			L2Cache[l2Index][l2InvalidSetIndex].tag = l2Tag;
+			L2Cache[l2Index][l2InvalidSetIndex].flags = L1ReplaceAddFlags;
+
+			// Add Latency to write to L2
+			// TODO: May not be needed, due to Store Buffering !!!!
+//			latency += L2CacheConf.hitLatency;
+		}
+#endif
+	}
+	// Make new data available
+	L1DCache[index][invalidSetIndex].tag = tag;
+	SET_CACHELINE_VALID(L1DCache[index][invalidSetIndex].flags);
+	if(!isReadAccess)
+		SET_CACHELINE_DIRTY(L1DCache[index][invalidSetIndex].flags);
+	else
+		SET_CACHELINE_CLEAN(L1DCache[index][invalidSetIndex].flags);
+
+	// Lookup Data in L2 Cache
 	tag = getTagFromAddress(address, L2CacheConf.tagLenBits, L2CacheConf.tagMask);
 	index = getIndexFromAddress(address, L2CacheConf.subIndexLenBits, L2CacheConf.indexMask);
 
-	replaceIndex = -1;
 	for (setIndex = 0; setIndex < L2CacheConf.numSets; setIndex++)
 	{
-		if (IS_CACHELINE_VALID(L2Cache[setIndex][index].flags))
+		if (IS_CACHELINE_VALID(L2Cache[index][setIndex].flags))
 		{
-			if (L2Cache[setIndex][index].tag == tag)
+			if (L2Cache[index][setIndex].tag == tag)
 			{
+				/**
+				 * If data is found in L2, just mark the line as invalid,
+				 * to mark that the data has been moved to L1. The data was
+				 * already made available in L1.
+				 *
+				 * Add the latency.
+				 */
 				latency += L2CacheConf.hitLatency;
-				if (isReadAccess)
-				{
-					L2_Hit_Read++;
-					result->L2Hits++;
-				}
-				else
-					L2_Hit_Writeback++;
+				SET_CACHELINE_INVALID(L2Cache[index][setIndex].flags);
+				SET_CACHELINE_CLEAN(L2Cache[index][setIndex].flags);
+				L2_Hit_Read++;
+				result->L2Hits++;
+				result->latency += latency;
 				return latency;
 			}
-		}
-		else
-		{
-			replaceIndex = setIndex;
 		}
 	}
 
@@ -486,37 +603,59 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	result->L2Misses++;
 	latency += L2CacheConf.missLatency;
 
-	// Data will be present for next access!
-	if (replaceIndex == -1)
-		replaceIndex = random() % L2CacheConf.numSets;
-	L2Cache[replaceIndex][index].tag = tag;
-	SET_CACHELINE_VALID(L2Cache[replaceIndex][index].flags);
+	/**
+	 * Data will directly be loaded to L1 Cache. Nothing to do, if L2 Miss.
+	 */
 
-	if(isReadAccess)
+#define DATA_PREFETCH
+#ifdef DATA_PREFETCH
+	/**
+	 * Checking for data prefetch at the end! Probably, need to do this in the
+	 * beginning.
+	 */
+
+	if(1)
 	{
+		int i;
+
 		prevAccess_t *access = prevAccessList_tail;
 		for (i = 0; i < prefetch_table_entries && access != NULL; i++)
 		{
-
 			if (address == access->address + L2CacheConf.lineLenBytes)
 			{
-				//printf("0x%lx - 0x%lx\n", access->address, address);
 				if (access->sequentialAccess > 15)
 				{
-					latency += memReadPrefetchLatency;
+					/**
+					 * Data would have been prefetched !!
+					 * Important:
+					 * 1. Data has already been loaded into L1 earlier.
+					 * 2. Latencies added if here, are L1 Miss and L2 Miss.
+					 *    These latencies need not be added if prefetched!!
+					 * 3. Incremement L1 Hit, and count for prefetches!
+					 * 4. Decrement L2 Miss count.
+					 */
+
+					latency = memReadPrefetchLatency;
 					result->prefetches++;
 					result->L1Hits++;
 					result->L2Misses--;
 				}
 				insertAccess(&prevAccessList_head, &prevAccessList_tail, address, access->sequentialAccess+1);
+				result->latency += latency;
 				return latency;
 			}
 			access = access->prev;
 		}
 		insertAccess(&prevAccessList_head, &prevAccessList_tail, address, 0);
 	}
+#endif
 
+	/**
+	 * Data must be fetched from the memory !!!
+	 * Add the memReadLatency only!
+	 */
 	latency += memReadLatency;
+	result->latency += latency;
 	return latency;
 }
 
@@ -529,14 +668,14 @@ void cortexA5_cacheSimInit(struct csim_result_t *result)
 	result->L2Hits = 0;
 	result->L2Misses = 0;
 	result->prefetches = 0;
-	result->cyclesConsumed = 0;
+	result->latency = 0;
 
-	L1DCache = (cacheLine_t **) alloc2D(L1DCacheConf.numSets,
-				L1DCacheConf.numLines, sizeof(cacheLine_t));
-	L1ICache = (cacheLine_t **) alloc2D(L1ICacheConf.numSets,
-				L1ICacheConf.numLines, sizeof(cacheLine_t));
-	L2Cache = (cacheLine_t **) alloc2D(L2CacheConf.numSets,
-				L2CacheConf.numLines, sizeof(cacheLine_t));
+	L1DCache = (cacheLine_t **) alloc2D(L1DCacheConf.numLines,
+				L1DCacheConf.numSets, sizeof(cacheLine_t));
+	L1ICache = (cacheLine_t **) alloc2D(L1ICacheConf.numLines,
+				L1ICacheConf.numSets, sizeof(cacheLine_t));
+	L2Cache = (cacheLine_t **) alloc2D(L2CacheConf.numLines,
+				L2CacheConf.numSets, sizeof(cacheLine_t));
 
 	prevAccessList_head = NULL;
 	prevAccessList_tail = NULL;
@@ -553,7 +692,7 @@ void cortexA5_cacheSimFini(struct csim_result_t *result)
 	printf ("Total L2 Hits = %llu\n", result->L2Hits);
 	printf ("Total L2 Misses = %llu\n", result->L2Misses);
 	printf ("Total Prefetches = %llu\n", result->prefetches);
-	printf ("Mem Access Cycles = %llu\n", result->cyclesConsumed);
+	printf ("Mem Access Cycles = %llu\n", result->latency);
 
 	printf("\nL1 Data Cache\n");
 	printf("\t Hit Read = %ld\n", L1D_Hit_Read);

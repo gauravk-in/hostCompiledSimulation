@@ -3,7 +3,7 @@
 
 struct csim_result_t
 {
-	unsigned long long cyclesConsumed;
+	unsigned long long latency;
 	unsigned long long L1Hits;
 	unsigned long long L2Hits;
 	unsigned long long L2Misses;
