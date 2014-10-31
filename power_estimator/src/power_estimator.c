@@ -98,7 +98,7 @@ double estimate_power(char *blockName,
 	totalEnergy += energy;
 //	power = energy / ((totalCycles - startCycle) / CPU_freq);
 
-	if(startCycle - lastCyclePrinted > 10000)
+	if(startCycle - lastCyclePrinted > 100000)
 	{
 		power = (totalEnergy - lastEnergyPrinted) / ((startCycle - lastCyclePrinted) / CPU_freq);
 		lastCyclePrinted = startCycle;
