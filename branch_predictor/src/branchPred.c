@@ -227,7 +227,7 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 
 	if (!predicted)
 	{
-		printf("Branch NOT Predicted. Start 0x%lx; End 0x%lx\n\n", blockObjStartAdd, blockObjEndAdd);
+//		printf("Branch NOT Predicted. Start 0x%lx; End 0x%lx\n\n", blockObjStartAdd, blockObjEndAdd);
 	}
 	else
 	{
