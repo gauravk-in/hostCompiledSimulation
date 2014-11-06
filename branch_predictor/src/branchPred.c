@@ -28,24 +28,21 @@ unsigned int bPredTableEntries;
 unsigned int prevBlockValid;
 unsigned long prevBlockEndAdd;
 
-void removeHeadEntry()
-{
-	// bPredTable_head and the next pointer must not be NULL
-	// TODO: Add an assert!
-	bPredTableEntry_t *tmp;
-	tmp = bPredTable_head;
-	bPredTable_head = bPredTable_head->next;
-	bPredTable_head->prev = NULL;
-	free(tmp);
-}
-
 void insertEntryToTail(bPredTableEntry_t *entry)
 {
+//	printf("***************** Inserting Entry! 0x%lx\n\n", entry->branchInstAdd);
+
 	if (bPredTableEntries == BPRED_TABLE_MAX_ENTRIES)
 	{
 		// Table Capacity full, must remove least recently used to make space
-
+		bPredTableEntry_t *tmp;
+		tmp = bPredTable_head;
+		bPredTable_head = bPredTable_head->next;
+		bPredTable_head->prev = NULL;
+		bPredTableEntries--;
+		free(tmp);
 	}
+
 	if (bPredTable_head == NULL &&
 			bPredTable_tail == NULL)
 	{
@@ -53,6 +50,7 @@ void insertEntryToTail(bPredTableEntry_t *entry)
 		entry->prev = NULL;
 		bPredTable_head = entry;
 		bPredTable_tail = entry;
+		bPredTableEntries++;
 		return;
 	}
 	else
@@ -61,6 +59,7 @@ void insertEntryToTail(bPredTableEntry_t *entry)
 		entry->prev = bPredTable_tail;
 		entry->next = NULL;
 		bPredTable_tail = entry;
+		bPredTableEntries++;
 		return;
 	}
 }
@@ -115,7 +114,12 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 		predicted =  0;
 	}
 
+#define ADDRESS_IS_LINE_NUMBER
+#ifdef ADDRESS_IS_LINE_NUMBER
+	if (blockObjStartAdd == prevBlockEndAdd + 1)
+#else
 	if (blockObjStartAdd == prevBlockEndAdd + 4)
+#endif
 	{
 		// Branch was not taken!
 		isBranchTaken = 0;
@@ -131,6 +135,7 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 	{
 		if (entry->branchInstAdd == prevBlockEndAdd)
 		{
+//			printf ("Entry Found!\n");
 			// Entry Found!
 			if (entry->prediction == STRONGLY_NOT_TAKEN)
 			{
@@ -201,9 +206,10 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 	}
 	else
 	{
+//		printf ("Entry NOT Found! 0x%lx\n", prevBlockEndAdd);
 		// Entry was not found!
 		entry = malloc(sizeof(bPredTableEntry_t));
-		entry->branchInstAdd = blockObjEndAdd;
+		entry->branchInstAdd = prevBlockEndAdd;
 		if (isBranchTaken)
 		{
 			entry->prediction = WEAKLY_NOT_TAKEN;
@@ -219,10 +225,14 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 
 	prevBlockEndAdd = blockObjEndAdd;
 
-//	if (!predicted)
-//	{
-//		printf("Branch NOT Predicted\n");
-//	}
+	if (!predicted)
+	{
+		printf("Branch NOT Predicted. Start 0x%lx; End 0x%lx\n\n", blockObjStartAdd, blockObjEndAdd);
+	}
+	else
+	{
+//		printf(" ****** Predicted. Start 0x%lx; End 0x%lx\n\n", blockObjStartAdd, blockObjEndAdd);
+	}
 
 	return predicted;
 }

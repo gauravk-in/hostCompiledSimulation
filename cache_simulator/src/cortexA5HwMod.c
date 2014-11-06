@@ -66,8 +66,8 @@ cacheLine_t **L1DCache;
 cacheLine_t **L1ICache;
 cacheLine_t **L2Cache;
 
-unsigned int memWriteLatency = 55;
-unsigned int memReadLatency = 55;
+unsigned int memWriteLatency = 50;
+unsigned int memReadLatency = 50;
 unsigned int memReadPrefetchLatency = 0;
 
 unsigned long L1D_Hit_Read = 0;
@@ -99,6 +99,9 @@ typedef struct prevAccess prevAccess_t;
 
 prevAccess_t *prevAccessList_head;
 prevAccess_t *prevAccessList_tail;
+
+// Round Robin L2 Cache Replacement
+unsigned int L2_RR_evictSetIndex;
 
 /**** LOCAL FUNCTIONS *********************************************************/
 
@@ -218,14 +221,14 @@ void initCacheParams ()
 
 	L1ICacheConf.isWriteThrough = 0;
 
-	L1ICacheConf.hitLatency = 1;
+	L1ICacheConf.hitLatency = 0;
 	L1ICacheConf.missLatency = 0;
 
 
 	/*** L2 Cache *****************/
 
 	L2CacheConf.lineLenBytes 		= 32;
-	L2CacheConf.cacheSizeBytes 		= 256 * 1024; // 256 KB
+	L2CacheConf.cacheSizeBytes 		= 512 * 1024; // 256 KB
 	L2CacheConf.numSets 			= 16;
 
 	L2CacheConf.numLines  			= L2CacheConf.cacheSizeBytes /
@@ -253,8 +256,8 @@ void initCacheParams ()
 
 	L2CacheConf.isWriteThrough = 0;
 
-	L2CacheConf.hitLatency = 14;
-	L2CacheConf.missLatency = 14;
+	L2CacheConf.hitLatency = 16;
+	L2CacheConf.missLatency = 16;
 }
 
 
@@ -392,7 +395,17 @@ unsigned long long cortexA5_simICache(unsigned long address,
 
 					if(l2InvalidSetIndex == -1)
 					{
-						l2InvalidSetIndex = random() % L2CacheConf.numSets;
+//						l2InvalidSetIndex = random() % L2CacheConf.numSets;
+						l2InvalidSetIndex = L2_RR_evictSetIndex++;
+						if (L2_RR_evictSetIndex == L2CacheConf.numSets)
+							L2_RR_evictSetIndex = 0;
+
+						if(IS_CACHELINE_DIRTY(L2Cache[l2Index][l2InvalidSetIndex].flags))
+						{
+							// Write Back to memory!
+							latency += memWriteLatency;
+							L2_Hit_Writeback++;
+						}
 					}
 					L2Cache[l2Index][l2InvalidSetIndex].tag = l2Tag;
 
@@ -543,7 +556,10 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 
 			if(l2InvalidSetIndex == -1)
 			{
-				l2InvalidSetIndex = random() % L2CacheConf.numSets;
+//				l2InvalidSetIndex = random() % L2CacheConf.numSets;
+				l2InvalidSetIndex = L2_RR_evictSetIndex;
+				if (L2_RR_evictSetIndex == L2CacheConf.numSets)
+					L2_RR_evictSetIndex = 0;
 
 				if(IS_CACHELINE_DIRTY(L2Cache[l2Index][l2InvalidSetIndex].flags))
 				{
@@ -586,6 +602,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 				 *
 				 * Add the latency.
 				 */
+
 				latency += L2CacheConf.hitLatency;
 				SET_CACHELINE_INVALID(L2Cache[index][setIndex].flags);
 				SET_CACHELINE_CLEAN(L2Cache[index][setIndex].flags);
@@ -680,6 +697,8 @@ void cortexA5_cacheSimInit(struct csim_result_t *result)
 	prevAccessList_head = NULL;
 	prevAccessList_tail = NULL;
 	prefetch_table_entries = 0;
+
+	L2_RR_evictSetIndex = 0;
 
 	return;
 }
