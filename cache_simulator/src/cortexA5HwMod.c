@@ -66,8 +66,8 @@ cacheLine_t **L1DCache;
 cacheLine_t **L1ICache;
 cacheLine_t **L2Cache;
 
-unsigned int memWriteLatency = 50;
-unsigned int memReadLatency = 50;
+unsigned int memWriteLatency = 55;
+unsigned int memReadLatency = 55;
 unsigned int memReadPrefetchLatency = 0;
 
 unsigned long L1D_Hit_Read = 0;
@@ -403,7 +403,7 @@ unsigned long long cortexA5_simICache(unsigned long address,
 						if(IS_CACHELINE_DIRTY(L2Cache[l2Index][l2InvalidSetIndex].flags))
 						{
 							// Write Back to memory!
-							latency += memWriteLatency;
+//							latency += memWriteLatency;
 							L2_Hit_Writeback++;
 						}
 					}
@@ -640,7 +640,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 		{
 			if (address == access->address + L2CacheConf.lineLenBytes)
 			{
-				if (access->sequentialAccess > 15)
+				if (access->sequentialAccess > 5)
 				{
 					/**
 					 * Data would have been prefetched !!

@@ -147,7 +147,7 @@ memAccessCycles += simICache(0x398, 32, &csim_result);
 estimate_power("adpcm_coderbb_3", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 15 - (enterBlock(0xfe, 0x105) ? 7 : 0);
   outp =  outdata;
-//  memAccessCycles += simDCache(outdata_addr, 1, &csim_result);
+  memAccessCycles += simDCache(outdata_addr, 1, &csim_result);
   ivtmp_28 = 0;
   bufferstep = 1;
 //  # SUCC: 4 [100.0%]  (fallthru,exec)
@@ -275,10 +275,8 @@ memAccessCycles += simDCache((SP + outputbuffer_addr), 0, &csim_result);
 adpcm_coderbb_17:
 //  # PRED: 15 [50.0%]  (false,exec)
 memAccessCycles += simDCache((SP + outputbuffer_addr), 1, &csim_result);
-memAccessCycles += simDCache(outdata_addr + (unsigned long)((uintptr_t)outp - (uintptr_t)outdata), 0, &csim_result); //MANUAL
-//memAccessCycles += simDCache((SP + outp_addr), 0, &csim_result);
+memAccessCycles += simDCache((SP + outp_addr), 0, &csim_result);
   *outp =  (signed char) delta_37 & 15 | (signed char) outputbuffer;
-  memAccessCycles += simDCache((SP + outp_addr), 0, &csim_result);
   outp = (uintptr_t)outp + 1;
 //  # SUCC: 18 [100.0%]  (fallthru,exec)
 

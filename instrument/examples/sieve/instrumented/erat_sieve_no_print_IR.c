@@ -27,7 +27,7 @@ struct test {
   unsigned int v;
   unsigned int k;
 } m = { 1, 1 };
-unsigned long m_addr = 0x7c8;
+
 
 void sieve_func() {
   int j_76;
@@ -41,7 +41,6 @@ void sieve_func() {
   uintptr_t D_2240;
   uintptr_t D_2230;
   uintptr_t ivtmp_36;
-  unsigned long ivtmp_36_addr; // MANUAL
   int j;
   int i;
   unsigned int sieve[500000];
@@ -216,7 +215,6 @@ memAccessCycles += simICache(0x31c, 12, &csim_result);
 estimate_power("sieve_funcbb_13", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 10 - (enterBlock(0xdd, 0xdf) ? 7 : 0);
   ivtmp_36 = (uintptr_t)&results;
-  ivtmp_36_addr = results_addr;
   D_2230 = ivtmp_36 + 1999996;
 //  # SUCC: 14 [100.0%]  (fallthru,exec)
 
@@ -227,7 +225,6 @@ memAccessCycles += simICache(0x328, 12, &csim_result);
 estimate_power("sieve_funcbb_14", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 // TODO: UnmappedLS: Load GlobalVar results at line 224
 pipelineCycles += 8 - (enterBlock(0xe0, 0xe2) ? 7 : 0);
-memAccessCycles += simDCache(ivtmp_36_addr + 4, 1, &csim_result);
   if (*(unsigned int*)((uintptr_t)ivtmp_36 + 4) == 0)
     goto sieve_funcbb_16;
   else
@@ -241,7 +238,6 @@ memAccessCycles += simICache(0x334, 12, &csim_result);
 estimate_power("sieve_funcbb_15", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 pipelineCycles += 9 - (enterBlock(0xe3, 0xe5) ? 7 : 0);
   ivtmp_36 = ivtmp_36 + 4;
-  ivtmp_36_addr = ivtmp_36_addr + 4;
   if (ivtmp_36 != D_2230)
     goto sieve_funcbb_14;
   else
