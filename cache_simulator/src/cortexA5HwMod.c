@@ -66,7 +66,7 @@ cacheLine_t **L1DCache;
 cacheLine_t **L1ICache;
 cacheLine_t **L2Cache;
 
-unsigned int memWriteLatency = 55;
+unsigned int memWriteLatency = 0;
 unsigned int memReadLatency = 55;
 unsigned int memReadPrefetchLatency = 0;
 
@@ -101,7 +101,7 @@ prevAccess_t *prevAccessList_head;
 prevAccess_t *prevAccessList_tail;
 
 // Round Robin L2 Cache Replacement
-unsigned int L2_RR_evictSetIndex;
+unsigned int *L2_RR_evictSetIndex;
 
 /**** LOCAL FUNCTIONS *********************************************************/
 
@@ -149,7 +149,12 @@ void insertAccess(prevAccess_t **head, prevAccess_t **tail, unsigned long addres
 int log_base2(int val)
 {
 	int ret = 0;
-	while (val >>= 1) ++ret;
+	val >>= 1;
+	while (val)
+	{
+		++ret;
+		val >>= 1;
+	}
 	return ret;
 }
 
@@ -172,7 +177,7 @@ void initCacheParams ()
 	for (i = 0; i < L1DCacheConf.indexLenBits; i++)
 	{
 		L1DCacheConf.indexMask = L1DCacheConf.indexMask << 1;
-		L1DCacheConf.indexMask |= 0x00000001;
+		L1DCacheConf.indexMask |= 1;
 	}
 	L1DCacheConf.indexMask = L1DCacheConf.indexMask << L1DCacheConf.subIndexLenBits;
 
@@ -181,7 +186,7 @@ void initCacheParams ()
 	for (i = 0; i < L1DCacheConf.tagLenBits; i++)
 	{
 		L1DCacheConf.tagMask = L1DCacheConf.tagMask << 1;
-		L1DCacheConf.tagMask |= 0x00000001;
+		L1DCacheConf.tagMask |= 1;
 	}
 	L1DCacheConf.tagMask = L1DCacheConf.tagMask << (L1DCacheConf.indexLenBits + L1DCacheConf.subIndexLenBits);
 
@@ -318,8 +323,8 @@ unsigned long long cortexA5_simICache(unsigned long address,
 	int hit = 0;
 	unsigned long address_32;
 
-	address_32 = address & (~L1ICacheConf.lineLenBytes);
-	for (_address = address_32; _address <= address + nBytes; _address += 32)
+	address_32 = address & (~(L1ICacheConf.lineLenBytes-1));
+	for (_address = address_32; _address <= address + nBytes; _address += L1ICacheConf.lineLenBytes)
 	{
 		tag = getTagFromAddress(_address, L1ICacheConf.tagLenBits, L1ICacheConf.tagMask);
 		index = getIndexFromAddress(_address, L1ICacheConf.subIndexLenBits, L1ICacheConf.indexMask);
@@ -396,9 +401,9 @@ unsigned long long cortexA5_simICache(unsigned long address,
 					if(l2InvalidSetIndex == -1)
 					{
 //						l2InvalidSetIndex = random() % L2CacheConf.numSets;
-						l2InvalidSetIndex = L2_RR_evictSetIndex++;
-						if (L2_RR_evictSetIndex == L2CacheConf.numSets)
-							L2_RR_evictSetIndex = 0;
+						l2InvalidSetIndex = L2_RR_evictSetIndex[l2Index]++;
+						if (L2_RR_evictSetIndex[l2Index] == L2CacheConf.numSets)
+							L2_RR_evictSetIndex[l2Index] = 0;
 
 						if(IS_CACHELINE_DIRTY(L2Cache[l2Index][l2InvalidSetIndex].flags))
 						{
@@ -444,7 +449,7 @@ unsigned long long cortexA5_simICache(unsigned long address,
 			continue;
 
 		// L2 Miss has occured!
-		L1I_Miss--;
+//		L1I_Miss--;
 		L2I_Miss++;
 		result->L2Misses++;
 		latency += L2CacheConf.missLatency;
@@ -556,10 +561,11 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 
 			if(l2InvalidSetIndex == -1)
 			{
+//				printf("l2_RR_evictSetIndex = %d\n", L2_RR_evictSetIndex);
 //				l2InvalidSetIndex = random() % L2CacheConf.numSets;
-				l2InvalidSetIndex = L2_RR_evictSetIndex;
-				if (L2_RR_evictSetIndex == L2CacheConf.numSets)
-					L2_RR_evictSetIndex = 0;
+				l2InvalidSetIndex = L2_RR_evictSetIndex[l2Index]++;
+				if (L2_RR_evictSetIndex[l2Index] == L2CacheConf.numSets)
+					L2_RR_evictSetIndex[l2Index] = 0;
 
 				if(IS_CACHELINE_DIRTY(L2Cache[l2Index][l2InvalidSetIndex].flags))
 				{
@@ -568,6 +574,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 					L2_Hit_Writeback++;
 				}
 			}
+
 			L2Cache[l2Index][l2InvalidSetIndex].tag = l2Tag;
 			L2Cache[l2Index][l2InvalidSetIndex].flags = L1ReplaceAddFlags;
 
@@ -631,7 +638,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 	 * beginning.
 	 */
 
-	if(1)
+	if(isReadAccess)
 	{
 		int i;
 
@@ -640,7 +647,7 @@ unsigned long long cortexA5_simDCache(unsigned long address,
 		{
 			if (address == access->address + L2CacheConf.lineLenBytes)
 			{
-				if (access->sequentialAccess > 5)
+				if (access->sequentialAccess > 25)
 				{
 					/**
 					 * Data would have been prefetched !!
@@ -698,7 +705,8 @@ void cortexA5_cacheSimInit(struct csim_result_t *result)
 	prevAccessList_tail = NULL;
 	prefetch_table_entries = 0;
 
-	L2_RR_evictSetIndex = 0;
+	L2_RR_evictSetIndex = (unsigned int*) malloc(L2CacheConf.numLines * sizeof(unsigned int));
+	memset(L2_RR_evictSetIndex, 0, sizeof(unsigned int) * L2CacheConf.numLines);
 
 	return;
 }
@@ -731,6 +739,7 @@ void cortexA5_cacheSimFini(struct csim_result_t *result)
 	free(L1DCache);
 	free(L1ICache);
 	free(L2Cache);
+	free(L2_RR_evictSetIndex);
 
 	return;
 }

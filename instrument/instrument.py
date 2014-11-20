@@ -371,7 +371,7 @@ def annotateLoadStore(listISCFunctions, listObjdumpFunctions, listLSInfo, listGl
                 for i in range(len(blockLSInfo)):
                     lsInfo = blockLSInfo.pop(0)
                     if lsInfo.isLoad and lsInfo.isPCRelLoad:
-                        annot_str = "memAccessCycles += simDCache(0x%x, 1, &csim_result);  // PC Relative Load" % (lsInfo.PCRelAdd)
+                        annot_str = "memAccessCycles += simICache(0x%x, 1, &csim_result);  // PC Relative Load" % (lsInfo.PCRelAdd)
                         annot = Annotation(annot_str, funcISC.fileName, blockISC.startLine-1, False)
                         addAnnotationToDict(dictAnnotLoadStore, 
                                             blockISC.startLine-1,

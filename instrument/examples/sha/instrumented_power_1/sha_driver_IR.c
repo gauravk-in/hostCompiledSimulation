@@ -36,21 +36,19 @@ cacheSimInit(&csim_result);
 branchPred_init();
 power_estimator_init();
 SP = SP + 0x8;
-memAccessCycles += simDCache(0x224, 1, &csim_result);  // PC Relative Load
-memAccessCycles += simDCache(0x228, 1, &csim_result);  // PC Relative Load
-memAccessCycles += simDCache(0x22c, 1, &csim_result);  // PC Relative Load
+memAccessCycles += simICache(0x224, 1, &csim_result);  // PC Relative Load
+memAccessCycles += simICache(0x228, 1, &csim_result);  // PC Relative Load
+memAccessCycles += simICache(0x22c, 1, &csim_result);  // PC Relative Load
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x200, 36, &csim_result);
 estimate_power("mainbb_2", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
-// TODO: UnmappedLS: Load GlobalVar ARR_SIZE at line 154 -- Done
-memAccessCycles += simDCache(ARR_SIZE_addr, 1, &csim_result); // GK
-pipelineCycles += 16 - (enterBlock(0x96, 0x9e) ? 7 : 0);
+// TODO: UnmappedLS: Load GlobalVar ARR_SIZE at line 154
+pipelineCycles += 16 - (enterBlock(0x96, 0x9e) ? 5 : 0);
   sha_stream (&sha_info, sha_info_addr,  &in_Data, in_Data_addr,  ARR_SIZE);
   printf("memAccessCycles = \%llu\n", memAccessCycles);
   printf("pipelineCycles = \%llu\n", pipelineCycles);
   cacheSimFini(&csim_result);
   power_estimator_fini();
-  branchPred_fini();
   return 0;
 //  # SUCC: EXIT [100.0%] 
 

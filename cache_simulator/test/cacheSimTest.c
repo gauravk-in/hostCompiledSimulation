@@ -5,27 +5,30 @@
  */
 
 #include "cacheSim.h"
+#include "cacheSimResult.h"
 
 #define HERE printf("%s: %s: %d\n", __FILE__, __func__, __LINE__)
 
 #define MAX_REPEATS 2 
-#define MAX_ACCESSES 8192 * 8 
+#define MAX_ACCESSES 64 * 1024 
 
 #define START_ADD 0x0
+
+struct csim_result_t csim_result;
 
 int main(int argc, char **argv)
 {
 	unsigned long address = START_ADD;
 
-	cacheSimInit();
+	cacheSimInit(&csim_result);
 
 	for(unsigned long j = 0; j < MAX_REPEATS; j++)
 		for(unsigned long i = 0; i < MAX_ACCESSES; i+=4)
 		{
-			simDCache(address + i, 1);
+			simDCache(address + i, 1, &csim_result);
 		}
 
-	cacheSimFini();
+	cacheSimFini(&csim_result);
 
 	return 0;
 }

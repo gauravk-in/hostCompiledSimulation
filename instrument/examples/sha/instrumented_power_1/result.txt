@@ -1,0 +1,32 @@
+06 Nov. 11:45 am
+
+memAccessCycles = 4440193
+pipelineCycles = 20502591
+Statistics : 
+
+Total L1 Hits = 5406006
+Total L2 Hits = 1928
+Total L2 Misses = 14805
+Total Prefetches = 9100
+Mem Access Cycles = 4440193
+
+L1 Data Cache
+	 Hit Read = 2209850
+	 Hit Writeback = 951041
+	 Miss = 1928
+
+L1 Instruction Cache
+	 Hit Read = 3187056
+	 Miss = 0
+
+L2 Unified Cache
+	 Hit Read = 1928
+	 Hit Writeback = 12624
+	 Inst. Miss = 24
+	 Data Miss = 23881
+Accesses = 4938338 
+L1 Hits = 0 
+L1 Miss = 0 (L1 Miss Rate = 0) 
+L2 Hits = 0 
+L2 Miss = 0 (L2 Miss Rate = 0) 
+

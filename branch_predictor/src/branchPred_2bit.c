@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define BPRED_TABLE_MAX_ENTRIES 256
+#define BPRED_TABLE_MAX_ENTRIES 125
 
 enum predictionValues {
 	UNKNOWN = -1,
@@ -102,37 +102,6 @@ void moveEntryToTail(bPredTableEntry_t *entry)
  *
  * returns whether branch was predicted or not
  */
-//#define BRANCH_ALWAYS
-#ifdef BRANCH_ALWAYS
-unsigned int enterBlock (unsigned long blockObjStartAdd,
-		unsigned long blockObjEndAdd)
-{
-	if (!prevBlockValid)
-	{
-		// No Previous block, so branch not predicted!
-		// Set current block as previous
-		prevBlockValid = 1;
-		prevBlockEndAdd = blockObjEndAdd;
-		mispredictions++;
-		return 0;
-	}
-
-	if (blockObjStartAdd == prevBlockEndAdd + 1)
-	{
-		// Branch was not taken!
-		prevBlockEndAdd = blockObjEndAdd;
-		mispredictions++;
-		return 0;
-	}
-	else
-	{
-		// Branch was taken!
-		prevBlockEndAdd = blockObjEndAdd;
-		predictions++;
-		return 1;
-	}
-}
-#else
 unsigned int enterBlock (unsigned long blockObjStartAdd,
 		unsigned long blockObjEndAdd)
 {
@@ -197,7 +166,7 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 				}
 				else
 				{
-//					entry->prediction = STRONGLY_NOT_TAKEN;
+					entry->prediction = STRONGLY_NOT_TAKEN;
 					predicted =  1; // predicted
 					break;
 				}
@@ -206,7 +175,7 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 			{
 				if (isBranchTaken)
 				{
-//					entry->prediction = STRONGLY_TAKEN;
+					entry->prediction = STRONGLY_TAKEN;
 					predicted =  1; // predicted
 					break;
 				}
@@ -248,12 +217,12 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 		entry->branchInstAdd = prevBlockEndAdd;
 		if (isBranchTaken)
 		{
-			entry->prediction = WEAKLY_TAKEN;
+			entry->prediction = WEAKLY_NOT_TAKEN;
 			predicted = 0;
 		}
 		else
 		{
-			entry->prediction = WEAKLY_NOT_TAKEN;
+			entry->prediction = STRONGLY_NOT_TAKEN;
 			predicted = 1;
 		}
 		insertEntryToTail(entry);
@@ -274,7 +243,6 @@ unsigned int enterBlock (unsigned long blockObjStartAdd,
 
 	return predicted;
 }
-#endif
 
 void branchPred_init() {
 	bPredTable_head = NULL;

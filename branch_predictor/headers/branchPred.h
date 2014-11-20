@@ -12,3 +12,5 @@ extern unsigned int enterBlock (unsigned long blockObjStartAdd,
 
 
 extern void branchPred_init();
+
+extern void branchPred_fini();

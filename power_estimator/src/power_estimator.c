@@ -32,6 +32,8 @@ double MEM_freq = 400;
 double MEM_volt = 1.2;
 double MEM_A_power;
 double MEM_C_power;
+double EMIM_A_power = 72;
+double EMIM_C_power = 0.98;
 unsigned int MEM_Access_Cycles = 200;
 
 FILE *output_fp;
@@ -124,8 +126,8 @@ void power_estimator_init()
 	L2_A_power = L2_A_ABV * L2_volt * L2_volt * L2_freq / 1000.0;
 	L2_C_power = L2_C_ABV * L2_volt * L2_volt * L2_freq / 1000.0;
 
-	MEM_A_power = MEM_A_ABV * MEM_volt * MEM_volt * MEM_freq / 1000.0;
-	MEM_C_power = MEM_C_ABV * MEM_volt * MEM_volt * MEM_freq / 1000.0;
+	MEM_A_power = (MEM_A_ABV * MEM_volt * MEM_volt * MEM_freq / 1000.0) + EMIM_A_power;
+	MEM_C_power = (MEM_C_ABV * MEM_volt * MEM_volt * MEM_freq / 1000.0) + EMIM_C_power;
 }
 
 void power_estimator_fini()

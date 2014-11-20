@@ -119,7 +119,7 @@ SP = SP + 0x30;
 memAccessCycles += simDCache((SP + 0x4), 1, &csim_result);  // Spilling Register
 memAccessCycles += simDCache((SP + 0xc), 1, &csim_result);  // Spilling Register
 memAccessCycles += simDCache((SP + 0xc), 1, &csim_result);  // Reading Spilt Register
-memAccessCycles += simDCache(0x4a8, 1, &csim_result);  // PC Relative Load
+memAccessCycles += simICache(0x4a8, 1, &csim_result);  // PC Relative Load
 // Simulating I Cache for obj block 0
 memAccessCycles += simICache(0x36c, 44, &csim_result);
 estimate_power("adpcm_coderbb_2", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
@@ -140,7 +140,7 @@ pipelineCycles += 23 - (enterBlock(0xf3, 0xfd) ? 5 : 0);
 
 adpcm_coderbb_3:
 //  # PRED: 2 [91.0%]  (true,exec)
-memAccessCycles += simDCache(0x4a8, 1, &csim_result);  // PC Relative Load
+memAccessCycles += simICache(0x4a8, 1, &csim_result);  // PC Relative Load
 memAccessCycles += simDCache((SP + outp_addr), 0, &csim_result);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x398, 32, &csim_result);
@@ -155,7 +155,7 @@ pipelineCycles += 15 - (enterBlock(0xfe, 0x105) ? 5 : 0);
 adpcm_coderbb_4:
 //  # PRED: 18 [91.0%]  (true,exec) 3 [100.0%]  (fallthru,exec)
 memAccessCycles += simDCache((SP + 0x4), 1, &csim_result);  // Reading Spilt Register
-pipelineCycles += 48 - (enterBlock(0x106, 0x137) ? 5 : 0);
+pipelineCycles += 58 - (enterBlock(0x106, 0x137) ? 5 : 0);
   diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;
   memAccessCycles += simDCache(indata_addr + (+ivtmp_28), 1, &csim_result);
   if (diff < 0)

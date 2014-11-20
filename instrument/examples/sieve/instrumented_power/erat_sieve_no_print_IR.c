@@ -11,7 +11,7 @@
 #include "cacheSim.h"
 #include "branchPred.h"
 #include "power_estimator.h"
-unsigned long SP = 0x1234;
+unsigned long SP = 0x1ff28;
 unsigned long long memAccessCycles = 0;
 unsigned long long pipelineCycles = 0;
 struct csim_result_t csim_result;
@@ -280,6 +280,7 @@ pipelineCycles += 12 - (enterBlock(0xf1, 0xf5) ? 7 : 0);
   printf("pipelineCycles = \%llu\n", pipelineCycles);
   cacheSimFini(&csim_result);
   power_estimator_fini();
+  branchPred_fini();
   return 0;
 //  # SUCC: EXIT [100.0%] 
 
