@@ -125,7 +125,7 @@ memAccessCycles += simICache(0x36c, 44, &csim_result);
 estimate_power("adpcm_coderbb_2", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 247
 // TODO: UnmappedLS: Load GlobalVar coder_1_state at line 249
-pipelineCycles += 23 - (enterBlock(0xf3, 0xfd) ? 5 : 0);
+pipelineCycles += 23 - (enterBlock(0xf3, 0xfd) ? 7 : 0);
   valpred = state->valprev;
   memAccessCycles += simDCache(state_addr, 1, &csim_result);
   index = state->index;
@@ -145,7 +145,7 @@ memAccessCycles += simDCache((SP + outp_addr), 0, &csim_result);
 // Simulating I Cache for obj block 1
 memAccessCycles += simICache(0x398, 32, &csim_result);
 estimate_power("adpcm_coderbb_3", pipelineCycles, memAccessCycles, csim_result.L2Hits, (csim_result.prefetches + csim_result.L2Misses));
-pipelineCycles += 15 - (enterBlock(0xfe, 0x105) ? 5 : 0);
+pipelineCycles += 15 - (enterBlock(0xfe, 0x105) ? 7 : 0);
   outp =  outdata;
 //  memAccessCycles += simDCache(outdata_addr, 1, &csim_result);
   ivtmp_28 = 0;
@@ -155,7 +155,7 @@ pipelineCycles += 15 - (enterBlock(0xfe, 0x105) ? 5 : 0);
 adpcm_coderbb_4:
 //  # PRED: 18 [91.0%]  (true,exec) 3 [100.0%]  (fallthru,exec)
 memAccessCycles += simDCache((SP + 0x4), 1, &csim_result);  // Reading Spilt Register
-pipelineCycles += 58 - (enterBlock(0x106, 0x137) ? 5 : 0);
+pipelineCycles += 68 - (enterBlock(0x106, 0x137) ? 7 : 0);
   diff = (int) *(short int *)((uintptr_t)indata + (uintptr_t)ivtmp_28) - valpred;
   memAccessCycles += simDCache(indata_addr + (+ivtmp_28), 1, &csim_result);
   if (diff < 0)
@@ -301,7 +301,7 @@ estimate_power("adpcm_coderbb_18", pipelineCycles, memAccessCycles, csim_result.
 
 adpcm_coderbb_19:
 //  # PRED: 18 [9.0%]  (false,exec)
-pipelineCycles += 10 - (enterBlock(0x138, 0x13b) ? 5 : 0);
+pipelineCycles += 10 - (enterBlock(0x138, 0x13b) ? 7 : 0);
   if (bufferstep == 0)
     goto adpcm_coderbb_20;
   else
@@ -328,7 +328,7 @@ memAccessCycles += simDCache((SP + 0xc), 1, &csim_result);  // Reading Spilt Reg
 memAccessCycles += simICache(0x490, 24, &csim_result);
 // TODO: UnmappedLS: Store GlobalVar coder_1_state at line 317
 // TODO: UnmappedLS: Store GlobalVar coder_1_state at line 318
-pipelineCycles += 19 - (enterBlock(0x13c, 0x141) ? 5 : 0);
+pipelineCycles += 19 - (enterBlock(0x13c, 0x141) ? 7 : 0);
   state->valprev = (short int) (short int) valpred;
   memAccessCycles += simDCache(state_addr, 0, &csim_result);
   state->index = (char) (char) index;
